@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>{{ site.title | default: site.github.repository_name }} by {{ site.github.owner_name }}</title>
+
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    <meta name="viewport" content="width=device-width">
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>{{ site.title | default: site.github.repository_name }}</h1>
+        <p>{{ site.description | default: site.github.project_tagline }}</p>
+
+        {% if site.show_downloads %}
+          <ul>
+            <li><a href="{{ site.github.zip_url }}">Download <strong>ZIP File</strong></a></li>
+            <li><a href="{{ site.github.tar_url }}">Download <strong>TAR Ball</strong></a></li>
+            <li><a href="{{ site.github.repository_url }}">View On <strong>GitHub</strong></a></li>
+          </ul>
+        {% endif %}
+
+		<nav>
+		{% assign sorted = site.pages | sort:"order" | reverse %}
+		{% for node in sorted %}
+			{% if node.url != '/' and node.title != nil %}
+				{% assign ur = site.baseurl | append: node.url %}
+				{% if node.title == page.title %}
+					<li><b><a class="active" href="{{ ur }}">{{ node.title }}</a></b></li>
+				{% else %}
+					<li><a href="{{ ur }}">{{ node.title }}</a></li>
+				{% endif %}
+			{% endif %}
+		{% endfor %}
+		</nav>
+
+			
+      </header>
+
+      <section>
+
+      {{ content }}
+
+      </section>
+
+      <footer>
+
+		{% if page.papersize != nil %}
+		<p><a href="{{ site.baseurl | append: page.url | replace: 'html', 'pdf' }}">Download as PDF</a></p>
+		{% endif %}
+
+        {% if site.github.is_project_page %}
+        <p>This project is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
+        {% endif %}
+        <p><small>Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
+
+  </body>
+</html>

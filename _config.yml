@@ -1,0 +1,11 @@
+---
+theme: jekyll-theme-minimal
+
+# exclude:
+
+title: 'xDPacket'
+description: 'the eXtremely Direct Packet handler'
+
+markdown: kramdown
+repository: siriobalmelli/xdpacket
+...
