@@ -1,0 +1,2 @@
+# how dependencies should be incorporated
+option('dep_type', type : 'string', value : 'shared')

@@ -52,3 +52,5 @@ Mkfile.old
 dkms.conf
 _site*
 .*.sw[op]
+build*
+*.pyc
