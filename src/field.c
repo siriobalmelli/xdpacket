@@ -12,8 +12,8 @@ uint8_t xdpk_field_tailmask(uint16_t mlen)
 	if (!mlen)
 		return 0x0;
 	/* fuck the bit-twiddling, do a single lookup */	
-	uint8_t masks[] = {
-		0xff, /* because mlen is masked before lookup */
+	const uint8_t masks[] = {
+		0xff, /* because mlen itself is masked at lookup */
 		0x80,
 		0xc0,
 		0xe0,
