@@ -9,6 +9,9 @@
 #include <net/if.h>
 
 #include <zed_dbg.h>
+#include <epoll_track.h>
+#include <posigs.h>
+
 #include <xdpk.h>
 
 
@@ -18,6 +21,7 @@ void xdpk_sock_free(struct xdpk_sock *sk)
 {
 	if (!sk)
 		return;
+	Z_log(Z_inf, "close "XDPK_PRN(sk));
 	if (sk->fd != -1)
 		close(sk->fd);
 	free(sk);
@@ -69,7 +73,7 @@ struct xdpk_sock *xdpk_sock_new(const char *ifname)
 		ioctl(ret->fd, SIOCGIFHWADDR, &ifr)
 		, "");
 	memcpy(&ret->hwaddr, &ifr.ifr_hwaddr, sizeof(ret->hwaddr));
-	Z_log(Z_inf, XDPK_PRN(ret));
+	Z_log(Z_inf, "add "XDPK_PRN(ret));
 
 	return ret;
 out:
@@ -77,18 +81,48 @@ out:
 	return NULL;
 }
 
+/*	xdpk_sock_callback()
+ */
+void xdpk_sock_callback(int fd, uint32_t events, epoll_data_t context)
+{
+	return;
+}
+
 
 /*	main()
  */
 int main(int argc, char **argv)
 {
+	struct epoll_track *tk = NULL;
 	struct xdpk_sock *sk = NULL;
+
+	Z_die_if(
+		psg_sigsetup(NULL)
+		, "failed to set up signals");
+	Z_die_if(!(
+		tk = eptk_new()
+		), "failed to set up epoll");
 
 	Z_die_if(!(
 		sk = xdpk_sock_new(argv[1])
-		), "");
+		), "failed to open socket on '%s'", argv[1]);
+	struct epoll_track_cb cb = {
+		.fd = sk->fd,
+		.events = EPOLLIN,
+		.context.ptr = sk,
+		.callback = xdpk_sock_callback
+	};
+	Z_die_if(eptk_register(tk, &cb), "");
+
+	int res;
+	while(!psg_kill_check()) {
+		Z_die_if((
+			res = eptk_pwait_exec(tk, -1, NULL)
+			) < 0, "");
+	}
 
 out:
+	eptk_free(tk, false);
 	xdpk_sock_free(sk);
 	return 0;
 }
