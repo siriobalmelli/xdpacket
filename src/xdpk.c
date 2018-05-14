@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <linux/if_packet.h>	/* struct packet_mreq */
+#include <linux/if_arp.h>	/* struct sockaddr_ll.sll_hatype */
+#include <linux/if_ether.h>	/* ETH_P_ALL and friends */
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <linux/if_ether.h>	/* ETH_P_ALL and friends */
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
-#include <net/if.h>
 
 #include <zed_dbg.h>
 #include <epoll_track.h>
@@ -38,27 +39,25 @@ struct xdpk_sock *xdpk_sock_new(const char *ifname)
 		), "alloc size %zu", sizeof(struct xdpk_sock));
 	snprintf(ret->name, IFNAMSIZ, "%s", ifname);
 
-	/* grok interface
-	 * ordered by increasing field size: avoid zeroing the union between calls
-	 */
+	/* socket */
 	ret->fd = -1;	
 	Z_die_if((
-		ret->fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
+		ret->fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
 		) < 0, "");
 	struct ifreq ifr = {{{0}}};
 	snprintf (ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ifname);
+
+	/* grok interface
+	 * ordered by increasing field size: avoid zeroing the union between calls
+	 */
 	Z_die_if(
 		ioctl(ret->fd, SIOCGIFINDEX, &ifr)
 		, "");
 	ret->ifindex = ifr.ifr_ifindex;
-	memset(&ifr.ifr_ifru, 0, sizeof(ifr.ifr_ifru));
-
 	Z_die_if(
 		ioctl(ret->fd, SIOCGIFMTU, &ifr)
 		, "");
 	ret->mtu = ifr.ifr_mtu;
-	memset(&ifr.ifr_ifru, 0, sizeof(ifr.ifr_ifru));
-
 	Z_die_if(
 		ioctl(ret->fd, SIOCGIFADDR, &ifr)
 		, "");
@@ -67,12 +66,44 @@ struct xdpk_sock *xdpk_sock_new(const char *ifname)
 		inet_ntop(ret->addr.sin_family, &ret->addr.sin_addr,
 			ret->ip_prn, sizeof(ret->ip_prn))
 		), "");
-	memset(&ifr.ifr_ifru, 0, sizeof(ifr.ifr_ifru));
-
 	Z_die_if(
 		ioctl(ret->fd, SIOCGIFHWADDR, &ifr)
 		, "");
 	memcpy(&ret->hwaddr, &ifr.ifr_hwaddr, sizeof(ret->hwaddr));
+
+	/* bind to interface */
+	struct sockaddr_ll saddr = {
+		.sll_family = AF_PACKET,
+		.sll_protocol = htons(ETH_P_ALL),
+		.sll_ifindex = ret->ifindex,
+		.sll_hatype = ARPHRD_ETHER, /* no clue what an ARP type is */
+		.sll_pkttype = PACKET_HOST | PACKET_BROADCAST | PACKET_MULTICAST,
+		.sll_halen = 6,
+		.sll_addr = { ret->hwaddr.sa_data[0], ret->hwaddr.sa_data[1], ret->hwaddr.sa_data[2], 
+			ret->hwaddr.sa_data[3], ret->hwaddr.sa_data[4], ret->hwaddr.sa_data[5]}
+	};
+	Z_die_if(
+		bind(ret->fd, (struct sockaddr *)&saddr, sizeof(saddr))
+		, "");
+
+#if 1
+	/* promiscuous */
+	struct packet_mreq mr = {
+		.mr_ifindex = ret->ifindex,
+		.mr_type = PACKET_MR_PROMISC
+	};
+	Z_die_if(
+		setsockopt(ret->fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr))
+		, "");
+	Z_die_if(
+		ioctl(ret->fd, SIOCGIFFLAGS, &ifr)
+		, "");
+	ifr.ifr_flags |= IFF_PROMISC;
+	Z_die_if(
+		ioctl(ret->fd, SIOCSIFFLAGS, &ifr)
+		, "");
+#endif
+
 	Z_log(Z_inf, "add "XDPK_PRN(ret));
 
 	return ret;
@@ -85,6 +116,17 @@ out:
  */
 void xdpk_sock_callback(int fd, uint32_t events, epoll_data_t context)
 {
+	Z_log(Z_inf, "callback");
+	char buf[16384];
+	ssize_t res = recv(fd, buf, sizeof(buf), 0);
+	if (res < 1)
+		return;
+	struct ethhdr *eth = (struct ethhdr *)buf;
+	//struct iphdr *ip = (struct iphdr*)(buf + sizeof(struct ethhdr));
+	Z_log(Z_inf, "recv len %zd from %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+		res, eth->h_source[0],eth->h_source[1],eth->h_source[2],
+		eth->h_source[3],eth->h_source[4],eth->h_source[5]);
+
 	return;
 }
 

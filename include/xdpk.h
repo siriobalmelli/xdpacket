@@ -3,7 +3,6 @@
 
 #include <unistd.h>
 #include <stdint.h>
-#include <net/if.h>
 #include <netinet/in.h> /* sockaddr_in */
 
 /*	fixed-size strings FTW
@@ -22,7 +21,7 @@ struct xdpk_sock {
 	int		mtu;
 	struct sockaddr	hwaddr;
 	struct sockaddr_in addr;
-	char		name[IFNAMSIZ];
+	char		name[XDPK_ADDR_MAX];
 };
 
 #define XDPK_PRN(sk_p) "%d: %s %s %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx mtu %d", \
