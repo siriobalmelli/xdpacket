@@ -24,7 +24,9 @@ struct xdpk_sock {
 	char		name[XDPK_ADDR_MAX];
 };
 
-#define XDPK_PRN(sk_p) "%d: %s %s %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx mtu %d", \
+#define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
+#define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
+#define XDPK_SOCK_PRN(sk_p) "%d: %s %s "XDPK_MAC_PROTO" mtu %d", \
 			sk_p->ifindex, sk_p->name, sk_p->ip_prn, \
 			sk_p->hwaddr.sa_data[0], sk_p->hwaddr.sa_data[1], sk_p->hwaddr.sa_data[2], \
 			sk_p->hwaddr.sa_data[3], sk_p->hwaddr.sa_data[4], sk_p->hwaddr.sa_data[5], \

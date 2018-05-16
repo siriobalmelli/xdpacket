@@ -22,7 +22,7 @@ void xdpk_sock_free(struct xdpk_sock *sk)
 {
 	if (!sk)
 		return;
-	Z_log(Z_inf, "close "XDPK_PRN(sk));
+	Z_log(Z_inf, "close "XDPK_SOCK_PRN(sk));
 	if (sk->fd != -1)
 		close(sk->fd);
 	free(sk);
@@ -76,35 +76,18 @@ struct xdpk_sock *xdpk_sock_new(const char *ifname)
 		.sll_family = AF_PACKET,
 		.sll_protocol = htons(ETH_P_ALL),
 		.sll_ifindex = ret->ifindex,
-		.sll_hatype = ARPHRD_ETHER, /* no clue what an ARP type is */
-		.sll_pkttype = PACKET_HOST | PACKET_BROADCAST | PACKET_MULTICAST,
 		.sll_halen = 6,
 		.sll_addr = { ret->hwaddr.sa_data[0], ret->hwaddr.sa_data[1], ret->hwaddr.sa_data[2], 
-			ret->hwaddr.sa_data[3], ret->hwaddr.sa_data[4], ret->hwaddr.sa_data[5]}
+			ret->hwaddr.sa_data[3], ret->hwaddr.sa_data[4], ret->hwaddr.sa_data[5]},
+		/* ignored by bind call */
+		.sll_hatype = 0,
+		.sll_pkttype = 0
 	};
 	Z_die_if(
 		bind(ret->fd, (struct sockaddr *)&saddr, sizeof(saddr))
 		, "");
 
-#if 1
-	/* promiscuous */
-	struct packet_mreq mr = {
-		.mr_ifindex = ret->ifindex,
-		.mr_type = PACKET_MR_PROMISC
-	};
-	Z_die_if(
-		setsockopt(ret->fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr))
-		, "");
-	Z_die_if(
-		ioctl(ret->fd, SIOCGIFFLAGS, &ifr)
-		, "");
-	ifr.ifr_flags |= IFF_PROMISC;
-	Z_die_if(
-		ioctl(ret->fd, SIOCSIFFLAGS, &ifr)
-		, "");
-#endif
-
-	Z_log(Z_inf, "add "XDPK_PRN(ret));
+	Z_log(Z_inf, "add "XDPK_SOCK_PRN(ret));
 
 	return ret;
 out:
@@ -116,17 +99,21 @@ out:
  */
 void xdpk_sock_callback(int fd, uint32_t events, epoll_data_t context)
 {
-	Z_log(Z_inf, "callback");
+	/* receive packet and discard outgoing packets */
+	struct sockaddr_ll addr;
+        socklen_t addr_len = sizeof(addr);
 	char buf[16384];
-	ssize_t res = recv(fd, buf, sizeof(buf), 0);
+	ssize_t res = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addr_len);
 	if (res < 1)
 		return;
+	if (addr.sll_pkttype == PACKET_OUTGOING)
+		return;
+
 	struct ethhdr *eth = (struct ethhdr *)buf;
 	//struct iphdr *ip = (struct iphdr*)(buf + sizeof(struct ethhdr));
-	Z_log(Z_inf, "recv len %zd from %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-		res, eth->h_source[0],eth->h_source[1],eth->h_source[2],
-		eth->h_source[3],eth->h_source[4],eth->h_source[5]);
-
+	Z_log(Z_inf, "recv "XDPK_MAC_PROTO" -> "XDPK_MAC_PROTO" len %zd",
+		XDPK_MAC_BYTES(eth->h_source), XDPK_MAC_BYTES(eth->h_dest),
+		res);
 	return;
 }
 
