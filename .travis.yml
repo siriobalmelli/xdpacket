@@ -1,0 +1,8 @@
+---
+language: nix
+
+matrix:
+  include:
+    - os: linux
+    - os: osx
+...
