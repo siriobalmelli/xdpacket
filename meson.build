@@ -6,6 +6,7 @@ project('xdpacket', 'c',
 	license : 'GPL2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'the eXtremely Direct Packet handler'
+homepage = 'https://siriobalmelli.github.io/xdpacket/'
 
 #sanity
 assert(meson.project_name() == 'xdpacket',
