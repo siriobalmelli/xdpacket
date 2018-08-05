@@ -1,23 +1,23 @@
 {
+  # options
+  buildtype ? "release",
+  compiler ? "clang",
+  dep_type ? "shared",
+  mesonFlags ? "",
+
   # deps
   system ? builtins.currentSystem,
   nixpkgs ? import <nixpkgs> { inherit system; },
-  nonlibc ? nixpkgs.nonlibc or import <nonlibc> {
+  nonlibc ? (nixpkgs.nonlibc or import <nonlibc> {
     inherit system;
     inherit buildtype;
     inherit compiler;
     inherit dep_type;
     inherit mesonFlags;
-  },
-  # options
-  buildtype ? "release",
-  compiler ? "clang",
-  dep_type ? "shared",
-  mesonFlags ? ""
+  })
 }:
 
-# note that "nonlibc" above should not be clobbered by this
-with import <nixpkgs> { inherit system; };
+with nixpkgs;
 
 stdenv.mkDerivation rec {
   name = "xdpacket";
@@ -34,13 +34,18 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     clang
-    liburcu
     meson
     ninja
     nonlibc
     pandoc
     pkgconfig
+    dpkg
+    fpm
+    rpm
+    zip
   ];
+  # runtime dependencies
+  inherit nonlibc;
 
   # just work with the current directory (aka: Git repo), no fancy tarness
   src = ./.;
@@ -67,10 +72,16 @@ stdenv.mkDerivation rec {
       cd build
   '';
 
-  buildPhase = "ninja";
+  buildPhase = ''
+      ninja
+  '';
   doCheck = true;
-  checkPhase = "ninja test";
-  installPhase = "ninja install";
+  checkPhase = ''
+      ninja test
+  '';
+  installPhase = ''
+      ninja install
+  '';
 
   # Build packages outside $out then move them in: fpm seems to ignore
   #+	the '-x' flag that we need to avoid packaging packages inside packages
@@ -94,5 +105,7 @@ stdenv.mkDerivation rec {
   # Allow YouCompleteMe and other tooling to see into the byzantine
   #+	labyrinth of library includes.
   # TODO: this string manipulation ought to be done in Nix.
-  shellHook=''export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")'';
+  shellHook = ''
+      export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")
+  '';
 }
