@@ -20,5 +20,6 @@ script:
     if ! nix-build -I ~; then
         echo "build fail! nix-info follows" >&2
         nix-shell -p nix-info --run "nix-info -m"
+        exit 1
     fi
 ...
