@@ -54,3 +54,4 @@ _site*
 .*.sw[op]
 build*
 *.pyc
+*.DS_Store
