@@ -4,5 +4,6 @@ language: nix
 matrix:
   include:
     - os: linux
-    - os: osx
+    #  don't run on macOS - depends on Linux-only network primitives
+    #  - os: osx
 ...
