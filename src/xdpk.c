@@ -131,17 +131,12 @@ int main(int argc, char **argv)
 	Z_die_if(!(
 		tk = eptk_new()
 		), "failed to set up epoll");
-
 	Z_die_if(!(
 		sk = xdpk_sock_new(argv[1])
 		), "failed to open socket on '%s'", argv[1]);
-	struct epoll_track_cb cb = {
-		.fd = sk->fd,
-		.events = EPOLLIN,
-		.context.ptr = sk,
-		.callback = xdpk_sock_callback
-	};
-	Z_die_if(eptk_register(tk, &cb), "");
+	Z_die_if(
+		eptk_register(tk, sk->fd, EPOLLIN, xdpk_sock_callback, (epoll_data_t){ .ptr = sk }),
+		"failed to register epoll on %d", sk->fd);
 
 	int res;
 	while(!psg_kill_check()) {

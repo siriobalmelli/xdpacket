@@ -24,7 +24,7 @@ NLC_INLINE size_t xdpk_field_len(uint16_t mlen)
 	 * - `>> 3` == `/ 8`
 	 * - any fractional bits (< 8) are treated as one byte
 	 */
-	return (mlen & 0x7F != 0) + (mlen >> 3);
+	return ((mlen & 0x7F) != 0) + (mlen >> 3);
 }
 
 NLC_LOCAL __attribute__((const))
