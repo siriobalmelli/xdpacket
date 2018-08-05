@@ -6,4 +6,12 @@ matrix:
     - os: linux
     #  don't run on macOS - depends on Linux-only network primitives
     #  - os: osx
+
+before_install:
+  # Clone nonlibc repo as we depend on it but it hasn't been added to nixpkgs
+  # TODO: replace this with a nix-channel instead of a download
+  - pushd ~; git clone https://github.com/siriobalmelli/nonlibc.git; popd
+
+script:
+  - nix-build -I ~
 ...
