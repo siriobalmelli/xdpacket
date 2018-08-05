@@ -20,11 +20,11 @@ struct xdpk_field {
  */
 NLC_INLINE size_t xdpk_field_len(uint16_t mlen)
 {
-	/* bitmask -> bytecount */
-	size_t len = (mlen >> 3);
-	if (mlen & 0x7)
-		len++;
-	return len;
+	/* bitmask -> bytecount
+	 * - `>> 3` == `/ 8`
+	 * - any fractional bits (< 8) are treated as one byte
+	 */
+	return (mlen & 0x7F != 0) + (mlen >> 3);
 }
 
 NLC_LOCAL __attribute__((const))

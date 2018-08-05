@@ -1,6 +1,6 @@
 #project
 project('xdpacket', 'c',
-	version : '0.0.1',
+	version : '0.0.2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'the eXtremely Direct Packet handler'
 
@@ -62,5 +62,5 @@ deps = [ nonlibc ]
 inc = include_directories('include')
 subdir('include')
 subdir('src')
-#subdir('test')
+subdir('test')
 #subdir('benchmark')

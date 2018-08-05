@@ -19,22 +19,15 @@ with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
 	name = "xdpacket";
-	#env = buildEnv { name = name; paths = nativeBuildInputs; };
 	outputs = [ "out" ];
 
 	# build-only deps
 	nativeBuildInputs = [
-		(lowPrio gcc)
-		clang-tools
 		clang
-		cscope
 		meson
 		ninja
 		pandoc
 		pkgconfig
-		python3
-		valgrind
-		which
 	];
 
 	# runtime deps
