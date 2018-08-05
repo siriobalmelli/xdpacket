@@ -55,3 +55,4 @@ _site*
 build*
 *.pyc
 *.DS_Store
+result

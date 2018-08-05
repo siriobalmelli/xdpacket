@@ -1,8 +1,12 @@
-#project
+# NOTE this metadata DUPLICATED in 'default.nix'. We must MANUALLY sync both because:
+#   - The Meson build setup must stand alone adn *not* depend on Nix
+#   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('xdpacket', 'c',
-	version : '0.0.1',
+	version : '0.0.3',
+	license : 'GPL2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'the eXtremely Direct Packet handler'
+homepage = 'https://siriobalmelli.github.io/xdpacket/'
 
 #sanity
 assert(meson.project_name() == 'xdpacket',
@@ -62,5 +66,5 @@ deps = [ nonlibc ]
 inc = include_directories('include')
 subdir('include')
 subdir('src')
-#subdir('test')
+subdir('test')
 #subdir('benchmark')
