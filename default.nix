@@ -21,18 +21,14 @@ stdenv.mkDerivation rec {
 	name = "xdpacket";
 	outputs = [ "out" ];
 
-	# build-only deps
-	nativeBuildInputs = [
+	buildInputs = [
 		clang
+		liburcu
 		meson
 		ninja
+		nonlibc
 		pandoc
 		pkgconfig
-	];
-
-	# runtime deps
-	buildInputs = [
-		nonlibc
 	];
 
 	# just work with the current directory (aka: Git repo), no fancy tarness
