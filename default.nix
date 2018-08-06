@@ -85,7 +85,7 @@ stdenv.mkDerivation rec {
 
   # Build packages outside $out then move them in: fpm seems to ignore
   #+	the '-x' flag that we need to avoid packaging packages inside packages
-  fixupPhase = ''
+  postFixup = ''
       mkdir temp
       for pk in "deb" "rpm" "tar" "zip"; do
           if ! fpm -f -t $pk -s dir -p temp/ -n $name -v $version \
