@@ -3,7 +3,7 @@ title: xDPacket
 order: 100
 ---
 
-# xDPacket
+# xDPacket [![Build Status](https://travis-ci.org/siriobalmelli/xdpacket.svg?branch=master)]
 
 the eXtremely Direct Packet handler (in userland)
 
