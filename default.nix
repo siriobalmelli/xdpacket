@@ -32,20 +32,19 @@ stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  # TODO: liburcu is a *nonlibc* dependency - but if we don't declare it here
-  #+ it won't be present in our build??
   buildInputs = [
     clang
     meson
-    liburcu
     ninja
-    nonlibc
     pandoc
     pkgconfig
     dpkg
     fpm
     rpm
     zip
+  ];
+  propagatedBuildInputs = [
+    nonlibc
   ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
