@@ -29,7 +29,7 @@ uint8_t xdpk_field_tailmask(uint16_t mlen)
  * Return 64-bit fnv1a hash of all bits described by 'fd'
  * Return 0 if nothing to hash or insane parameters.
  */
-uint64_t xdpk_field_hash(struct xdpk_field fd, const void *pkt, size_t plen)
+uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
 {
 	/* sane addressing */
 	const void *start = pkt + fd.offt;

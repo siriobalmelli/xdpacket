@@ -57,14 +57,13 @@ endif
 nonlibc = dependency('nonlibc', static: dep_static, version : '>=0.1.9',
 		fallback : ['nonlibc', 'nonlibc_dep_' + _dep ], required : true)
 
-
 # All deps in a single arg. Use THIS ONE in compile calls
 deps = [ nonlibc ]
-
 
 #build
 inc = include_directories('include')
 subdir('include')
+subdir('lib')
 subdir('src')
 subdir('test')
 #subdir('benchmark')
