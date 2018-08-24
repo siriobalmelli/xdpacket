@@ -32,20 +32,19 @@ stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  # TODO: liburcu is a *nonlibc* dependency - but if we don't declare it here
-  #+ it won't be present in our build??
   buildInputs = [
     clang
     meson
-    liburcu
     ninja
-    nonlibc
     pandoc
     pkgconfig
     dpkg
     fpm
     rpm
     zip
+  ];
+  propagatedBuildInputs = [
+    nonlibc
   ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
@@ -86,7 +85,7 @@ stdenv.mkDerivation rec {
 
   # Build packages outside $out then move them in: fpm seems to ignore
   #+	the '-x' flag that we need to avoid packaging packages inside packages
-  fixupPhase = ''
+  postFixup = ''
       mkdir temp
       for pk in "deb" "rpm" "tar" "zip"; do
           if ! fpm -f -t $pk -s dir -p temp/ -n $name -v $version \
