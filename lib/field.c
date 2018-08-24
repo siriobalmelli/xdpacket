@@ -32,19 +32,19 @@ uint8_t xdpk_field_tailmask(uint16_t mlen)
 uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
 {
 	/* sane addressing */
-	const void *start = pkt + fd.offt;
-	if (fd.offt < 0)
+	const void *start = pkt + field.offt;
+	if (field.offt < 0)
 		start += plen;
 	if (start < pkt)
 		return 0;
 
 	/* sane length */
-	size_t flen = xdpk_field_len(fd.mlen);
+	size_t flen = xdpk_field_len(field.mlen);
 	if (!flen || (start + flen) > (pkt + plen))
 		return 0;
 
 	uint64_t hash = fnv_hash64(NULL, pkt, flen-1);
 	uint8_t trailing = ((uint8_t*)pkt)[flen-1]
-				& xdpk_field_tailmask(fd.mlen);
+				& xdpk_field_tailmask(field.mlen);
 	return fnv_hash64(&hash, &trailing, sizeof(trailing));
 }

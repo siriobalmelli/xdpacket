@@ -63,9 +63,6 @@ stdenv.mkDerivation rec {
     + " -Ddep_type=${dep_type}";
 
   configurePhase = ''
-      echo "------------------ build env --------------------------"
-      env
-      echo "-------------------------------------------------------"
       echo "flags: $mFlags"
       echo "prefix: $out"
       CC=${compiler} meson --prefix=$out build $mFlags
