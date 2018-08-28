@@ -1,6 +1,7 @@
 /*	field_test.c
  * Verify invariant bitfield and hashing manipulation math
  * (c) 2018 Sirio Balmelli
+ * (c) 2018 Alan Morrissett
  */
 #include <nonlibc.h>
 #include <stdio.h>
