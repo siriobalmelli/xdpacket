@@ -26,7 +26,7 @@ uint8_t xdpk_field_tailmask(uint16_t mlen)
 }
 
 /*	xdpk_field_hash()
- * Return 64-bit fnv1a hash of all bits described by 'fd'
+ * Return 64-bit fnv1a hash of all bits described by 'field'
  * Return 0 if nothing to hash or insane parameters.
  */
 uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)

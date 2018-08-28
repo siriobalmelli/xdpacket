@@ -51,28 +51,38 @@ int field_check()
 	int err_cnt = 0;
 
 	/* tuple: test-only data structure
-	 * @packet = array of bytes simulating an actual packet
 	 * @matcher = field specification (what portion of 'packet' to hash)
+	 * @packet = array of bytes simulating an actual packet
+	 * @len = size of packet in bytes
 	 * @hash = expected fnv1a result
 	 */
 	struct tuple {
 		struct xdpk_field	matcher;
+		char			*packet;
 		uint64_t		hash;
-		uint8_t			*packet;
 	};
-	/* TODO: test zero, odd masks, negative offsets, etc */
-	const struct tuple tests[] = {
+	/* TODO: test zero, odd masks, negative offsets, etc
+	 * NOTE we use strlen so no non-ASCII constructs please
+	 */
+	const struct tuple tst[] = {
 		{
 		.matcher = { .offt = 0, .mlen = 40 },
-		.hash = 0x4b64e9abbc760b0d,
-		.packet = (uint8_t*)"blaar"
+		.packet = "blaar",
+		.hash = 0x4b64e9abbc760b0d
+		},
+		{
+		.matcher = { .offt = 1, .mlen = 40 },
+		.packet = "xblaar",
+		.hash = 0x4b64e9abbc760b0d
 		}
 	};
 
-	for (int i=0; i < NLC_ARRAY_LEN(tests); i++) {
-		const struct tuple *tt = &tests[i];
-		uint64_t hash = xdpk_field_hash(tt->matcher, tt->packet, sizeof(tt->packet));
-		Z_err_if(hash != tt->hash, "0x%lx 0x%lx", hash, tt->hash);
+	for (int i=0; i < NLC_ARRAY_LEN(tst); i++) {
+		const struct tuple *tt = &tst[i];
+		size_t len = strlen(tt->packet);
+		uint64_t hash = xdpk_field_hash(tt->matcher, tt->packet, len);
+		Z_err_if(hash != tt->hash, "0x%lx 0x%lx len %zu",
+			hash, tt->hash, len);
 	}
 
 	return err_cnt;
