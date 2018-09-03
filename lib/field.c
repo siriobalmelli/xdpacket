@@ -1,5 +1,6 @@
 #include <field.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <fnv.h>
 
 /*	xdpk_field_tailmask()
@@ -40,10 +41,13 @@ uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
 
 	/* sane length */
 	size_t flen = xdpk_field_len(field.mlen);
+	printf("flen  == %lu\n", flen);
+	printf("start == %lu\n", start);
 	if (!flen || (start + flen) > (pkt + plen))
 		return 0;
 
 	uint64_t hash = fnv_hash64(NULL, start, flen-1);
+	printf("hash1 == %lu\n", hash);
 	uint8_t trailing = ((uint8_t*)start)[flen-1]
 				& xdpk_field_tailmask(field.mlen);
 	return fnv_hash64(&hash, &trailing, sizeof(trailing));

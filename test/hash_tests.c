@@ -21,6 +21,7 @@ struct htuple {
 
 /* TODO: test zero, odd masks, negative offsets, etc */
 const struct htuple hash_pos_tst[] = {
+	/*
 	{
 	.matcher = { .offt = 0, .mlen = 40 },
 	.npkt = 0,
@@ -31,11 +32,37 @@ const struct htuple hash_pos_tst[] = {
 	.npkt = 1,
 	.hash = 0x4b64e9abbc760b0d
 	},
+	*/
+	/* This one should pass and does */
 	{
 	.matcher = { .offt = 7, .mlen = 40 },
 	.npkt = 2,
 	.hash = 0x4b64e9abbc760b0d
 	},
+	/* This one shouldn't pass (?) but does */
+	{
+	.matcher = { .offt = 7, .mlen = 39 },
+	.npkt = 2,
+	.hash = 0x4b64e9abbc760b0d
+	},
+	/* This one shouldn't pass and doesn't */
+	{
+	.matcher = { .offt = 7, .mlen = 38 },
+	.npkt = 2,
+	.hash = 0x4b64e9abbc760b0d
+	},
+	/*
+	{
+	.matcher = { .offt = -11, .mlen = 40 },
+	.npkt = 2,
+	.hash = 0x4b64e9abbc760b0d
+	},
+	{
+	.matcher = { .offt = -11, .mlen = 38 },
+	.npkt = 2,
+	.hash = 0x4b64e9abbc760b0d
+	},
+	*/
 };
 
 const struct htuple hash_neg_tst[] = {
