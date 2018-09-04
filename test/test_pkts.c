@@ -4,7 +4,7 @@
  * (c) 2018 Alan Morrissett
  */
 
-static char *cpkts[] = 
+static char *cpkts[] =
 {
 	"626c616172",			/* "blaar" */
 

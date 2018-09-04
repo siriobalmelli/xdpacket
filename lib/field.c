@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <fnv.h>
+#include <zed_dbg.h>
 
 /*	xdpk_field_tailmask()
  * Return a mask to apply against the final byte of a field.
@@ -41,13 +42,13 @@ uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
 
 	/* sane length */
 	size_t flen = xdpk_field_len(field.mlen);
-	printf("flen  == %lu\n", flen);
-	printf("start == %lu\n", start);
+	Z_log(Z_inf, "flen  == %lu", flen);
+	Z_log(Z_inf, "start == %p", start);
 	if (!flen || (start + flen) > (pkt + plen))
 		return 0;
 
 	uint64_t hash = fnv_hash64(NULL, start, flen-1);
-	printf("hash1 == %lu\n", hash);
+	Z_log(Z_inf, "hash1 == %lu", hash);
 	uint8_t trailing = ((uint8_t*)start)[flen-1]
 				& xdpk_field_tailmask(field.mlen);
 	return fnv_hash64(&hash, &trailing, sizeof(trailing));

@@ -47,7 +47,7 @@ void init_pkts() {
 
 	for (int i = 0; i < npkts; i++) {
 		uint16_t slen = strlen(cpkts[i]);
-		Z_die_if((slen % 2 != 0), 
+		Z_die_if((slen % 2 != 0),
 			"odd number of chars in cpkts #%d", i);
 		pkts[i].len = slen/2;
 		pkts[i].data = malloc(pkts[i].len);
@@ -79,9 +79,9 @@ void free_pkts() {
 
 void dump_pkt(struct pkt *pkt)
 {
-	printf("dump_pkt len == %lu\n", pkt->len);
-	printf("packet == '");
+	Z_log(Z_inf, "dump_pkt len == %lu", pkt->len);
+	Z_log(Z_inf, "packet == '");
 	for (int i = 0; i < pkt->len; i++)
-		printf("%c", ((char*)pkt->data)[i]);
-	printf("'\n");
+		Z_log(Z_inf, "%c", ((char*)pkt->data)[i]);
+	Z_log(Z_inf, "");
 }

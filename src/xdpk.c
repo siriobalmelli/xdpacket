@@ -77,7 +77,7 @@ struct xdpk_sock *xdpk_sock_new(const char *ifname)
 		.sll_protocol = htons(ETH_P_ALL),
 		.sll_ifindex = ret->ifindex,
 		.sll_halen = 6,
-		.sll_addr = { ret->hwaddr.sa_data[0], ret->hwaddr.sa_data[1], ret->hwaddr.sa_data[2], 
+		.sll_addr = { ret->hwaddr.sa_data[0], ret->hwaddr.sa_data[1], ret->hwaddr.sa_data[2],
 			ret->hwaddr.sa_data[3], ret->hwaddr.sa_data[4], ret->hwaddr.sa_data[5]},
 		/* ignored by bind call */
 		.sll_hatype = 0,
