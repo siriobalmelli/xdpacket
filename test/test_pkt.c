@@ -7,6 +7,7 @@
 #include <nonlibc.h>
 #include <stdio.h>
 #include <zed_dbg.h>
+#include <binhex.h>
 
 /* Keep definitions separately to make more readable */
 #include "test_pkts.c"
@@ -18,26 +19,6 @@ struct pkt {
 
 static struct pkt *pkts;
 
-/*	hex_parse_nibble_()
-Returns value of parsed nibble, -1 on error.
-TODO: Remove this copied function and link to nonlibc instead.
-*/
-uint8_t hex_parse_nibble_(const char *hex)
-{
-	/* We take advantage of the fact that sets of characters appear in
-		the ASCII table in sequence ;)
-	*/
-	switch (*hex) {
-		case '0'...'9':
-			return (*hex) & 0xf;
-		case 'A'...'F':
-		case 'a'...'f':
-			return 9 + ((*hex) & 0xf);
-		default:
-			return -1;
-	}
-}
-
 /*	init_pkts()
 Initializes the ASCII expressed packets into binary blocks.
 */
@@ -47,13 +28,12 @@ void init_pkts() {
 
 	for (int i = 0; i < npkts; i++) {
 		uint16_t slen = strlen(cpkts[i]);
-		Z_die_if((slen % 2 != 0),
-			"odd number of chars in cpkts #%d", i);
+		Z_die_if(slen & 0x1, "odd number of chars in cpkts #%d", i);
 		pkts[i].len = slen/2;
 		pkts[i].data = malloc(pkts[i].len);
 		for (int j = 0; j < slen; j+=2) {
-			uint8_t c1 = hex_parse_nibble_(&(cpkts[i][j]));
-			uint8_t c2 = hex_parse_nibble_(&(cpkts[i][j+1]));
+			uint8_t c1 = hex_parse_nibble(&(cpkts[i][j]));
+			uint8_t c2 = hex_parse_nibble(&(cpkts[i][j+1]));
 			uint8_t val = (c1 << 4) | c2;
 			pkts[i].data[j/2] = val;
 		}
