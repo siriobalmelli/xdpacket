@@ -1,16 +1,17 @@
-/*	test_pkt.c
- * Create test packets
+/*	field_test.c
+ * Verify invariant bitfield and hashing manipulation math
  * (c) 2018 Sirio Balmelli
  * (c) 2018 Alan Morrissett
  */
 #include <stdlib.h>
 #include <nonlibc.h>
-#include <stdio.h>
-#include <zed_dbg.h>
 #include <binhex.h>
+#include <zed_dbg.h>
+#include "field.h"
 
 /* Keep definitions separately to make more readable */
-#include "test_pkts.c"
+#include "hash_sets.h"
+#include "packets.h"
 
 struct pkt {
 	size_t len;
@@ -64,4 +65,55 @@ void dump_pkt(struct pkt *pkt)
 	for (int i = 0; i < pkt->len; i++)
 		Z_log(Z_inf, "%c", ((char*)pkt->data)[i]);
 	Z_log(Z_inf, "");
+}
+
+
+/*	field_check()
+ * Validate that field hashing matches known values.
+ */
+int field_check()
+{
+	init_pkts();
+
+	int err_cnt = 0;
+
+	for (int i=0; i < NLC_ARRAY_LEN(hash_pos_tst); i++) {
+		const struct htuple *tt = &hash_pos_tst[i];
+		struct pkt *pkt = &pkts[tt->npkt];
+		uint64_t hash = xdpk_field_hash(tt->matcher,
+				pkt->data, pkt->len);
+		Z_err_if(hash != tt->hash, "0x%lx 0x%lx len %zu",
+			hash, tt->hash, pkt->len);
+	}
+	Z_log(Z_inf, "number of positive field_check tests == %ld",
+			NLC_ARRAY_LEN(hash_pos_tst));
+
+	/*
+	for (int i=0; i < NLC_ARRAY_LEN(hash_neg_tst); i++) {
+		const struct htuple *tt = &hash_neg_tst[i];
+		struct pkt *pkt = &pkts[tt->npkt];
+		uint64_t hash = xdpk_field_hash(tt->matcher,
+				pkt->data, pkt->len);
+		Z_err_if(hash == tt->hash, "0x%lx 0x%lx len %zu",
+			hash, tt->hash, pkt->len);
+	}
+	Z_log(Z_inf, "number of negative field_check tests == %ld",
+			NLC_ARRAY_LEN(hash_neg_tst));
+	*/
+
+	free_pkts();
+
+	return err_cnt;
+}
+
+
+/*	main()
+ * Run all test routines in this file.
+ * Expects test routines to return err_cnt (0 on success).
+ */
+int main()
+{
+	int err_cnt = 0;
+	err_cnt += field_check();
+	return err_cnt;
 }
