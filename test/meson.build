@@ -1,4 +1,7 @@
-tests = [ 'field_test.c' ]
+tests = [
+  'field_len_test.c',
+  'field_hash_test.c'
+]
 
 foreach t : tests
 	name = t.split('.')[0]
