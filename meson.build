@@ -11,7 +11,7 @@ homepage = 'https://siriobalmelli.github.io/xdpacket/'
 #sanity
 assert(meson.project_name() == 'xdpacket',
 			'Incorrect project name')
-assert(meson.version() >= '0.46.0')
+assert(meson.version() >= '0.46.0', '')
 
 
 #

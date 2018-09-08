@@ -7,8 +7,7 @@ order: 1
 
 TODO:
 
-- specify as BNF
-- yacc file?
+- specify grammar as BNF
 
 NOTES:
 
@@ -23,11 +22,11 @@ Description:
 - NAT out enp0s3
 
 1. matchers:
-	- 32@ip.saddr="192.168.0.1"
-	- 32@ip.daddr="192.168.0.1"
+  - 32@ip.saddr="192.168.0.1"
+  - 32@ip.daddr="192.168.0.1"
 1. actions:
-	- output(ifindex("enp0s3"))
-	- mangle(output.ip_addr:32@ip.saddr)
+  - output(ifindex("enp0s3"))
+  - mangle(output.ip_addr:32@ip.saddr)
 
 Description:
 
@@ -35,9 +34,9 @@ Description:
 - drop
 
 1. matchers:
-	- 32@ip.saddr;32@ip.daddr="192.168.0.1";"192.168.0.1"
+  - 32@ip.saddr;32@ip.daddr="192.168.0.1";"192.168.0.1"
 1. actions:
-	- drop
+  - drop
 
 Description:
 
@@ -45,9 +44,9 @@ Description:
 - route through eth1
 
 1. matchers:
-	- 24@ip.saddr="192.168.0"
+  - 24@ip.saddr="192.168.0"
 1. actions:
-	- output(ifindex("eth1"))
+  - output(ifindex("eth1"))
 
 Description:
 
@@ -56,9 +55,9 @@ Description:
 - drop
 
 1. matchers:
-	- 16@tcp.dport;328@tcp.payload=80;"POST[...]"
+  - 16@tcp.dport;328@tcp.payload=80;"POST..."
 1. actions:
-	- drop
+  - drop
 
 Description:
 
@@ -66,18 +65,18 @@ Description:
 - note that '48' is "mDNS flags"
 
 1. matchers:
-	- 48@eth.src_mac;32@ip.daddr;16@ip.dport;16@48=`x`;224.0.0.251;5353;8400
+  - 48@eth.src_mac;32@ip.daddr;16@ip.dport;16@48=`x`;224.0.0.251;5353;8400
 1. actions:
-	- output(maciface(`y`))
-	- mangle(output.ip_addr:32@ip.saddr)
-	- mangle(output.ip_addr:32@-4)
+  - output(maciface(`y`))
+  - mangle(output.ip_addr:32@ip.saddr)
+  - mangle(output.ip_addr:32@-4)
 
 Description:
 
 - spoof generic mDNS from MAC `x` to MAC `y`
 
 1. matchers:
-	- 48@eth.src_mac;32@ip.daddr;16@ip.dport=`x`;224.0.0.251;5353
+  - 48@eth.src_mac;32@ip.daddr;16@ip.dport=`x`;224.0.0.251;5353
 1. actions:
-	- output(maciface(`y`))
-	- mangle(output.ip_addr:32@ip.saddr)
+  - output(maciface(`y`))
+  - mangle(output.ip_addr:32@ip.saddr)
