@@ -34,4 +34,6 @@ NLC_PUBLIC __attribute__((pure))
 	uint64_t xdpk_field_hash(struct xdpk_field field,
 					const void *pkt, size_t plen);
 
+NLC_LOCAL  uint8_t xdpk_field_start_byte(struct xdpk_field field, const void *pkt, size_t plen);
+
 #endif /* field_h_ */
