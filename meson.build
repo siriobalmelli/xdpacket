@@ -2,7 +2,7 @@
 #   - The Meson build setup must stand alone adn *not* depend on Nix
 #   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('xdpacket', 'c',
-	version : '0.0.4',
+	version : '0.0.5',
 	license : 'GPL2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'the eXtremely Direct Packet handler'
@@ -11,8 +11,7 @@ homepage = 'https://siriobalmelli.github.io/xdpacket/'
 #sanity
 assert(meson.project_name() == 'xdpacket',
 			'Incorrect project name')
-assert(meson.version() >= '0.44.0',
-			'Unfortunately, rpath issues in previous versions')
+assert(meson.version() >= '0.46.0')
 
 
 #
