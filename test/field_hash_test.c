@@ -77,29 +77,21 @@ int field_check()
 
 	int err_cnt = 0;
 
-	for (int i=0; i < NLC_ARRAY_LEN(hash_pos_tst); i++) {
-		const struct htuple *tt = &hash_pos_tst[i];
+	for (int i=0; i < NLC_ARRAY_LEN(hash_tests); i++) {
+		const struct htuple *tt = &hash_tests[i];
 		struct pkt *pkt = &pkts[tt->npkt];
 		uint64_t hash = xdpk_field_hash(tt->matcher,
 				pkt->data, pkt->len);
-		Z_err_if(hash != tt->hash, "0x%lx 0x%lx len %zu",
-			hash, tt->hash, pkt->len);
+		if (tt->pos_test) {
+			Z_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx len %zu",
+				tt->tag, hash, tt->hash, pkt->len);
+		} else {
+			Z_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx len %zu",
+				tt->tag, hash, tt->hash, pkt->len);
+		}
 	}
-	Z_log(Z_inf, "number of positive field_check tests == %ld",
-			NLC_ARRAY_LEN(hash_pos_tst));
-
-	/*
-	for (int i=0; i < NLC_ARRAY_LEN(hash_neg_tst); i++) {
-		const struct htuple *tt = &hash_neg_tst[i];
-		struct pkt *pkt = &pkts[tt->npkt];
-		uint64_t hash = xdpk_field_hash(tt->matcher,
-				pkt->data, pkt->len);
-		Z_err_if(hash == tt->hash, "0x%lx 0x%lx len %zu",
-			hash, tt->hash, pkt->len);
-	}
-	Z_log(Z_inf, "number of negative field_check tests == %ld",
-			NLC_ARRAY_LEN(hash_neg_tst));
-	*/
+	Z_log(Z_inf, "number of field_check tests == %ld",
+			NLC_ARRAY_LEN(hash_tests));
 
 	free_pkts();
 
