@@ -83,11 +83,13 @@ int field_check()
 		uint64_t hash = xdpk_field_hash(tt->matcher,
 				pkt->data, pkt->len);
 		if (tt->pos_test) {
-			Z_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx len %zu",
-				tt->tag, hash, tt->hash, pkt->len);
+			Z_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx, len %zu, '%c'",
+				tt->tag, hash, tt->hash, pkt->len, 
+				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
 		} else {
-			Z_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx len %zu",
-				tt->tag, hash, tt->hash, pkt->len);
+			Z_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx, len %zu, '%c'",
+				tt->tag, hash, tt->hash, pkt->len, 
+				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
 		}
 	}
 	Z_log(Z_inf, "number of field_check tests == %ld",

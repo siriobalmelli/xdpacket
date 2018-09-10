@@ -144,4 +144,30 @@ const struct htuple hash_tests[] = {
 	"15",
 	0
 	},
+	// Bigger packet
+	{
+	.matcher = { .offt = 9, .mlen = 40 },
+	.npkt = 4,
+	.hash = 0x4b64e9abbc760b0d,
+	"16",
+	1
+	},
+	/**/
+	// Bigger packet, negative offset
+	{
+	.matcher = { .offt = -1431, .mlen = 40 },
+	.npkt = 4,
+	.hash = 0x4b64e9abbc760b0d,
+	"17",
+	1
+	},
+	// Bigger packet, last instance
+	{
+	.matcher = { .offt = -29, .mlen = 40 },
+	.npkt = 4,
+	.hash = 0x4b64e9abbc760b0d,
+	"18",
+	1
+	},
+	/**/
 };
