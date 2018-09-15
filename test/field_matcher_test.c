@@ -16,31 +16,7 @@
 #include "packets.h"
 
 static struct pkt *pkts;
-
-/*	init_pkts()
-Initializes the ASCII expressed packets into binary blocks.
-TODO: replace this with library function
-*/
-void init_pkts() {
-	int npkts = (sizeof(cpkts)/sizeof(char*));
-	pkts = malloc(sizeof(struct pkt) * npkts);
-
-	for (int i = 0; i < npkts; i++) {
-		uint16_t slen = strlen(cpkts[i]);
-		Z_die_if(slen & 0x1, "odd number of chars in cpkts #%d", i);
-		pkts[i].len = slen/2;
-		pkts[i].data = malloc(pkts[i].len);
-		for (int j = 0; j < slen; j+=2) {
-			uint8_t c1 = hex_parse_nibble(&(cpkts[i][j]));
-			uint8_t c2 = hex_parse_nibble(&(cpkts[i][j+1]));
-			uint8_t val = (c1 << 4) | c2;
-			pkts[i].data[j/2] = val;
-		}
-	}
-
-out:
-	return;
-}
+const static int npkts = (sizeof(cpkts)/sizeof(char*));
 
 /*	free_pkts()
 Initializes the ASCII expressed packets into binary blocks.
@@ -75,8 +51,7 @@ void dump_pkt(struct pkt *pkt)
  */
 int matcher_check()
 {
-	init_pkts();	
-	//new_init_pkts(cpkts, npkts, &pkts);
+	new_init_pkts(cpkts, npkts, &pkts);
 
 	int err_cnt = 0;
 
