@@ -42,12 +42,12 @@ uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
 
 	/* sane length */
 	size_t flen = xdpk_field_len(field.mlen);
-	Z_log(Z_inf, "flen  == %lu, start == %p, plen == %lu", flen, start, plen);
+	Z_log(Z_inf, "flen  == 0x%lu, start == %p, plen == %lu", flen, start, plen);
 	if (!flen || (start + flen) > (pkt + plen))
 		return 0;
 
 	uint64_t hash = fnv_hash64(NULL, start, flen-1);
-	Z_log(Z_inf, "hash1 == %lu", hash);
+	Z_log(Z_inf, "hash == 0x%llu", hash);
 	uint8_t trailing = ((uint8_t*)start)[flen-1]
 				& xdpk_field_tailmask(field.mlen);
 	return fnv_hash64(&hash, &trailing, sizeof(trailing));

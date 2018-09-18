@@ -1,4 +1,4 @@
-/*	tests.c
+/*	hash_sets.h
  * Define test set for hashing
  * (c) 2018 Sirio Balmelli
  * (c) 2018 Alan Morrissett
@@ -21,7 +21,6 @@ struct htuple {
 	int			pos_test;
 };
 
-/* TODO: test zero, odd masks, negative offsets, etc */
 const struct htuple hash_tests[] = {
 	// Straightforward "blaar" test
 	{
@@ -63,13 +62,13 @@ const struct htuple hash_tests[] = {
 	"5",
 	0
 	},
-	// Offset, with mask length too big
+	// Offset, with mask length too short but matching real end
 	{
-	.matcher = { .offt = 1, .mlen =  35},
+	.matcher = { .offt = 1, .mlen =  32},
 	.npkt = 0,
 	.hash = 0x0,
 	"6",
-	1
+	0
 	},
 	// Offset in "Xblaar"
 	{

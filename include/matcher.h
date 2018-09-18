@@ -24,6 +24,6 @@ struct xdpk_matcher {
  */
 NLC_PUBLIC __attribute__((pure))
     bool xdpk_match(const struct xdpk_matcher *match,
-		    const void *pkt, size_t plen);
+		const void *pkt, size_t plen, uint64_t hash);
 
 #endif /* matcher_h_ */
