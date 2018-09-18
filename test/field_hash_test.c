@@ -12,7 +12,7 @@
 #include "packet.h"
 
 /* Keep definitions separately to make more readable */
-#include "hash_sets.h"
+#include "field_hash_test_set.h"
 #include "packets.h"
 
 static struct pkt *pkts;
