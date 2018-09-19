@@ -86,7 +86,7 @@ int matcher_check()
 		struct pkt *pkt = &pkts[mt->npkt];
 		const uint64_t hash = mt->hash;
 		bool is_match = xdpk_match(match, pkt->data, pkt->len, hash);
-		Z_log(Z_inf, "test %d match == %d", i, is_match);
+		Z_log(Z_inf, "test %d match == %d, len == %d", i, is_match, pkt->len);
 
 		if (mt->pos_test) {
 			Z_err_if(is_match != true, "Tag %s: %d != %d, len %zu",

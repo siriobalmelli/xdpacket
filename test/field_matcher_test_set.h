@@ -109,4 +109,17 @@ const struct mtuple matcher_tests[] = {
 		"6",
 		1
 	},
+	// Check within 0's packet
+	{
+		{{
+			{ 0, 8 },
+			{ 4, 40 },
+			{ 0, 0 },
+			{ 0, 0 },
+		}},
+		.npkt = 3,
+		.hash =  0x4b64e9abbc760b0d,
+		"7",
+		1
+	},
 };
