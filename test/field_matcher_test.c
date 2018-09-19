@@ -1,5 +1,5 @@
 /*	field_test.c
- * Verify invariant bitfield and hashing manipulation math
+ * Verify field matching
  * (c) 2018 Sirio Balmelli
  * (c) 2018 Alan Morrissett
  */
@@ -12,14 +12,14 @@
 #include "packet.h"
 
 /* Keep definitions separately to make more readable */
-#include "field_hash_test_set.h"
+#include "field_matcher_test_set.h"
 #include "packets.h"
 
 static struct pkt *pkts;
 
 /*	init_pkts()
 Initializes the ASCII expressed packets into binary blocks.
-TODO: replace this with libary function
+TODO: replace this with library function
 */
 void init_pkts() {
 	int npkts = (sizeof(cpkts)/sizeof(char*));
@@ -70,34 +70,34 @@ void dump_pkt(struct pkt *pkt)
 }
 
 
-/*	field_check()
- * Validate that field hashing matches known values.
+/*	matcher_check()
+ * Validate a matcher can find packets with matching fields.
  */
-int field_check()
+int matcher_check()
 {
 	init_pkts();	
-	//int npkts = (sizeof(cpkts)/sizeof(char*));
 	//new_init_pkts(cpkts, npkts, &pkts);
 
 	int err_cnt = 0;
 
-	for (int i=0; i < NLC_ARRAY_LEN(hash_tests); i++) {
-		const struct htuple *tt = &hash_tests[i];
-		struct pkt *pkt = &pkts[tt->npkt];
-		uint64_t hash = xdpk_field_hash(tt->matcher,
-				pkt->data, pkt->len);
-		if (tt->pos_test) {
-			Z_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx, len %zu, '%c'",
-				tt->tag, hash, tt->hash, pkt->len, 
-				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
+	for (int i = 0; i < NLC_ARRAY_LEN(matcher_tests); i++) {
+		const struct mtuple *mt = &matcher_tests[i];
+		const struct xdpk_matcher *match = &mt->matcher;
+		struct pkt *pkt = &pkts[mt->npkt];
+		const uint64_t hash = mt->hash;
+		bool is_match = xdpk_match(match, pkt->data, pkt->len, hash);
+		Z_log(Z_inf, "test %d match == %d, len == %d", i, is_match, pkt->len);
+
+		if (mt->pos_test) {
+			Z_err_if(is_match != true, "Tag %s: %d != %d, len %zu",
+				mt->tag, is_match, true, pkt->len);
 		} else {
-			Z_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx, len %zu, '%c'",
-				tt->tag, hash, tt->hash, pkt->len, 
-				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
+			Z_err_if(is_match == true, "Tag %s: %d != %d, len %zu",
+				mt->tag, is_match, true, pkt->len);
 		}
 	}
-	Z_log(Z_inf, "number of field_check tests == %ld",
-			NLC_ARRAY_LEN(hash_tests));
+	Z_log(Z_inf, "number of matcher tests == %ld",
+			NLC_ARRAY_LEN(matcher_tests));
 
 	free_pkts();
 
@@ -112,6 +112,6 @@ int field_check()
 int main()
 {
 	int err_cnt = 0;
-	err_cnt += field_check();
+	err_cnt += matcher_check();
 	return err_cnt;
 }

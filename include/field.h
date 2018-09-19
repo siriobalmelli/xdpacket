@@ -31,11 +31,12 @@ struct xdpk_field {
  * cannot possibly be valid; this also makes anything
  * obtained by calloc() invalid by default.
  *
- * TODO: @alan please write a test for this.
+ * Alan note: My thought about this is that 'mlen' cannot be zero,
+ *	 but 'offt' can be.  I think it's sufficient to check for mlen != 0.
  */
 NLC_INLINE bool xdpk_field_valid(struct xdpk_field field)
 {
-	return (!field.offt && !field.mlen);
+	return (field.mlen != 0);
 }
 
 /*	xdpk_field_len()
