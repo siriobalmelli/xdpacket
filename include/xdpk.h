@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <netinet/in.h> /* sockaddr_in */
+#include <well.h>
 
 /*	fixed-size strings FTW
 The largest address is '[0-9]{12}' + '\.{3}' + '\0'
@@ -12,8 +13,13 @@ The largest address is '[0-9]{12}' + '\.{3}' + '\0'
 
 
 /*	xdpk_sock
+ * @pkin : queue of packets to be output
+ * @msg : pipe containing control messages
+ * @fd : raw socket
+ * @ip_prn : IP address as a string
  */
 struct xdpk_sock {
+	struct well	input;
 	int		fd;
 	char		ip_prn[XDPK_ADDR_MAX];
 	/* taken directly from struct ifreq: */

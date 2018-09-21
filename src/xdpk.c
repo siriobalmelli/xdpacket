@@ -12,9 +12,16 @@
 #include <zed_dbg.h>
 #include <epoll_track.h>
 #include <posigs.h>
-
 #include <xdpk.h>
 
+#if 0
+#include <Judy.h>
+
+/* global register of sockets
+ * TODO: replace with mutex-protected judyutils struct
+ */
+static Word_t j_sockets = 0;
+#endif
 
 /*	xdpk_free()
  */

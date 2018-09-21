@@ -7,24 +7,17 @@
 
   # deps
   system ? builtins.currentSystem,
-  nixpkgs ? import <nixpkgs> { inherit system; },
-  nonlibc ? (nixpkgs.nonlibc or import ./nonlibc {
-    inherit system;
-    inherit buildtype;
-    inherit compiler;
-    inherit dep_type;
-    inherit mesonFlags;
-  })
+  nixpkgs ? import <nixpkgs> { inherit system; }
 }:
 
 with nixpkgs;
 
-stdenv.mkDerivation rec {
+nixpkgs.stdenv.mkDerivation rec {
   name = "xdpacket";
-  version = "0.0.5";
+  version = "0.0.6";
   outputs = [ "out" ];
 
-  meta = with stdenv.lib; {
+  meta = with nixpkgs.stdenv.lib; {
     description = "the eXtremely Direct Packet handler";
     homepage = https://siriobalmelli.github.io/xdpacket/;
     license = licenses.gpl2;
@@ -32,18 +25,23 @@ stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
+  nonlibc = nixpkgs.nonlibc or import ./nonlibc {};
+  memorywell = nixpkgs.memorywell or import ./memorywell {};
+
   buildInputs = [
-    clang
-    meson
-    ninja
-    pandoc
-    pkgconfig
-    dpkg
-    fpm
-    rpm
-    zip
+    nixpkgs.clang
+    nixpkgs.meson
+    nixpkgs.ninja
+    nixpkgs.pandoc
+    nixpkgs.pkgconfig
+    nixpkgs.dpkg
+    nixpkgs.fpm
+    nixpkgs.rpm
+    nixpkgs.zip
   ];
   propagatedBuildInputs = [
+    nixpkgs.judy
+    memorywell
     nonlibc
   ];
 
@@ -52,7 +50,7 @@ stdenv.mkDerivation rec {
 
   # Override the setupHook in the meson nix derviation,
   # so that meson doesn't automatically get invoked from there.
-  meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
+  meson = nixpkgs.pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
 
   # don't harden away position-dependent speedups for static builds
   hardeningDisable = [ "pic" "pie" ];

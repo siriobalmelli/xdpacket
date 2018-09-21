@@ -2,7 +2,7 @@
 #   - The Meson build setup must stand alone adn *not* depend on Nix
 #   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('xdpacket', 'c',
-	version : '0.0.5',
+	version : '0.0.6',
 	license : 'GPL2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'the eXtremely Direct Packet handler'
@@ -53,11 +53,14 @@ endif
 
 # Insert deps here
 # Note that subproject expected to export as '[name]_dep_[shared||static]'
-nonlibc = dependency('nonlibc', static: dep_static, version : '>=0.1.9',
+nonlibc = dependency('nonlibc', static: dep_static,
 		fallback : ['nonlibc', 'nonlibc_dep_' + _dep ], required : true)
+memorywell = dependency('memorywell', static: dep_static,
+		fallback : ['memorywell', 'memorywell_dep_' + _dep ], required : true)
+#judy = dependency('judy', required : true)
 
 # All deps in a single arg. Use THIS ONE in compile calls
-deps = [ nonlibc ]
+deps = [nonlibc]
 
 #build
 inc = include_directories('include')
@@ -65,4 +68,3 @@ subdir('include')
 subdir('lib')
 subdir('src')
 subdir('test')
-#subdir('benchmark')
