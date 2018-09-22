@@ -13,7 +13,7 @@
 
 /* Keep definitions separately to make more readable */
 #include "field_matcher_test_set.h"
-#include "packets.h"
+#include "test_pkts.h"
 
 static struct pkt *pkts;
 const static int npkts = (sizeof(cpkts)/sizeof(char*));

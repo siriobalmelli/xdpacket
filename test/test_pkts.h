@@ -1,4 +1,4 @@
-/*	test_pkts.c
+/*	test_pkts.h
  * Define test packets.
  * (c) 2018 Sirio Balmelli
  * (c) 2018 Alan Morrissett
