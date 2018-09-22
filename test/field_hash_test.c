@@ -16,68 +16,14 @@
 #include "packets.h"
 
 static struct pkt *pkts;
-
-/*	init_pkts()
-Initializes the ASCII expressed packets into binary blocks.
-TODO: replace this with libary function
-*/
-void init_pkts() {
-	int npkts = (sizeof(cpkts)/sizeof(char*));
-	pkts = malloc(sizeof(struct pkt) * npkts);
-
-	for (int i = 0; i < npkts; i++) {
-		uint16_t slen = strlen(cpkts[i]);
-		Z_die_if(slen & 0x1, "odd number of chars in cpkts #%d", i);
-		pkts[i].len = slen/2;
-		pkts[i].data = malloc(pkts[i].len);
-		for (int j = 0; j < slen; j+=2) {
-			uint8_t c1 = hex_parse_nibble(&(cpkts[i][j]));
-			uint8_t c2 = hex_parse_nibble(&(cpkts[i][j+1]));
-			uint8_t val = (c1 << 4) | c2;
-			pkts[i].data[j/2] = val;
-		}
-	}
-
-out:
-	return;
-}
-
-/*	free_pkts()
-Initializes the ASCII expressed packets into binary blocks.
-TODO: replace this with library function
-*/
-void free_pkts() {
-	int npkts = (sizeof(cpkts)/sizeof(char*));
-
-	for (int i = 0; i < npkts; i++)
-		if (pkts[i].data != NULL) free(pkts[i].data);
-	free(pkts);
-	pkts = NULL;
-
-	return;
-}
-
-/*
-TODO: replace this with library function
-*/
-void dump_pkt(struct pkt *pkt)
-{
-	Z_log(Z_inf, "dump_pkt len == %lu", pkt->len);
-	Z_log(Z_inf, "packet == '");
-	for (int i = 0; i < pkt->len; i++)
-		Z_log(Z_inf, "%c", ((char*)pkt->data)[i]);
-	Z_log(Z_inf, "");
-}
-
+const static int npkts = (sizeof(cpkts)/sizeof(char*));
 
 /*	field_check()
  * Validate that field hashing matches known values.
  */
 int field_check()
 {
-	init_pkts();	
-	//int npkts = (sizeof(cpkts)/sizeof(char*));
-	//new_init_pkts(cpkts, npkts, &pkts);
+	init_pkts(cpkts, npkts, &pkts);
 
 	int err_cnt = 0;
 
@@ -99,7 +45,7 @@ int field_check()
 	Z_log(Z_inf, "number of field_check tests == %ld",
 			NLC_ARRAY_LEN(hash_tests));
 
-	free_pkts();
+	free_pkts(npkts, &pkts);
 
 	return err_cnt;
 }

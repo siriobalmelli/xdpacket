@@ -14,12 +14,12 @@ struct pkt {
 };
 
 NLC_PUBLIC
-	void new_init_pkts(char *cpkts[], int npkts, struct pkt **pkts);
+	void init_pkts(char *cpkts[], int npkts, struct pkt **pkts);
 
 NLC_PUBLIC
-	void new_free_pkts(int npkts, struct pkt **pkts);
+	void free_pkts(int npkts, struct pkt **pkts);
 
 NLC_PUBLIC
-	void new_dump_pkt(struct pkt *pkt);
+	void dump_pkt(struct pkt *pkt);
 
 #endif /* packet_h_ */

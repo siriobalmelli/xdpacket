@@ -9,7 +9,7 @@
 /*	init_pkts()
 Initializes the ASCII expressed packets into binary blocks.
 */
-void new_init_pkts(char *cpkts[], int npkts, struct pkt **pkts) {
+void init_pkts(char *cpkts[], int npkts, struct pkt **pkts) {
 	*pkts = malloc(sizeof(struct pkt) * npkts);
 
 	for (int i = 0; i < npkts; i++) {
@@ -33,7 +33,7 @@ out:
 /*	free_pkts()
 Initializes the ASCII expressed packets into binary blocks.
 */
-void new_free_pkts(int npkts, struct pkt **pkts) {
+void free_pkts(int npkts, struct pkt **pkts) {
 	for (int i = 0; i < npkts; i++)
 		if ((*pkts)[i].data != NULL) free((*pkts)[i].data);
 	free(*pkts);
@@ -42,7 +42,7 @@ void new_free_pkts(int npkts, struct pkt **pkts) {
 	return;
 }
 
-void new_dump_pkt(struct pkt *pkt)
+void dump_pkt(struct pkt *pkt)
 {
 	Z_log(Z_inf, "dump_pkt len == %lu", pkt->len);
 	Z_log(Z_inf, "packet == '");

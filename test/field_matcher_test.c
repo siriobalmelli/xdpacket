@@ -18,40 +18,12 @@
 static struct pkt *pkts;
 const static int npkts = (sizeof(cpkts)/sizeof(char*));
 
-/*	free_pkts()
-Initializes the ASCII expressed packets into binary blocks.
-TODO: replace this with library function
-*/
-void free_pkts() {
-	int npkts = (sizeof(cpkts)/sizeof(char*));
-
-	for (int i = 0; i < npkts; i++)
-		if (pkts[i].data != NULL) free(pkts[i].data);
-	free(pkts);
-	pkts = NULL;
-
-	return;
-}
-
-/*
-TODO: replace this with library function
-*/
-void dump_pkt(struct pkt *pkt)
-{
-	Z_log(Z_inf, "dump_pkt len == %lu", pkt->len);
-	Z_log(Z_inf, "packet == '");
-	for (int i = 0; i < pkt->len; i++)
-		Z_log(Z_inf, "%c", ((char*)pkt->data)[i]);
-	Z_log(Z_inf, "");
-}
-
-
 /*	matcher_check()
  * Validate a matcher can find packets with matching fields.
  */
 int matcher_check()
 {
-	new_init_pkts(cpkts, npkts, &pkts);
+	init_pkts(cpkts, npkts, &pkts);
 
 	int err_cnt = 0;
 
@@ -74,7 +46,7 @@ int matcher_check()
 	Z_log(Z_inf, "number of matcher tests == %ld",
 			NLC_ARRAY_LEN(matcher_tests));
 
-	free_pkts();
+	free_pkts(npkts, &pkts);
 
 	return err_cnt;
 }
