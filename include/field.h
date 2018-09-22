@@ -54,7 +54,7 @@ NLC_INLINE size_t xdpk_field_len(uint16_t mlen)
 
 NLC_PUBLIC __attribute__((pure))
 	uint64_t xdpk_field_hash(struct xdpk_field field,
-				const void *pkt, size_t plen);
+			const void *pkt, size_t plen, uint64_t *hashp);
 
 /*	xdpk_field_parse()
  * Parse text field definition in 'grammar' (e.g. '16@tcp.src_port=80').

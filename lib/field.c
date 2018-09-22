@@ -31,7 +31,8 @@ uint8_t xdpk_field_tailmask(uint16_t mlen)
  * Return 64-bit fnv1a hash of all bits described by 'field'
  * Return 0 if nothing to hash or insane parameters.
  */
-uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
+uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, 
+				size_t plen, uint64_t *hashp)
 {
 	/* sane addressing */
 	const void *start = pkt + field.offt;
@@ -46,7 +47,7 @@ uint64_t xdpk_field_hash(struct xdpk_field field, const void *pkt, size_t plen)
 	if (!flen || (start + flen) > (pkt + plen))
 		return 0;
 
-	uint64_t hash = fnv_hash64(NULL, start, flen-1);
+	uint64_t hash = fnv_hash64(hashp, start, flen-1);
 	Z_log(Z_inf, "hash == 0x%llu", hash);
 	uint8_t trailing = ((uint8_t*)start)[flen-1]
 				& xdpk_field_tailmask(field.mlen);

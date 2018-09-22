@@ -31,13 +31,13 @@ int field_check()
 		const struct htuple *tt = &hash_tests[i];
 		struct pkt *pkt = &pkts[tt->npkt];
 		uint64_t hash = xdpk_field_hash(tt->matcher,
-				pkt->data, pkt->len);
+				pkt->data, pkt->len, NULL);
 		if (tt->pos_test) {
-			Z_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx, len %zu, '%c'",
+			Z_err_if(hash != tt->hash, "Tag %s: 0x%llx != 0x%llx, len %zu, '%c'",
 				tt->tag, hash, tt->hash, pkt->len, 
 				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
 		} else {
-			Z_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx, len %zu, '%c'",
+			Z_err_if(hash == tt->hash, "Tag %s: 0x%llx == 0x%llx, len %zu, '%c'",
 				tt->tag, hash, tt->hash, pkt->len, 
 				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
 		}

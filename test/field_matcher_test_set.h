@@ -31,7 +31,7 @@ struct mtuple {
 };
 
 const struct mtuple matcher_tests[] = {
-	// Straightforward "blaar" test
+	// Single field test
 	{
 		{{
 			{ 0, 40 },
@@ -44,82 +44,17 @@ const struct mtuple matcher_tests[] = {
 		"1",
 		1
 	},
-	// Match on the second
+	// Match two fields, second field is 1-bit = 0
 	{
 		{{
-			{ 10, 40 },
-			{ 0, 40 },
-			{ 0, 0 },
-			{ 0, 0 },
-		}},
-		.npkt = 0,
-		.hash = 0x4b64e9abbc760b0d,
-		"2",
-		1
-	},
-	// Match on the third
-	{
-		{{
-			{ 20, 40 },
-			{ -10, 40 },
-			{ 0, 40 },
-			{ 0, 0 },
-		}},
-		.npkt = 0,
-		.hash = 0x4b64e9abbc760b0d,
-		"3",
-		1
-	},
-	// Match on the fourth with negative offset
-	{
-		{{
-			{ 20, 40 },
-			{ -10, 40 },
-			{ 0, 30 },
-			{ -5, 40 },
-		}},
-		.npkt = 0,
-		.hash = 0x4b64e9abbc760b0d,
-		"4",
-		1
-	},
-	// Fail on invalid field
-	{
-		{{
-			{ 0, 0 },
-			{ 0, 40 },
-			{ 0, 0 },
-			{ 0, 0 },
-		}},
-		.npkt = 0,
-		.hash = 0x4b64e9abbc760b0d,
-		"5",
-		0
-	},
-	// Bigger packet
-	{
-		{{
-			{ 0, 1 },
-			{ 0, 40 },
-			{ 9, 40 },
-			{ 0, 0 },
-		}},
-		.npkt = 4,
-		.hash = 0x4b64e9abbc760b0d,
-		"6",
-		1
-	},
-	// Check within 0's packet
-	{
-		{{
-			{ 0, 8 },
-			{ 4, 40 },
+			{ 8, 40 },
+			{ 40, 1 },
 			{ 0, 0 },
 			{ 0, 0 },
 		}},
 		.npkt = 3,
-		.hash =  0x4b64e9abbc760b0d,
-		"7",
+		.hash = 0xed448eeca2d6285f,
+		"2",
 		1
 	},
 };
