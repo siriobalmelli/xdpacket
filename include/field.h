@@ -64,8 +64,6 @@ NLC_PUBLIC __attribute__((pure))
  * - returns `(!xdpk_field_valid(field)`
  * - leaves 'expected_hash' in a mangled/garbage state
  *
- * TODO: @alan please implement
- *
  * NOTE:
  * - grammar is mlen@offt=value
  * - integers may legally be decimal ('80'), hex ('0x50') or binary ('b01010000')

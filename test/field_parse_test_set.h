@@ -9,10 +9,10 @@
 #include "field.h"
 #include "matcher.h"
 
-/* mtuple: test-only data structure
- * @matcher = set of field specification to check for hash match
- * @npkt = index of packet structure in packet test array
- * @hash = expected fnv1a result
+/* ptuple: test-only data structure
+ * @grammar = single field specification grammar
+ * @expected_fld =  expected xdpk_field generated from grammar
+ * @expected_hash = expected hash of value
  * @tag = human readable test identifier
  * @pos_test = if test supposed to succeed or fail
  */
@@ -21,18 +21,24 @@ struct ptuple {
 	char			*grammar;
 	struct xdpk_field	expected_fld;
 	uint64_t		expected_hash;
+	char			*tag;
+	bool			pos_test;
 };
 
 const struct ptuple parse_tests[] = {
 	//
 	{
 		"16@udp.sport=6501",
-		{0, 16},
-		0
+		{34, 16},
+		0,
+		"1",
+		true
 	},
 	{
-		"16@udp.sport=6501",
-		{0, 22},
-		0
+		"1@tcp.flags=0",
+		{46, 1},
+		0,
+		"2",
+		true
 	},
 };

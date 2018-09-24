@@ -20,7 +20,6 @@ struct xdpk_matcher {
 
 /*	xdpk_match()
  * Test 'pkt' against all fields in '*match'.
- * TODO: @alan please implement
  */
 NLC_PUBLIC __attribute__((pure))
     bool xdpk_match(const struct xdpk_matcher *match,
