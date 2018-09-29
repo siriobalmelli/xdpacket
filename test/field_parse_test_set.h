@@ -30,14 +30,14 @@ const struct ptuple parse_tests[] = {
 	{
 		"16@udp.sport=6501",
 		{34, 16},
-		0,
+		0x8804f07b52d3063,
 		"1",
 		true
 	},
 	{
 		"1@tcp.flags=0",
 		{46, 1},
-		0,
+		0xaf63bd4c8601b7df,
 		"2",
 		true
 	},

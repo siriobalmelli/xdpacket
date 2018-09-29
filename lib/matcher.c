@@ -18,6 +18,6 @@ bool xdpk_match(const struct xdpk_matcher *match,
 		h = xdpk_field_hash(fld, pkt, plen, p);
 		p = &h;
 	}
-	fprintf(stderr, "Hash == 0x%llx\n", h);
+	fprintf(stderr, "Hash == 0x%lx\n", h);
 	return h == hash;
 }

@@ -25,12 +25,9 @@ int parse_check()
 		uint64_t hash;
 		struct xdpk_field fld = xdpk_field_parse(pt->grammar, &hash);
 
-		Z_log(Z_inf, "offt == %d, mlen == %d, hash == %llu", 
+		Z_log(Z_inf, "offt == %d, mlen == %d, hash == %lu", 
 				fld.offt, fld.mlen, hash);
-		bool is_match = (fld.offt == pt->expected_fld.offt) &&
-			     (fld.mlen == pt->expected_fld.mlen) &&
-			     (hash == pt->expected_hash);
-
+		
 		if (pt->pos_test) {
 			Z_err_if(fld.offt != pt->expected_fld.offt, 
 				"Tag %s: offt %d != %d",
@@ -39,10 +36,8 @@ int parse_check()
 				"Tag %s: mlen %u != %u",
 				pt->tag, fld.mlen, pt->expected_fld.mlen);
 			Z_err_if(hash != pt->expected_hash, 
-				"Tag %s: hash 0x%llu != 0x%llu",
+				"Tag %s: hash 0x%lu != 0x%lu",
 				pt->tag, hash, pt->expected_hash);
-		} else {
-			
 		}
 	}
 	Z_log(Z_inf, "number of matcher tests == %ld",

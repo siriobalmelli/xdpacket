@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+enum data_type { ASCII_TYPE = 0, DECIMAL_TYPE = 1, HEX_TYPE = 2, BIN_TYPE = 3};
+
 /* xdpk_field
  * @offt : positive offset from start of packet, negative from end; in bytes.
  * @mlen : mask length in bits (and implicitly: length of field being masked).
@@ -53,6 +55,10 @@ NLC_INLINE size_t xdpk_field_len(uint16_t mlen)
 }
 
 NLC_PUBLIC __attribute__((pure))
+uint64_t xdpk_hash(uint16_t mlen, const void *start, 
+				size_t plen, uint64_t *hashp);
+
+NLC_PUBLIC __attribute__((pure))
 	uint64_t xdpk_field_hash(struct xdpk_field field,
 			const void *pkt, size_t plen, uint64_t *hashp);
 
@@ -77,6 +83,12 @@ NLC_PUBLIC __attribute__((pure))
 NLC_PUBLIC
 	struct xdpk_field xdpk_field_parse(const char *grammar,
 					    uint64_t *expected_hash);
+
+NLC_PUBLIC
+	uint16_t parse_uint16(const char *begin, const char *end, bool *err);
+
+NLC_PUBLIC
+	uint64_t parse_value(const char *begin, const char *end, int mlen, bool *err);
 
 /*	xdpk_field_print()
  * Allocate and return a string containing
