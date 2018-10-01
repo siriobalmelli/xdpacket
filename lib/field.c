@@ -221,18 +221,19 @@ error:
 }
 
 /*	parse_long_hex
- *
+ * Parse fields longer than will fit in a 64-bit integer.
  */
 void parse_long_hex(const char *begin, const char *end, 
-						uint8_t *buf, bool *err)
+			uint8_t *buf, size_t flen, bool *err)
 {
 	int len = end - begin;
+	printf("parse_long_hex: len == %d, flen == %d\n", len, flen);
 	if ((len % 2) != 0) {
 		*err = true;
 		goto error;
 	}
 	int i = 0;
-	for (const char *cp = begin; cp < end; cp += 2, i++) {
+	for (const char *cp = begin; (cp < end) && (i < flen); cp += 2, i++) {
 		char c1 = *cp;
 		char c2 = *(cp + 1);
 		if (!isxdigit(c1) || !isxdigit(c2)) {
@@ -247,6 +248,21 @@ error:
 	return;
 }
 
+/*	parse_ascii
+ *
+ */
+void parse_ascii(const char *begin, const char *end, 
+			uint8_t *buf, size_t flen, bool *err)
+{
+	const char *cp = begin;
+	for (int i = 0; (cp < end) && (i < flen); cp++, i++) {
+		buf[i] = *cp;
+	}
+
+	return;
+}
+
+
 /*	parse_value
  * Get the value of a field, third part in the grammar "mlen@offt=value",
  * and return its hash value.
@@ -258,7 +274,7 @@ uint64_t parse_value(const char *begin, const char *end, int mlen, bool *err) {
 	uint64_t hval = 0;
 	uint64_t hash = 0;
 
-	uint8_t * buf = (uint8_t*) calloc(flen, sizeof(uint8_t));
+	uint8_t *buf = (uint8_t*) calloc(flen, sizeof(uint8_t));
 	
 	switch (parse_data_type(begin, end))
 	{
@@ -278,7 +294,7 @@ uint64_t parse_value(const char *begin, const char *end, int mlen, bool *err) {
 		break;
 	case HEX_TYPE:
 		if ((slen - 2) <= 16) {
-			hval = parse_hex(begin+2, end, 0xFFFFFFFFFFFFFFFF, err);
+			hval = parse_hex(begin+2, end, 0xFFFFFFFFFFFFFFFFL, err);
 			if (*err) goto error;
 			hval <<= xdpk_field_shiftval(mlen);
 			for (int i = 0; i < flen; i++) {
@@ -289,9 +305,9 @@ uint64_t parse_value(const char *begin, const char *end, int mlen, bool *err) {
 		}
 		else {
 			if (xdpk_field_shiftval(mlen) != 0) goto error;
-			parse_long_hex(begin+2, end, buf, err);
+			parse_long_hex(begin+2, end, buf, flen, err);
 			if (*err) goto error;
-			hash  = fnv_hash64(NULL, (void*)buf, flen);
+			hash = fnv_hash64(NULL, (void*)buf, flen);
 		}
 		break;
 	case BIN_TYPE:
@@ -308,6 +324,9 @@ uint64_t parse_value(const char *begin, const char *end, int mlen, bool *err) {
 		hash  = fnv_hash64(NULL, (void*)buf, flen);
 		break;
 	case ASCII_TYPE:
+		parse_ascii(begin, end, buf, flen, err);
+		if (*err) goto error;
+		hash = fnv_hash64(NULL, (void*)buf, flen); 
 		break;
 	default:
 		*err = true;

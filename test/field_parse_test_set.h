@@ -41,4 +41,11 @@ const struct ptuple parse_tests[] = {
 		"2",
 		true
 	},
+	{
+		"80@0=0x00000000000000000001",
+		{0, 80},
+		0x69d306cc20f6edda,
+		"3",
+		true
+	},
 };

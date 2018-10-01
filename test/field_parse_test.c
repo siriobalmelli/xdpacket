@@ -28,16 +28,24 @@ int parse_check()
 		Z_log(Z_inf, "offt == %d, mlen == %d, hash == %lu", 
 				fld.offt, fld.mlen, hash);
 		
+		bool match = (	(fld.offt == pt->expected_fld.offt)
+			     &&	(fld.mlen = pt->expected_fld.mlen)
+			     &&	(hash == pt->expected_hash));
+
 		if (pt->pos_test) {
-			Z_err_if(fld.offt != pt->expected_fld.offt, 
-				"Tag %s: offt %d != %d",
-				pt->tag, fld.offt, pt->expected_fld.offt);
-			Z_err_if(fld.mlen != pt->expected_fld.mlen, 
-				"Tag %s: mlen %u != %u",
-				pt->tag, fld.mlen, pt->expected_fld.mlen);
-			Z_err_if(hash != pt->expected_hash, 
-				"Tag %s: hash 0x%lu != 0x%lu",
-				pt->tag, hash, pt->expected_hash);
+			Z_err_if(!match, 
+				"Tag %s: (offt %d, mlen %u, 0x%lx)"
+				" != expected (offt %d, mlen %u, 0x%lx\n)",
+				pt->tag, fld.offt, fld.mlen, hash,
+				pt->expected_fld.offt, pt->expected_fld.mlen,
+				pt->expected_hash);
+		} else {
+			Z_err_if(match, 
+				"Tag %s: (offt %d, mlen %u, 0x%lx)"
+				" == not expected (offt %d, mlen %u, 0x%lx\n)",
+				pt->tag, fld.offt, fld.mlen, hash,
+				pt->expected_fld.offt, pt->expected_fld.mlen,
+				pt->expected_hash);
 		}
 	}
 	Z_log(Z_inf, "number of matcher tests == %ld",

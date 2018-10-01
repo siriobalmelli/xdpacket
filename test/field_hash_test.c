@@ -83,7 +83,7 @@ void interactive_hash_check()
 	while (true) {
 		memset(mlenb, 0, sizeof(mlenb));
 		memset(numb, 0, sizeof(numb));
-		printf("Enter <mlen> <number>: ");
+		printf("Enter <mlen> <value>: ");
 		if (fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
 		if (sscanf(buf, "%s %s", mlenb, numb) != 2) {
@@ -91,7 +91,7 @@ void interactive_hash_check()
 			continue;
 		}
 		mlen = parse_uint16(mlenb, strchr(mlenb, '\0'), &err);
-		printf("mlen == 0x%x, err = %d\n", mlen, err);
+		printf("mlen == %d (0x%x), err = %d\n", mlen, mlen, err);
 		hash = parse_value(numb, strchr(numb, '\0'), mlen, &err);
 		printf("hash == 0x%lx, err = %d\n", hash, err);
 	}
@@ -117,7 +117,7 @@ void interactive_parse_check()
 		fld = xdpk_field_parse(buf, &hash);
 
 		printf("fld.mlen == %u, field.offt = %d\n", fld.mlen, fld.offt);
-		printf("hash == 0x%lx\n", hash);
+		printf("YYY hash == 0x%lx\n", hash);
 	}
 }
 
