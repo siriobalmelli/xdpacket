@@ -25,6 +25,7 @@ nixpkgs.stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
+  libjudy = nixpkgs.libjudy or import ./libjudy {};
   nonlibc = nixpkgs.nonlibc or import ./nonlibc {};
   memorywell = nixpkgs.memorywell or import ./memorywell {};
 
@@ -40,7 +41,7 @@ nixpkgs.stdenv.mkDerivation rec {
     nixpkgs.zip
   ];
   propagatedBuildInputs = [
-    nixpkgs.judy
+    libjudy
     memorywell
     nonlibc
   ];
