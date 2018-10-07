@@ -58,9 +58,10 @@ nonlibc = dependency('nonlibc', static: dep_static,
 memorywell = dependency('memorywell', static: dep_static,
 		fallback : ['memorywell', 'memorywell_dep_' + _dep ], required : true)
 judy = dependency('Judy', required : true)
+yaml = dependency('yaml-0.1', required : true)
 
 # All deps in a single arg. Use THIS ONE in compile calls
-deps = [nonlibc, judy]
+deps = [nonlibc, judy, yaml]
 
 #build
 inc = include_directories('include')

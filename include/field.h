@@ -14,14 +14,26 @@
 
 enum data_type { ASCII_TYPE = 0, DECIMAL_TYPE = 1, HEX_TYPE = 2, BIN_TYPE = 3};
 
+#if 1
+struct xdpk_field {
+	int16_t         offt;
+	uint16_t        mlen;
+}__attribute__((packed));
+
+#else
 /* xdpk_field
  * @offt : positive offset from start of packet, negative from end; in bytes.
- * @mlen : mask length in bits (and implicitly: length of field being masked).
+ * @len  : byte length of field being hashed
+ * @mask : bitwise &-mask applied to last byte of field before hashing
+ * @pad  : unused (*not* guaranteed to remain, don't store ad-hoc data here)
  */
 struct xdpk_field {
-	int16_t		offt;
-	uint16_t	mlen;
+	int32_t		offt;
+	uint16_t	len;
+	uint8_t		mask;
+	uint8_t		pad;
 }__attribute__((packed));
+#endif
 
 /*	xdpk_field_valid()
  * Used to test whether a field is "valid".
@@ -63,7 +75,7 @@ NLC_PUBLIC __attribute__((pure))
 			const void *pkt, size_t plen, uint64_t *hashp);
 
 /*	xdpk_field_parse()
- * Parse text field definition in 'grammar' (e.g. '16@tcp.src_port=80').
+ * Parse text field definition in 'grammar'
  * Output the expected hash to 'expected_hash'.
  * Return a field struct.
  * On error:
@@ -71,7 +83,6 @@ NLC_PUBLIC __attribute__((pure))
  * - leaves 'expected_hash' in a mangled/garbage state
  *
  * NOTE:
- * - grammar is mlen@offt=value
  * - integers may legally be decimal ('80'), hex ('0x50') or binary ('b01010000')
  * - need to come up with a clean approach to statically represent the offset grammar,
  *	so that this same single definition can be referenced:
@@ -81,8 +92,15 @@ NLC_PUBLIC __attribute__((pure))
  *	4. in the documentation
  */
 NLC_PUBLIC
-	struct xdpk_field xdpk_field_parse(const char *grammar,
+#if 1
+struct xdpk_field xdpk_field_parse(const char *grammar,
 					    uint64_t *expected_hash);
+#else
+	struct xdpk_field xdpk_field_parse(size_t len, size_t offt,
+					    uint8_t *val, size_t val_len,
+					    uint8_t mask,
+					    uint64_t *expected_hash);
+#endif
 
 NLC_PUBLIC
 	uint16_t parse_uint16(const char *begin, const char *end, bool *err);

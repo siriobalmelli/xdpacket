@@ -5,21 +5,82 @@ order: 1
 
 # xDPacket Grammar
 
-TODO:
+xDPacket parses valid YAML using [LibYAML](https://github.com/yaml/libyaml).
 
-- specify grammar as BNF
+Reasons for the YAML approach:
+
+1. JSON is valid input:
+- This is straight compatibility with every web API ever.
+
+```
+{
+"len": 2,
+"mask": "0xff",
+"offt": 56,
+"val": "some \"string\" 'so-called' @;|$"
+}
+```
+
+1. YAML is valid input:
+- Every *other* web API we care about (let XML perish please).
+
+```
+---
+len: 2
+mask: "0xff"
+offt: 56
+val: "some \"string\" 'so-called' @;|$"
+```
+
+1. YAML lends itself to one-liners:
+- It's best if sysadmins don't have to type longform rules
+- Command-line rule manipulation must be terse but legible
+
+```
+{ len: 2, mask: 0xff, offt: 56, val: "some \"string\" 'so-called' @;|$" }
+```
 
 NOTES:
 
 - matchers must be in user-defined sequence (linked list?)
-- masks are in *bits*; positions are in *bytes*
+- "mask" is optional - if not included assumed to be `0xff`
 
 ## examples
 
-Description:
+1. Matching multiple IP addresses, simple NAT:
 
-- "src or dst ip 192.168.0.1"
-- NAT out enp0s3
+```yaml
+---
+# 'match' is a list of matchers; *any* of which may match (OR)
+match:
+  # a matcher is a list of fields which must *all* match (AND)
+  -
+    # this is a field
+    - len: 4
+      offt: ip.saddr
+      val: "192.168.0.1"
+    - len: 4
+      offt: tcp.dport
+      val: 80
+  # this is another matcher
+  -
+    - len: 4
+      offt: ip.daddr
+      val: "192.168.0.1"
+
+action:
+  - mangle:
+      from:
+        if: enp0s3
+        attr: ip
+      to:
+        len: 4
+        offt: ip.saddr
+  - out:
+      if: enp0s3
+```
+
+TODO: rewrite all other examples with this grammar:
 
 1. matchers:
   - 32@ip.saddr="192.168.0.1"
