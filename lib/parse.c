@@ -257,7 +257,6 @@ error:
 void parse_long_hex(const char *begin, size_t len, 
 			uint8_t *buf, size_t flen, bool *err)
 {
-	printf("parse_long_hex: len == %d, flen == %d\n", len, flen);
 	if ((len % 2) != 0) {
 		*err = true;
 		goto error;
