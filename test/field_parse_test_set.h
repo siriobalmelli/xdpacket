@@ -28,19 +28,20 @@ struct ptuple {
 const struct ptuple parse_tests[] = {
 	//
 	{
-		"16@udp.sport=6501",
-		{34, 16},
+		"{ offset: 34, len: 2, val: 6501 }",
+		{34, 16, 0xff, 0},
 		0x8804f07b52d3063,
 		"1",
 		true
 	},
 	{
-		"1@tcp.flags=0",
-		{46, 1},
+		"{ offset: tcp.flags, len: 1, mask: 0x80, val: 0 }",
+		{46, 1, 0x80, 0},
 		0xaf63bd4c8601b7df,
 		"2",
 		true
 	},
+/*
 	{
 		"80@0=0x00000000000000000001",
 		{0, 80},
@@ -48,4 +49,5 @@ const struct ptuple parse_tests[] = {
 		"3",
 		true
 	},
+*/
 };

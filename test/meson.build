@@ -1,9 +1,9 @@
 tests = [
-  'field_len_test.c',
   'field_hash_test.c',
   'field_valid_test.c',
   'field_matcher_test.c',
-  'field_parse_test.c'
+  'field_parse_test.c',
+  'parse_test.c'
 ]
 
 foreach t : tests

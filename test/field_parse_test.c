@@ -8,6 +8,7 @@
 #include <nonlibc.h>
 #include <binhex.h>
 #include <zed_dbg.h>
+#include <parse.h>
 #include "field.h"
 
 /* Keep definitions separately to make more readable */
@@ -22,31 +23,34 @@ int parse_check()
 
 	for (int i = 0; i < NLC_ARRAY_LEN(parse_tests); i++) {
 		const struct ptuple *pt = &parse_tests[i];
-		uint64_t hash;
-		struct xdpk_field fld = xdpk_field_parse(pt->grammar, &hash);
+		uint64_t hash = 0;
+		struct xdpk_field fld = xdpk_field_parse(pt->grammar, 
+						strlen(pt->grammar), &hash);
 
-		Z_log(Z_inf, "offt == %d, mlen == %d, hash == %lu", 
-				fld.offt, fld.mlen, hash);
-		
+		Z_log(Z_inf, "offt == %d, len == %d, mask == 0x%0x, hash == 0x%0lx", 
+				fld.offt, fld.len, fld.mask, hash);
+
 		bool match = (	(fld.offt == pt->expected_fld.offt)
-			     &&	(fld.mlen = pt->expected_fld.mlen)
+			     &&	(fld.len = pt->expected_fld.len)
+			     && (fld.mask = pt->expected_fld.mask)
 			     &&	(hash == pt->expected_hash));
 
 		if (pt->pos_test) {
 			Z_err_if(!match, 
-				"Tag %s: (offt %d, mlen %u, 0x%lx)"
-				" != expected (offt %d, mlen %u, 0x%lx\n)",
-				pt->tag, fld.offt, fld.mlen, hash,
-				pt->expected_fld.offt, pt->expected_fld.mlen,
-				pt->expected_hash);
+				"Tag %s: (offt %d, len %u, mask 0x%0x, hash 0x%0lx)"
+				" != expected (offt %d, len %u, mask %0x, hash 0x%0lx)\n",
+				pt->tag, fld.offt, fld.len, fld.mask, hash,
+				pt->expected_fld.offt, pt->expected_fld.len, 
+				pt->expected_fld.mask, pt->expected_hash);
 		} else {
 			Z_err_if(match, 
-				"Tag %s: (offt %d, mlen %u, 0x%lx)"
-				" == not expected (offt %d, mlen %u, 0x%lx\n)",
-				pt->tag, fld.offt, fld.mlen, hash,
-				pt->expected_fld.offt, pt->expected_fld.mlen,
-				pt->expected_hash);
+				"Tag %s: (offt %d, len %u, mask 0x%0x, hash 0x%0lx)"
+				" == expected (offt %d, len %u, mask %0x, hash 0x%0lx)\n",
+				pt->tag, fld.offt, fld.len, fld.mask, hash,
+				pt->expected_fld.offt, pt->expected_fld.len, 
+				pt->expected_fld.mask, pt->expected_hash);
 		}
+		printf("match == %d\n", match);
 	}
 	Z_log(Z_inf, "number of matcher tests == %ld",
 			NLC_ARRAY_LEN(parse_tests));
@@ -61,6 +65,7 @@ int parse_check()
  */
 int main()
 {
+	printf("field_parse_test\n");
 	int err_cnt = 0;
 	err_cnt += parse_check();
 	return err_cnt;

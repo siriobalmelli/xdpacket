@@ -34,10 +34,10 @@ const struct mtuple matcher_tests[] = {
 	// Single field test
 	{
 		{{
-			{ 0, 40 },
-			{ 0, 0 },
-			{ 0, 0 },
-			{ 0, 0 },
+			{ 0, 5, 0xff },
+			{ 0, 0, 0xff },
+			{ 0, 0, 0xff },
+			{ 0, 0, 0xff },
 		}},
 		.npkt = 0,
 		.hash = 0x4b64e9abbc760b0d,
@@ -47,10 +47,10 @@ const struct mtuple matcher_tests[] = {
 	// Match two fields, second field is 1-bit = 0
 	{
 		{{
-			{ 8, 40 },
-			{ 40, 1 },
-			{ 0, 0 },
-			{ 0, 0 },
+			{ 8, 5, 0xff },
+			{ 40, 1, 0x80 },
+			{ 0, 0, 0xff },
+			{ 0, 0, 0xff },
 		}},
 		.npkt = 3,
 		.hash = 0xed448eeca2d6285f,

@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <zed_dbg.h>
 #include <fnv.h>
+#include <parse.h>
 #include "field.h"
 #include "packet.h"
 
@@ -59,9 +60,9 @@ int field_check()
  void baseline_hash_check()
  {
 	uint64_t h = 0;
-	uint8_t byte = 0;
+	uint8_t byte = 0 & 0x80;
 	h = fnv_hash64(NULL, (void*)&byte, sizeof(byte));
-	printf("fnv_hash64 1-bit hash of 0 == 0x%lx\n", h);
+	printf("fnv_hash64 1-byte hash of 0, mask 0x80 == 0x%lx\n", h);
 	uint16_t udp_sport = 6501;
 	uint16_t n_udp_sport = htons(udp_sport);
 	printf("udp_sport == 0x%04x, n_udp_sport == 0x%04x\n", udp_sport, n_udp_sport);
@@ -74,26 +75,46 @@ int field_check()
 void interactive_hash_check()
 {
 	char buf[80];
-	char mlenb[80];
-	char numb[80];
-	uint16_t mlen = 0;
+	char lenbuf[80];
+	char buf2[80];
+	char buf3[80];
+	uint16_t len = 0;
+	uint16_t mask = 0xff;
 	uint64_t hash = 0;
 	bool err;
 
 	while (true) {
-		memset(mlenb, 0, sizeof(mlenb));
-		memset(numb, 0, sizeof(numb));
-		printf("Enter <mlen> <value>: ");
+		int nparam;
+		memset(lenbuf, 0, sizeof(lenbuf));
+		memset(buf2, 0, sizeof(buf2));
+		memset(buf3, 0, sizeof(buf3));
+		printf("Enter <len> [<mask>==0xff] <value>: ");
 		if (fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
-		if (sscanf(buf, "%s %s", mlenb, numb) != 2) {
-			printf("Error: two parameters needed.\n");
+			
+		nparam = sscanf(buf, "%s %s %s", lenbuf, buf2, buf3);
+
+		switch (nparam) {
+		case 2:
+			len = parse_uint16(lenbuf, strlen(lenbuf), &err);
+			printf("len == %d (0x%04x), err = %d\n", len, len, err);
+			mask = 0xff;
+			printf("mask == %d (0x%02x)\n", mask, mask);
+			//hash = parse_value(buf2, strlen(buf2), len, mask, &err);
+			printf("hash == 0x%lx, err = %d\n", hash, err);
+			break;
+		case 3:
+			len = parse_uint16(lenbuf, strlen(lenbuf), &err);
+			printf("len == %d (0x%04x), err = %d\n", len, len, err);
+			mask = parse_uint16(buf2, strlen(buf2), &err);
+			printf("mask == %d (0x%02x), err = %d\n", mask, mask, err);
+			//hash = parse_value(buf3, strlen(buf3), len, mask, &err);
+			printf("hash == 0x%lx, err = %d\n", hash, err);
+			break;
+		default:
+			printf("Error: 2 or 3 parameters needed.\n");
 			continue;
-		}
-		mlen = parse_uint16(mlenb, strchr(mlenb, '\0'), &err);
-		printf("mlen == %d (0x%x), err = %d\n", mlen, mlen, err);
-		hash = parse_value(numb, strchr(numb, '\0'), mlen, &err);
-		printf("hash == 0x%lx, err = %d\n", hash, err);
+		}	
 	}
 }
 
@@ -103,21 +124,21 @@ void interactive_parse_check()
 {
 	char buf[1024];
 	struct xdpk_field fld;
-	uint64_t hash = 0;
+	int len;
+	uint64_t hash;
 
 	while (true) {
 		memset(buf, 0, sizeof(buf));
-		printf("Enter <field grammar>: ");
+		printf("Enter <YAML field expr>: ");
 		if (fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
-		if (sscanf(buf, "%s", buf) != 1) {
-			printf("Error: one field grammar string needed.\n");
-			continue;
-		}
-		fld = xdpk_field_parse(buf, &hash);
+		len = strlen(buf);
+		if (buf[len-1] == '\n')
+			buf[--len] = '\0';
+		fld = xdpk_field_parse(buf, strlen(buf), &hash);
 
-		printf("fld.mlen == %u, field.offt = %d\n", fld.mlen, fld.offt);
-		printf("YYY hash == 0x%lx\n", hash);
+		printf("offt == %u, len == %d, mask == 0x%02x, hash == 0x%016x\n", 
+					fld.offt, fld.len, fld.mask, hash);
 	}
 }
 
