@@ -137,7 +137,7 @@ void interactive_parse_check()
 			buf[--len] = '\0';
 		fld = xdpk_field_parse(buf, strlen(buf), &hash);
 
-		printf("offt == %u, len == %d, mask == 0x%02x, hash == 0x%016x\n", 
+		printf("offt == %u, len == %d, mask == 0x%02x, hash == 0x%016lx\n", 
 					fld.offt, fld.len, fld.mask, hash);
 	}
 }
