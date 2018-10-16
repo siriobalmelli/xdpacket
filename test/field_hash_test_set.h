@@ -24,7 +24,7 @@ struct htuple {
 const struct htuple hash_tests[] = {
 	// Straightforward "blaar" test
 	{
-	.matcher = { .offt = 0, .mlen = 40 },
+	.matcher = { .offt = 0, .len = 5,  .mask = 0xff},
 	.npkt = 0,
 	.hash = 0x4b64e9abbc760b0d,
 	"1",
@@ -32,7 +32,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Negative offset "blaar" test
 	{
-	.matcher = { .offt = -5, .mlen = 40 },
+	.matcher = { .offt = -5, .len = 5, .mask = 0xff },
 	.npkt = 0,
 	.hash = 0x4b64e9abbc760b0d,
 	"2",
@@ -40,15 +40,16 @@ const struct htuple hash_tests[] = {
 	},
 	// Negative offset too big
 	{
-	.matcher = { .offt = -6, .mlen = 40 },
+	.matcher = { .offt = -6, .len = 5, .mask = 0xff },
 	.npkt = 0,
 	.hash = 0x0,
 	"3",
 	1
 	},
+/*
 	// Mask length too big
 	{
-	.matcher = { .offt = 0, .mlen = 41 },
+	.matcher = { .offt = 0, .len = 6 },
 	.npkt = 0,
 	.hash = 0x0,
 	"4",
@@ -56,7 +57,7 @@ const struct htuple hash_tests[] = {
 	},
 	// "blaar" test with mask too short
 	{
-	.matcher = { .offt = 0, .mlen = 32 },
+	.matcher = { .offt = 0, .len = 4 },
 	.npkt = 0,
 	.hash = 0x4b64e9abbc760b0d,
 	"5",
@@ -64,7 +65,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Offset, with mask length too short but matching real end
 	{
-	.matcher = { .offt = 1, .mlen =  32},
+	.matcher = { .offt = 1, .len =  4},
 	.npkt = 0,
 	.hash = 0x0,
 	"6",
@@ -72,7 +73,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Offset in "Xblaar"
 	{
-	.matcher = { .offt = 1, .mlen = 40 },
+	.matcher = { .offt = 1, .len = 5 },
 	.npkt = 1,
 	.hash = 0x4b64e9abbc760b0d,
 	"7",
@@ -80,7 +81,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Offset in "XXXXXXXblaarYYYYYY"
 	{
-	.matcher = { .offt = 7, .mlen = 40 },
+	.matcher = { .offt = 7, .len = 5 },
 	.npkt = 2,
 	.hash = 0x4b64e9abbc760b0d,
 	"8",
@@ -88,24 +89,23 @@ const struct htuple hash_tests[] = {
 	},
 	// Negative offset in "XXXXXXXblaarYYYYYY"
 	{
-	.matcher = { .offt = -11, .mlen = 40 },
+	.matcher = { .offt = -11, .len = 5 },
 	.npkt = 2,
 	.hash = 0x4b64e9abbc760b0d,
 	"9",
 	1
 	},
-	/* This one shouldn't pass (?) but does
+	// This one shouldn't pass (?) but does
 	// Mask off last bit of "blaar" and then take hash
-	{
-	.matcher = { .offt = 7, .mlen = 39 },
-	.npkt = 2,
-	.hash = 0x4b64e9abbc760b0d,
-	"10",
-	0
-	},*/
+	//{
+	//.matcher = { .offt = 7, .len = 5 },
+	//.npkt = 2,
+	//.hash = 0x4b64e9abbc760b0d,
+	//"10",
+	//0
 	// Mask off last two bits of "blaar" and then take hash
 	{
-	.matcher = { .offt = 7, .mlen = 38 },
+	.matcher = { .offt = 7, .len = 5 },
 	.npkt = 2,
 	.hash = 0x4b64e9abbc760b0d,
 	"11",
@@ -113,7 +113,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Check embedded "blaar" within 0's packet
 	{
-	.matcher = { .offt = 4, .mlen = 40 },
+	.matcher = { .offt = 4, .len = 5 },
 	.npkt = 3,
 	.hash = 0x4b64e9abbc760b0d,
 	"12",
@@ -121,7 +121,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Bigger mask for "blaar" within 0's packet
 	{
-	.matcher = { .offt = 4, .mlen = 48 },
+	.matcher = { .offt = 4, .len = 6 },
 	.npkt = 3,
 	.hash = 0x4b64e9abbc760b0d,
 	"13",
@@ -129,7 +129,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Negative indexed "blaar" within 0's packet
 	{
-	.matcher = { .offt = -96, .mlen = 40 },
+	.matcher = { .offt = -96, .len = 5 },
 	.npkt = 3,
 	.hash = 0x4b64e9abbc760b0d,
 	"14",
@@ -137,7 +137,7 @@ const struct htuple hash_tests[] = {
 	},
 	// Check "blaar" shifted by 4 bits off byte boundary
 	{
-	.matcher = { .offt = 90, .mlen = 48 },
+	.matcher = { .offt = 90, .len = 6 },
 	.npkt = 3,
 	.hash = 0x4b64e9abbc760b0d,
 	"15",
@@ -145,16 +145,15 @@ const struct htuple hash_tests[] = {
 	},
 	// Bigger packet
 	{
-	.matcher = { .offt = 9, .mlen = 40 },
+	.matcher = { .offt = 9, .len = 5 },
 	.npkt = 4,
 	.hash = 0x4b64e9abbc760b0d,
 	"16",
 	1
 	},
-	/**/
 	// Bigger packet, negative offset
 	{
-	.matcher = { .offt = -1431, .mlen = 40 },
+	.matcher = { .offt = -1431, .len = 5 },
 	.npkt = 4,
 	.hash = 0x4b64e9abbc760b0d,
 	"17",
@@ -162,11 +161,11 @@ const struct htuple hash_tests[] = {
 	},
 	// Bigger packet, last instance
 	{
-	.matcher = { .offt = -29, .mlen = 40 },
+	.matcher = { .offt = -29, .len = 5 },
 	.npkt = 4,
 	.hash = 0x4b64e9abbc760b0d,
 	"18",
 	1
 	},
-	/**/
+*/
 };

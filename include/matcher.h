@@ -13,9 +13,18 @@
 #ifndef XDPK_MATCH_FIELD_MAX
 #define XDPK_MATCH_FIELD_MAX 4
 #endif
+#ifndef XDPK_MATCHER_SET_MAX
+#define XDPK_MATCHER_SET_MAX 4
+#endif
 
+/* Set of xdpk_fields, all of which must match (logical AND) */
 struct xdpk_matcher {
-    struct xdpk_field fields[XDPK_MATCH_FIELD_MAX];
+	struct xdpk_field fields[XDPK_MATCH_FIELD_MAX];
+}__attribute__((packed));
+
+/* Set of xdpk_matcher structs, any one of which can match (logical OR) */
+struct xdpk_matcher_set {
+	struct xdpk_matcher matchers[XDPK_MATCHER_SET_MAX];	
 }__attribute__((packed));
 
 /*	xdpk_match()

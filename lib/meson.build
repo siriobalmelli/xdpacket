@@ -1,4 +1,4 @@
-lib_files = [ 'field.c', 'matcher.c', 'packet.c' ]
+lib_files = [ 'field.c', 'matcher.c', 'packet.c', 'parse.c' ]
 
 # TODO: clean up using both_libraries() instead
 xdpacket = shared_library(meson.project_name(),

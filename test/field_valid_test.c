@@ -18,17 +18,17 @@ int field_valid_check()
 	};
 
 	const struct tuple tests[] = {
-		{{0, 8}, 1},
-		{{-1, 1}, 1},
-		{{1000, 0}, 0},
-		{{0, 0}, 0},
+		{{0, 2, 0xff}, 1},
+		{{-1, 1, 0xff}, 1},
+		{{1000, 0, 0xff}, 0},
+		{{0, 0, 0xff}, 0},
 	};
 
 	for (int i=0; i < NLC_ARRAY_LEN(tests); i++) {
 		bool valid = xdpk_field_valid(tests[i].field);
 		Z_err_if((valid ^ tests[i].expect), 
 			"xpdk_field_valid({%d, %u}) == %d, expected %d",
-			tests[i].field.offt, tests[i].field.mlen, valid, tests[i].expect);
+			tests[i].field.offt, tests[i].field.len, valid, tests[i].expect);
 	}
 
 	Z_log(Z_inf, "number of field_valid tests == %ld",
