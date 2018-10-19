@@ -51,7 +51,7 @@ void interactive_parse_check()
 
 		yaml_parser_initialize(&parser);
 		yaml_parser_set_input_string(&parser, (unsigned char*)buf, len);
-		if (!yaml_parser_load(&parser, &document)) {
+		if (!yaml_parser_load(&parser, &document)) {  /* returns 1 on success */
 			yaml_mark_t *mark = &parser.context_mark;
 			fprintf(stderr, "parse failed: %s\n", parser.problem);
 			fprintf(stderr, "%s\n", buf);
@@ -82,7 +82,7 @@ void interactive_parse_check()
 				break;
 			}
 		}
-		/**/
+		/* renders YAML to stdout */
 		print_yaml_document(&document);
 
 		memset(buf, 0, BUF_SIZE);
@@ -119,13 +119,12 @@ int main(int argc, char *argv[])
 				parse_check = true;
 				break;
 			default:
-				fprintf(stderr, "Usage: %s [-n]\n");
+				fprintf(stderr, "Usage: %s [-n]\n", argv[0]);
 				exit(EXIT_FAILURE);
 			}
 		}
-		if (interactive) {
+		if (interactive)
 			interactive_parse_check();
-		}
 	}
 
 	if (!interactive)

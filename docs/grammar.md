@@ -10,39 +10,99 @@ xDPacket parses valid YAML using [LibYAML](https://github.com/yaml/libyaml).
 Reasons for the YAML approach:
 
 1. JSON is valid input:
-- This is straight compatibility with every web API ever.
-
+    - This is straight compatibility with every web API ever.
+    ```json
+    {
+    "len": 2,
+    "mask": "0xff",
+    "offt": 56,
+    "val": "some \"string\" 'so-called' @;|$"
+    }
 ```
-{
-"len": 2,
-"mask": "0xff",
-"offt": 56,
-"val": "some \"string\" 'so-called' @;|$"
-}
-```
-
 1. YAML is valid input:
-- Every *other* web API we care about (let XML perish please).
-
-```
----
-len: 2
-mask: "0xff"
-offt: 56
-val: "some \"string\" 'so-called' @;|$"
-```
+    - Every *other* web API we care about (let XML perish please).
+    ```yaml
+    ---
+    len: 2
+    mask: "0xff"
+    offt: 56
+    val: "some \"string\" 'so-called' @;|$"
+    ```
 
 1. YAML lends itself to one-liners:
-- It's best if sysadmins don't have to type longform rules
-- Command-line rule manipulation must be terse but legible
+    - It's best if sysadmins don't have to type longform rules
+    - Command-line rule manipulation must be terse but legible
+    ```yaml
+    { len: 2, mask: 0xff, offt: 56, val: "some \"string\" 'so-called' @;|$" }
+    ```
 
+## Command Set
+
+Input is parsed as either:
+    - a single `command` object
+    - a list of `command` objects inside an `xdpk` object
+
+```yaml
+# single command: add an interface
+if: { add: eth0 }
+
+# multi-command list example
+xdpk: [ { if: { add: eth0 } }, { if: { add: eth1 } } ]
 ```
-{ len: 2, mask: 0xff, offt: 56, val: "some \"string\" 'so-called' @;|$" }
+
+```yaml
+# Some more examples showing various commands.
+# until such time as a proper spec is completed,
+# this is the "unofficial guide" to xdpk grammar
+
+xdpk:
+  - if:
+    - add: eth0  # capture packets on eth0
+    - show: eth.*  # show counters for any "eth" interface (POSIX EREs)
+    - del: eth0  # stop capture and output on eth0
+
+  - field:
+    - add: joes_ip
+      offt: ip.saddr
+      len: 4
+      val: 192.168.1.1
+    - add: isp
+      offt: ip.daddr
+      len: 2
+      val: 10.68
+    - add: flagged
+      offt: tcp.flags
+      len: 1
+      mask: 0x80
+      val: 0x80
+    - show: .*
+
+  - action:
+    - add: reflect
+      out: in.if  # send packet back to input interface
+    # NOTE that 'action' semantics are identical to those of 'field'
+    - add: set_flag
+      offt: tcp.flags
+      len: 1
+      val: 0xC0
+
+  - match:
+    add: to_joe
+    if: eth0
+    dir: in
+    or: [ joes_ip, isp ]
+    act: reflect
+
+  - match:
+    add: to_isp
+    if: eth1
+    dir: out
+    or: [ joes_ip, and: [ joes_isp, flagged ] ]
+    act: set_flag
 ```
 
 NOTES:
 
-- matchers must be in user-defined sequence (linked list?)
 - "mask" is optional - if not included assumed to be `0xff`
 
 ## examples

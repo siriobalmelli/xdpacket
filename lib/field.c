@@ -66,13 +66,12 @@ struct xdpk_field xdpk_field_create(size_t offt,
 	bool err = false;
 	struct xdpk_field fld = {offt, len, mask};
 
-	if (!xdpk_field_valid(fld))
-		goto error;
+	Z_die_if(!xdpk_field_valid(fld), "");
 
 	//*expected_hash = parse_value(val, val + len, len, fld.mask, &err);
-	if (err) goto error;
+	Z_die_if(err, "");
 
-error:
+out:
 	return fld;
 }
 
