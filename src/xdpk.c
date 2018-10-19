@@ -1,27 +1,25 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <linux/if_packet.h>	/* struct packet_mreq */
+#include <arpa/inet.h>
 #include <linux/if_arp.h>	/* struct sockaddr_ll.sll_hatype */
 #include <linux/if_ether.h>	/* ETH_P_ALL and friends */
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include <linux/if_packet.h>	/* struct packet_mreq */
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
-#include <zed_dbg.h>
 #include <epoll_track.h>
 #include <posigs.h>
 #include <xdpk.h>
+#include <zed_dbg.h>
 
-#if 0
 #include <Judy.h>
 
 /* global register of sockets
  * TODO: replace with mutex-protected judyutils struct
  */
 static Word_t j_sockets = 0;
-#endif
 
 /*	xdpk_free()
  */
@@ -121,7 +119,6 @@ void xdpk_sock_callback(int fd, uint32_t events, epoll_data_t context)
 	Z_log(Z_inf, "recv "XDPK_MAC_PROTO" -> "XDPK_MAC_PROTO" len %zd",
 		XDPK_MAC_BYTES(eth->h_source), XDPK_MAC_BYTES(eth->h_dest),
 		res);
-	return;
 }
 
 
