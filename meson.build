@@ -55,8 +55,6 @@ endif
 # Note that subproject expected to export as '[name]_dep_[shared||static]'
 nonlibc = dependency('nonlibc', static: dep_static,
 		fallback : ['nonlibc', 'nonlibc_dep_' + _dep ], required : true)
-memorywell = dependency('memorywell', static: dep_static,
-		fallback : ['memorywell', 'memorywell_dep_' + _dep ], required : true)
 judy = dependency('Judy', required : true)
 yaml = dependency('yaml-0.1', required : true)
 
@@ -65,7 +63,6 @@ deps = [nonlibc, judy, yaml]
 
 #build
 inc = include_directories('include')
-subdir('include')
 subdir('lib')
 subdir('src')
 subdir('test')

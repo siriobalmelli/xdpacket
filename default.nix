@@ -27,7 +27,6 @@ nixpkgs.stdenv.mkDerivation rec {
 
   libjudy = nixpkgs.libjudy or import ./libjudy {};
   nonlibc = nixpkgs.nonlibc or import ./nonlibc {};
-  memorywell = nixpkgs.memorywell or import ./memorywell {};
 
   buildInputs = [
     nixpkgs.gcc

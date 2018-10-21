@@ -12,7 +12,7 @@ foreach t : tests
 
 	a_test = executable(name + '_shared', t,
 			dependencies : deps,
-			link_with: xdpacket_static,
+			link_with: internal_static,
 			include_directories : inc)
 	test(name_spaced, a_test, timeout : 45)
 endforeach
