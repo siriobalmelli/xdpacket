@@ -21,3 +21,32 @@ bool xdpk_match(const struct xdpk_matcher *match,
 	fprintf(stderr, "Hash == 0x%lx\n", h);
 	return h == hash;
 }
+
+
+#include <matcher2.h>
+
+/* matcher_free()
+ */
+void matcher_free(struct matcher *mch)
+{
+	free(mch);
+}
+
+/* matcher_new()
+ * Allocates a new matcher.
+ * Returns NULL on error
+ */
+struct matcher *matcher_new()
+{
+	return NULL;
+}
+
+/* matcher_do()
+ * Matches 'buf' (of 'buf_len' bytes) against 'mch'.
+ * If matching, executes actions and returns true,
+ * else return false.
+ */
+bool matcher_do(struct matcher *mch, const void *buf, size_t buf_len)
+{
+	return false;
+}

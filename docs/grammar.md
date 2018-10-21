@@ -90,20 +90,22 @@ xdpk:
     add: to_joe
     if: eth0
     dir: in
-    or: [ joes_ip, isp ]
+    sel: [joes_ip, isp]  # joes_ip || isp
     act: reflect
 
   - match:
     add: to_isp
     if: eth1
     dir: out
-    or: [ joes_ip, and: [ joes_isp, flagged ] ]
+    sel: [joes_ip, [joes_isp, flagged]]  # joes_ip || (joes_isp && flagged)
     act: set_flag
 ```
 
 NOTES:
 
 - "mask" is optional - if not included assumed to be `0xff`
+
+NOTE: EVERYTHING BELOW HERE IS OLD AND NEEDS REWRITING
 
 ## examples
 

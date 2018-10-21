@@ -1,6 +1,8 @@
 #ifndef field_h_
 #define field_h_
 
+#include <xdpk.h> /* must always be first */
+
 /*	field.h
  * A data structure describing a contiguous series of bits to be matched,
  * replated manipulation functions.
