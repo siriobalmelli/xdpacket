@@ -1,6 +1,8 @@
 #ifndef matcher_h_
 #define matcher_h_
 
+/* TODO: @alan: merge matcher2.h into this one, clean it up, delete matcher2.h */
+
 /*	matcher.h
  * A data structure describing one or more 'fields' to be matched (see field.h)
  * and associated manipulation functions.
