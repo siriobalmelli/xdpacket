@@ -43,7 +43,6 @@ nixpkgs.stdenv.mkDerivation rec {
   propagatedBuildInputs = [
     nixpkgs.libyaml
     libjudy
-    memorywell
     nonlibc
   ];
 
