@@ -9,7 +9,7 @@
 #include <Judy.h>
 #include <epoll_track.h>
 
-#include <matcher2.h>
+#include <matcher.h>
 
 /*	fixed-size strings FTW
 The largest address is '[0-9]{12}' + '\.{3}' + '\0'
