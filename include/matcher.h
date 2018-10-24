@@ -13,22 +13,22 @@
 #include <Judy.h>
 #include <stdbool.h>
 
-struct selector {
+typedef struct selector {
 	/* TODO: implement */
-};
+} selector_t;
 
-struct matcher {
+typedef struct matcher {
 	/* TODO: implement */	
 	size_t sel_cnt;
 	struct selector sel[];
-};
+} matcher_t;
 
 void		matcher_free(struct matcher *mch);
 struct matcher	*matcher_new();
 bool		matcher_do(struct matcher *mch, const void *buf, size_t buf_len);
 
 
-/* The following are obsolete, but are temporarily renamed as an incremental step
+/* The following are obsolete, but are temporarily maintained as an incremental step
  * to maintain compilation until full switchover
  */
 #include <field.h>

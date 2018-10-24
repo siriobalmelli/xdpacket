@@ -1,6 +1,6 @@
-/*	parser_test.c
- * (c) 2018 Sirio Balmelli
+/*	parse_test.c
  * (c) 2018 Alan Morrissett
+ * (c) 2018 Sirio Balmelli
  */
 #include <stdlib.h>
 #include <stdio.h>

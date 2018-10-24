@@ -75,6 +75,23 @@ out:
 	return fld;
 }
 
+/*	xdpk_field_print()
+ * Allocate and return a string containing
+ * the definition of a field in the proper grammar.
+ */
+char *xdpk_field_print(struct xdpk_field field)
+{
+	char buf[1024];
+	memset(buf, 0, sizeof(buf));
+	sprintf(buf, "{ offt: %d, len: %d, mask: 0x%x }", 
+				field.offt, field.len, field.mask);
+	char *rv = malloc(strlen(buf)+1);
+	strcpy(rv, buf);
+	
+	return rv;
+}
+
+
 /*
  * Return address of field start
  */

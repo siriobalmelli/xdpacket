@@ -3,6 +3,7 @@ tests = [
   'field_valid_test.c',
   'field_matcher_test.c',
   'field_parse_test.c',
+  'command_test.c',
   'parse_test.c'
 ]
 
