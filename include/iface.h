@@ -32,8 +32,8 @@ The largest address is '[0-9]{12}' + '\.{3}' + '\0'
  * @msg		: pipe containing control messages
  * @fd		: raw socket
  * @ip_prn	: IP address as a string
- * @JS_mch_out	: output mathers in alphabetical order
- * @JS_mch_in	: input mathers in alphabetical order
+ * @JS_mch_out	: output matchers in alphabetical order
+ * @JS_mch_in	: input matchers in alphabetical order
  */
 struct iface {
 	int		fd;
