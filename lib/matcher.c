@@ -29,7 +29,7 @@ bool matcher_do(struct matcher *mch, const void *buf, size_t buf_len)
 }
 
 /* THE FOLLOWING IS OBSOLETE, BUT IS TEMPORARILY MAINTAIND UNTIL FULL SWITCHOVER
-/*	xdpk_match()
+ *	xdpk_match()
  * Test 'pkt' against all fields in '*match'.
  * Return true if any field matches, otherwise false.
  */

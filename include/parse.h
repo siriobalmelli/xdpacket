@@ -26,7 +26,7 @@ typedef enum if_cmd_type {
 	IF_CMD_NONE = 0, 
 	IF_CMD_ADD = 1, 
 	IF_CMD_SHOW = 2, 
-	IF_CMD_DEL 
+	IF_CMD_DEL = 3 
 } if_cmd_type_t;
 
 typedef enum fld_cmd_type { 
@@ -52,6 +52,7 @@ typedef struct xdpk_command {
 		struct {
 			if_cmd_type_t cmd;
 			char *name;
+			char *value;
 		} intf;
 
 		struct {
@@ -66,11 +67,13 @@ typedef struct xdpk_command {
 		struct {
 			action_cmd_type_t cmd;
 			char *name;
+			uint8_t *value;
 		} action;
 
 		struct {
 			match_cmd_type_t cmd;
 			char *name;
+			uint8_t *value;
 		} match;
 	};
 } xdpk_command_t;
