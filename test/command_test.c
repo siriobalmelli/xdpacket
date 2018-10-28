@@ -11,12 +11,36 @@
 #include <yaml.h>
 #include <parse.h>
 
+/* Keep definitions separate to make more readable */
+#include "command_test_set.h"
+
 /*	bulk_command_check()
  * Validate that all commands parse correctly.
  */
 int bulk_command_check()
 {
 	int err_cnt = 0;
+
+	for (int i = 0; i < NLC_ARRAY_LEN(cmd_tests); i++) {
+		const struct ctuple *ct = &cmd_tests[i];
+		Z_log(Z_inf, "Parse '%s'", ct->cmdstr);
+		xdpk_command_t *cmds;
+		int num_cmds;
+		err_cnt = parse_commands(ct->cmdstr, strlen(ct->cmdstr), 
+							&cmds, &num_cmds);
+
+		if (ct->pos_test) {
+			Z_err_if(err_cnt || (num_cmds != ct->expected_num_cmds), 
+				"tag: '%s', err_cnt: %d, num_cmds: %d, expected_num: %d",
+				ct->tag, err_cnt, num_cmds, ct->expected_num_cmds);
+		} else {
+			Z_err_if(!err_cnt || (num_cmds == ct->expected_num_cmds), 
+				"tag: '%s', err_cnt: %d, num_cmds: %d, expected_num: %d",
+				ct->tag, err_cnt, num_cmds, ct->expected_num_cmds);
+		}
+	}
+	Z_log(Z_inf, "Number of command parse tests == %ld",
+			NLC_ARRAY_LEN(cmd_tests));
 
 	return err_cnt;
 }
@@ -31,7 +55,7 @@ int bulk_command_check()
 void interactive_command_check()
 {
 	char buf[BUF_SIZE];
-	int numcmds;
+	int num_cmds;
 	xdpk_command_t *cmds;
 
 	while (true) {
@@ -46,12 +70,19 @@ void interactive_command_check()
 		if (len == 0) 
 			continue;
 		printf("You entered: '%s'\n", buf);
-		if (parse_commands(buf, len, &cmds, &numcmds)) {
+		if (parse_commands(buf, len, &cmds, &num_cmds)) {
 			printf("error on parsing\n");
 		} else {
-			printf("Commands parsed: %d\n", numcmds);
+			printf("Commands parsed: %d\n", num_cmds);
+			for (int i = 0; i < num_cmds; i++) {
+				char *cmdtmp = xdpk_command_print(&cmds[i]);
+				if (cmdtmp) {
+					printf("%s\n", cmdtmp);
+					free(cmdtmp);
+				}
+			}
 			if (cmds != NULL)
-				delete_commands(&cmds, numcmds);
+				delete_commands(&cmds, num_cmds);
 		}
 
 	}

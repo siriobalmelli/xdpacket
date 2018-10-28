@@ -7,145 +7,295 @@
 #include <yaml.h>
 #include <field.h>
 #include <parse.h>
+#include <matcher.h>
 #include "offset_defs.h"
 
+static const char *cmd_usage = 
+		"[xdpk:|if:|field:|action:|match:] { <command body> }";
 
-int parse_if(yaml_document_t *document, yaml_node_t *node, xdpk_command_t **cmd, int *numcmd) 
+/*	parse_commands
+ * Parses a string and returns an array of xdpk_command.  Caller
+ * owns the storage.  Returns 0 on success.
+ */
+int parse_commands(char *cmdstr, size_t cmdlen, 
+				xdpk_command_t *cmds[], int *numcmds) 
 {
 	int err_cnt = 0;
-	Z_log(Z_inf, "parse node 'if'");
-	Z_die_if(node->type != YAML_MAPPING_NODE, "Top node not a map: '%s'", yaml_node_type(node));
-	char *value = NULL;
-	xdpk_command_t command;
-	memset((void*)&command, 0, sizeof(command));
+	yaml_parser_t parser;
+	yaml_document_t document;
 
-	*cmd = calloc(sizeof(xdpk_command_t), 1);
-	memcpy((void*)*cmd, (void*)&command, sizeof(xdpk_command_t));
-	// deep copy
-	if (command.field.name)
-		(*cmd)->field.name = strdup(command.field.name);
-	if (value)
-		(*cmd)->field.value = (uint8_t*)strdup(value);
-	*numcmd = 1;
+	yaml_parser_initialize(&parser);
+	yaml_parser_set_input_string(&parser, (yaml_char_t*)cmdstr, cmdlen);
+	if (!yaml_parser_load(&parser, &document)) {
+		yaml_mark_t *mark = &parser.context_mark;
+		Z_die_if(true, "Invalid YAML, "
+				"parse failed at position %d", mark->column);
+	}
+
+	yaml_node_t *root = yaml_document_get_root_node(&document);
+	Z_die_if((root->type != YAML_MAPPING_NODE) || 
+		(yaml_map_count(root) > 1), "Usage: '%s'", cmd_usage);
+
+	yaml_node_pair_t *i_node_p;
+	for (i_node_p = root->data.mapping.pairs.start; 
+			i_node_p < root->data.mapping.pairs.top; i_node_p++) {
+		yaml_node_t *key_node_p = 
+			yaml_document_get_node(&document, i_node_p->key);
+		yaml_node_t *val_node_p = 
+			yaml_document_get_node(&document, i_node_p->value);
+		char *key = (char*)key_node_p->data.scalar.value;
+		int keylen = strlen(key);
+		
+		if (!strncmp("xdpk", key, keylen)) {
+			Z_die_if(parse_xdpk(&document, val_node_p, 
+				cmds, numcmds), "Failed parse of xdpk");
+		} else if (!strncmp("if", key, keylen)) {
+			Z_die_if(parse_if(&document, val_node_p, 
+				cmds, numcmds), "Failed parse of if");
+		} else if (!strncmp("field", key, keylen)) {
+			Z_die_if(parse_field(&document, val_node_p, 
+				cmds, numcmds), "Failed parse of field");
+		} else if (!strncmp("action", key, keylen)) {
+			Z_die_if(parse_action(&document, val_node_p, 
+				cmds, numcmds), "Failed parse of action");
+		} else if (!strncmp("match", key, keylen)) {
+			Z_die_if(parse_match(&document, val_node_p, 
+				cmds, numcmds), "Failed parse of match");
+		} else {
+			Z_die_if(true, "Usage: '%s'", cmd_usage);
+		}
+	}
 
 out:
-	Z_log(Z_inf, "parse_field err_cnt: %d\n", err_cnt);
-
 	return err_cnt;
 }
 
-int parse_field(yaml_document_t *document, yaml_node_t *node, xdpk_command_t **cmd, int *numcmd) 
+static const char *if_usage = 
+	"if: { [add: <name>|show: <ere>|del: <if>] }";
+
+int parse_if(yaml_document_t *document, yaml_node_t *node, 
+					xdpk_command_t **cmds, int *numcmd) 
 {
 	int err_cnt = 0;
-	Z_log(Z_inf, "parse node 'field'");
-	Z_die_if(node->type != YAML_MAPPING_NODE, "Top node not a map: '%s'", yaml_node_type(node));
-	char *value = NULL;
-	xdpk_command_t command;
-	memset((void*)&command, 0, sizeof(command));
-	struct xdpk_field *fld = &command.field.fld;
-	fld->mask = 0xff;
-	command.type = CMD_FLD_TYPE;
+	xdpk_command_t *cmd = NULL;
+	Z_die_if(node->type != YAML_MAPPING_NODE, "Usage: '%s'", if_usage);
 
-	yaml_node_pair_t *i_node_p;
-	yaml_node_t *key_node_p;
-	yaml_node_t *val_node_p;
-	char *key;
-	char *val;
-	bool err = false;
-	for (i_node_p = node->data.mapping.pairs.start; i_node_p < node->data.mapping.pairs.top; i_node_p++) {
-		key_node_p = yaml_document_get_node(document, i_node_p->key);
-		key = (char*)key_node_p->data.scalar.value;
-		val_node_p = yaml_document_get_node(document, i_node_p->value);
-		val = (char*)val_node_p->data.scalar.value;
-		if (!strncmp("offt", key, strlen(key))) {
-			fld->offt = (int32_t)parse_offset((char*)val, strlen(val), &err);
-			Z_die_if(err, "Bad offset");
-		} else if (!strncmp("length", key, strlen(key))) {
-			fld->len = (uint16_t)parse_uint16(val, strlen(val), &err);
-			Z_die_if(err, "Bad length");
-		} else if (!strncmp("mask", key, strlen(key))) {
-			fld->mask = (uint8_t)parse_uint8(val, strlen(val), &err);
-			Z_die_if(err, "Bad mask");
-		} else if (!strncmp("value", key, strlen(key))) {
-			value = val;
-		} else if (!strncmp("add", key, strlen(key))) {
-			command.field.cmd = FLD_CMD_ADD;
-			command.field.name = val;
+	cmd = calloc(sizeof(xdpk_command_t), 1);
+	cmd->type = CMD_IF_TYPE;
+
+	for (yaml_node_pair_t *i_node_p = node->data.mapping.pairs.start; 
+			i_node_p < node->data.mapping.pairs.top; i_node_p++) {
+		yaml_node_t *key_node_p = 
+			yaml_document_get_node(document, i_node_p->key);
+		char *key = (char*)key_node_p->data.scalar.value;
+		yaml_node_t *val_node_p = 
+			yaml_document_get_node(document, i_node_p->value);
+		char *val = (char*)val_node_p->data.scalar.value;
+
+		if (!strncmp("add", key, strlen(key))) {
+			cmd->intf.cmdtype = IF_CMD_ADD;
+			cmd->intf.name = strdup(val);
 		} else if (!strncmp("show", key, strlen(key))) {
-			command.field.cmd = FLD_CMD_SHOW;
-			command.field.value = (uint8_t*)val;
+			cmd->intf.cmdtype = IF_CMD_SHOW;
+			cmd->intf.value = (uint8_t*)strdup(val);
+		} else if (!strncmp("del", key, strlen(key))) {
+			cmd->intf.cmdtype = IF_CMD_DEL;
+			cmd->intf.name = strdup(val);
 		} else {
 			Z_die_if(true, "Bad field: '%s'", key);
 		}
 	}
-	if (command.field.cmd == FLD_CMD_ADD) {
-		char * fldstr = xdpk_field_print(*fld);
-		Z_log(Z_inf, "field: %s", fldstr);
-		free(fldstr);
-		Z_die_if(!xdpk_field_valid(*fld), "Invalid field");
-		Z_die_if(!command.field.name || !strlen(command.field.name), "No name given for field");
+
+	cmds[0] = cmd;
+	*numcmd = 1;
+
+	return err_cnt;
+out:
+	delete_commands(&cmd, 1);
+	*cmds = NULL;
+	numcmd = 0;
+	return err_cnt;
+}
+
+static const char *field_usage = 
+	"field: { add: <name>, offt: <offt>, len: <len>, [mask: <mask>] }"
+	"\n"
+	"field: { show: <ere> }";
+
+int parse_field(yaml_document_t *document, yaml_node_t *node, 
+					xdpk_command_t **cmds, int *numcmd) 
+{
+	int err_cnt = 0;
+	xdpk_command_t *cmd = NULL;
+	Z_die_if(node->type != YAML_MAPPING_NODE, "Usage: '%s'", field_usage);
+
+	cmd = calloc(sizeof(xdpk_command_t), 1);
+	cmd->type = CMD_FLD_TYPE;
+	struct xdpk_field *fld = &(cmd->field.fld);
+	fld->mask = 0xff;
+
+	for (yaml_node_pair_t *i_node_p = node->data.mapping.pairs.start; 
+			i_node_p < node->data.mapping.pairs.top; i_node_p++) {
+		yaml_node_t *key_node_p = 
+			yaml_document_get_node(document, i_node_p->key);
+		char *key = (char*)key_node_p->data.scalar.value;
+		yaml_node_t *val_node_p = 
+			yaml_document_get_node(document, i_node_p->value);
+		char *val = (char*)val_node_p->data.scalar.value;
+		bool err = false;
+
+		if (!strncmp("offt", key, strlen(key))) {
+			fld->offt = parse_offset((char*)val, strlen(val), &err);
+			Z_die_if(err, "Invalid offset");
+		} else if (!strncmp("length", key, strlen(key))) {
+			fld->len = parse_uint16(val, strlen(val), &err);
+			Z_die_if(err, "Invalid length");
+		} else if (!strncmp("mask", key, strlen(key))) {
+			fld->mask = parse_uint8(val, strlen(val), &err);
+			Z_die_if(err, "Invalid mask");
+		} else if (!strncmp("value", key, strlen(key))) {
+			cmd->field.value = (uint8_t*)strdup(val);
+		} else if (!strncmp("add", key, strlen(key))) {
+			cmd->field.cmdtype = FLD_CMD_ADD;
+			cmd->field.name = strdup(val);
+		} else if (!strncmp("show", key, strlen(key))) {
+			cmd->field.cmdtype = FLD_CMD_SHOW;
+			cmd->field.value = (uint8_t*)strdup(val);
+		} else {
+			Z_die_if(true, "Bad field: '%s'", key);
+		}
 	}
 
-	*cmd = calloc(sizeof(xdpk_command_t), 1);
-	memcpy((void*)*cmd, (void*)&command, sizeof(xdpk_command_t));
-	// deep copy
-	if (command.field.name)
-		(*cmd)->field.name = strdup(command.field.name);
-	if (value)
-		(*cmd)->field.value = (uint8_t*)strdup(value);
+	switch(cmd->field.cmdtype) {
+	case FLD_CMD_ADD:
+		Z_die_if(!xdpk_field_valid(*fld), "Invalid field");
+		Z_die_if(!cmd->field.name || !strlen(cmd->field.name), 
+						"No name given for field");
+		break;
+	case FLD_CMD_SHOW:
+		break;
+	default:
+		Z_die_if(true, "Bad field command type");
+	}
+
+	cmds[0] = cmd;
 	*numcmd = 1;
+
+	return err_cnt;
 out:
-	Z_log(Z_inf, "parse_field err_cnt: %d\n", err_cnt);
-	
+	delete_commands(&cmd, 1);
+	*cmds = NULL;
+	numcmd = 0;
 	return err_cnt;
 }
 
-int parse_action(yaml_document_t *document, yaml_node_t *node, xdpk_command_t **cmd, int *numcmd) 
+static const char *action_usage = 
+	"action: { [add: <action>, out: <target>|add: <action>, "
+		"offt: <offt>, len: <len>, val:, <val>] }";
+
+int parse_action(yaml_document_t *document, yaml_node_t *node, 
+					xdpk_command_t **cmds, int *numcmd) 
 {
 	int err_cnt = 0;
-	Z_log(Z_inf, "parse node 'action'");
-	Z_die_if(node->type != YAML_MAPPING_NODE, "Top node not a map: '%s'", yaml_node_type(node));
-	char *value = NULL;
-	xdpk_command_t command;
-	memset((void*)&command, 0, sizeof(command));
+	xdpk_command_t *cmd = NULL;
+	Z_die_if(node->type != YAML_MAPPING_NODE, "Usage: '%s'", action_usage);
 
-	*cmd = calloc(sizeof(xdpk_command_t), 1);
-	memcpy((void*)*cmd, (void*)&command, sizeof(xdpk_command_t));
-	// deep copy
-	if (command.field.name)
-		(*cmd)->field.name = strdup(command.field.name);
-	if (value)
-		(*cmd)->field.value = (uint8_t*)strdup(value);
+	cmd = calloc(sizeof(xdpk_command_t), 1);
+	cmd->type = CMD_ACTION_TYPE;
+	struct xdpk_field *fld = &(cmd->field.fld);
+	fld->mask = 0xff;
+
+	for (yaml_node_pair_t *i_node_p = node->data.mapping.pairs.start; 
+			i_node_p < node->data.mapping.pairs.top; i_node_p++) {
+		yaml_node_t *key_node_p = 
+			yaml_document_get_node(document, i_node_p->key);
+		char *key = (char*)key_node_p->data.scalar.value;
+		yaml_node_t *val_node_p = 
+			yaml_document_get_node(document, i_node_p->value);
+		char *val = (char*)val_node_p->data.scalar.value;
+		bool err = false;
+		
+		if (!strncmp("add", key, strlen(key))) {
+			cmd->action.cmdtype = ACTION_CMD_ADD;
+			cmd->action.name = strdup(val);
+		} else if (!strncmp("out", key, strlen(key))) {
+			cmd->action.value = (uint8_t*)strdup(val);
+		} else if (!strncmp("offt", key, strlen(key))) {
+			fld->offt = parse_offset((char*)val, strlen(val), &err);
+			Z_die_if(err, "Invalid offset");
+		} else if (!strncmp("length", key, strlen(key))) {
+			fld->len = parse_uint16(val, strlen(val), &err);
+			Z_die_if(err, "Invalid length");
+		} else if (!strncmp("mask", key, strlen(key))) {
+			fld->mask = parse_uint8(val, strlen(val), &err);
+			Z_die_if(err, "Invalid mask");
+		} else if (!strncmp("val", key, strlen(key))) {
+			cmd->action.value = (uint8_t*)strdup(val);
+			Z_die_if(err, "Invalid value");
+		} else {
+			Z_die_if(true, "Bad field: '%s'", key);
+		}
+	}
+
+	cmds[0] = cmd;
 	*numcmd = 1;
 
+	return err_cnt;
 out:
-	Z_log(Z_inf, "parse_field err_cnt: %d\n", err_cnt);
-
+	delete_commands(&cmd, 1);
+	*cmds = NULL;
+	numcmd = 0;
 	return err_cnt;
 }
 
-int parse_match(yaml_document_t *document, yaml_node_t *node, xdpk_command_t **cmd, int *numcmd) 
+int parse_match(yaml_document_t *document, yaml_node_t *node, 
+					xdpk_command_t **cmds, int *numcmd) 
 {
 	int err_cnt = 0;
-	Z_log(Z_inf, "parse node 'match'");
-	Z_die_if(false, "");
+	xdpk_command_t *cmd = NULL;
+	Z_die_if(node->type != YAML_MAPPING_NODE, "Usage: '%s'", action_usage);
 
-	char *value = NULL;
-	xdpk_command_t command;
-	memset((void*)&command, 0, sizeof(command));
+	cmd = calloc(sizeof(xdpk_command_t), 1);
+	cmd->type = CMD_MATCH_TYPE;
 
-	*cmd = calloc(sizeof(xdpk_command_t), 1);
-	memcpy((void*)*cmd, (void*)&command, sizeof(xdpk_command_t));
-	// deep copy
-	if (command.field.name)
-		(*cmd)->field.name = strdup(command.field.name);
-	if (value)
-		(*cmd)->field.value = (uint8_t*)strdup(value);
+	for (yaml_node_pair_t *i_node_p = node->data.mapping.pairs.start; 
+			i_node_p < node->data.mapping.pairs.top; i_node_p++) {
+		yaml_node_t *key_node_p = 
+			yaml_document_get_node(document, i_node_p->key);
+		char *key = (char*)key_node_p->data.scalar.value;
+		yaml_node_t *val_node_p = 
+			yaml_document_get_node(document, i_node_p->value);
+		char *val = (char*)val_node_p->data.scalar.value;
+		
+		if (!strncmp("add", key, strlen(key))) {
+			cmd->match.cmdtype = MATCH_CMD_ADD;
+			cmd->match.name = strdup(val);
+		} else if (!strncmp("if", key, strlen(key))) {
+			cmd->match.intf = strdup(val);
+		} else if (!strncmp("dir", key, strlen(key))) {
+			if (!strncmp("in", val, strlen(val)))
+				cmd->match.dir = DIRECTION_IN;
+			else if (!strncmp("out", val, strlen(val)))
+				cmd->match.dir = DIRECTION_OUT;
+			else 
+				Z_die_if(true, "Invalid direction '%s'", val);
+		} else if (!strncmp("sel", key, strlen(key))) {
+			cmd->match.sel = NULL;
+		} else if (!strncmp("act", key, strlen(key))) {
+			cmd->match.action = strdup(val);
+		} else {
+			Z_die_if(true, "Bad field: '%s'", key);
+		}
+	}
+
+	cmds[0] = cmd;
 	*numcmd = 1;
 
+	return err_cnt;
 out:
-	Z_log(Z_inf, "parse_field err_cnt: %d\n", err_cnt);
-
+	delete_commands(&cmd, 1);
+	*cmds = NULL;
+	numcmd = 0;
 	return err_cnt;
 }
 
@@ -158,66 +308,6 @@ out:
 	return err_cnt;
 }
 
-/*	parse_commands
- * Parses a string and returns an array of xdpk_command.  Caller
- * owns the storage.  Returns 0 on success.
- */
-int parse_commands(char *cmdstr, size_t cmdlen, xdpk_command_t *cmds[], int *numcmds) 
-{
-	yaml_parser_t parser;
-	yaml_document_t document;
-	yaml_node_t *node;
-	yaml_node_t *key_node_p;
-	yaml_node_t *val_node_p;
-	bool err = false;
-	*numcmds = 0;
-	*cmds = NULL;
-	yaml_parser_initialize(&parser);
-	yaml_parser_set_input_string(&parser, (yaml_char_t*)cmdstr, cmdlen);
-	if (!yaml_parser_load(&parser, &document)) {
-		yaml_mark_t *mark = &parser.context_mark;
-		err = true;
-		Z_die_if(true, "Parse failed at position %d", mark->column);
-	}
-	node = yaml_document_get_root_node(&document);
-	Z_die_if(node->type != YAML_MAPPING_NODE, "Top node not a map: '%s'", yaml_node_type(node));
-	int topcnt = yaml_map_count(node);
-	Z_die_if(topcnt > 1, "Top node count > 1: %d", topcnt);
-
-	yaml_node_pair_t *i_node_p;
-	char *key;
-	char *val;
-	for (i_node_p = node->data.mapping.pairs.start; i_node_p < node->data.mapping.pairs.top; i_node_p++) {
-		key_node_p = yaml_document_get_node(&document, i_node_p->key);
-		key = (char*)key_node_p->data.scalar.value;
-		val_node_p = yaml_document_get_node(&document, i_node_p->value);
-		val = (char*)val_node_p->data.scalar.value;
-		
-		int keylen = strlen(key);
-		if (!strncmp("xdpk", key, keylen)) {
-			Z_die_if(parse_xdpk(&document, val_node_p, cmds, numcmds), "Failed parse of xdpk");
-		} else if (!strncmp("if", key, keylen)) {
-			printf("Checkpoint 1\n");
-			Z_die_if(parse_if(&document, val_node_p, cmds, numcmds), "Failed parse of if");
-			printf("Checkpoint 2\n");
-		} else if (!strncmp("field", key, keylen)) {
-			Z_die_if(parse_field(&document, val_node_p, cmds, numcmds), "Failed parse of field");
-		} else if (!strncmp("action", key, keylen)) {
-			Z_die_if(parse_action(&document, val_node_p, cmds, numcmds), "Failed parse of action");
-		} else if (!strncmp("match", key, keylen)) {
-			Z_die_if(parse_match(&document, val_node_p, cmds, numcmds), "Failed parse of match");
-		} else {
-			Z_die_if(true, "Bad key on top node: '%s'", key);
-		}
-	}
-	printf("Checkpoint 3\n");
-	char *cmdtmp = xdpk_command_print(cmds[0]);
-	printf("Checkpoint 4\n");
-	Z_log(Z_inf, "command: %s\n", cmdtmp);
-	if (cmdtmp) free(cmdtmp);
-out:
-	return (int)err;
-}
 
 /*	xdpk_command_print()
  * Allocate and return a string containing
@@ -230,15 +320,18 @@ char *xdpk_command_print(xdpk_command_t *cmd)
 	char * fldstr;
 	switch(cmd->type) {
 	case CMD_IF_TYPE:
-		switch(cmd->intf.cmd) {
+		switch(cmd->intf.cmdtype) {
 		case IF_CMD_ADD:
-			sprintf(buf, "IF_TYPE: { add: %s }", cmd->intf.name ? cmd->intf.name : "None");
+			sprintf(buf, "IF_TYPE: { add: %s }", 
+				cmd->intf.name ? cmd->intf.name : "None");
 			break;
 		case IF_CMD_SHOW:
-			sprintf(buf, "IF_TYPE: { show: %s }", cmd->intf.value ? cmd->intf.value : "None");
+			sprintf(buf, "IF_TYPE: { show: %s }", cmd->intf.value
+				? (char*)cmd->intf.value : "None");
 			break;
 		case IF_CMD_DEL:
-			sprintf(buf, "IF_TYPE: { del: %s }", cmd->intf.name ? cmd->intf.name : "None");
+			sprintf(buf, "IF_TYPE: { del: %s }", 
+				cmd->intf.name ? cmd->intf.name : "None");
 			break;
 		default:
 			sprintf(buf, "IF_TYPE: { BAD COMMAND TYPE }");
@@ -246,11 +339,12 @@ char *xdpk_command_print(xdpk_command_t *cmd)
 		}
 		break;
 	case CMD_FLD_TYPE:
-		switch(cmd->field.cmd) {
+		switch(cmd->field.cmdtype) {
 		case FLD_CMD_ADD: 
 			fldstr = xdpk_field_print(cmd->field.fld);
-			sprintf(buf, "FLD_TYPE: { name: %s, field: %s, value: '%s', hash: 0x%0lx }",
-				cmd->field.name, fldstr, cmd->field.value, cmd->field.hash);
+			sprintf(buf, "FLD_TYPE: { name: %s, field: %s, value:"
+				"'%s', hash: 0x%0lx }", cmd->field.name, fldstr, 
+				cmd->field.value, cmd->field.hash);
 			free(fldstr);
 			break;
 		case FLD_CMD_SHOW:
@@ -272,7 +366,6 @@ char *xdpk_command_print(xdpk_command_t *cmd)
 		break;
 	}
 
-	Z_log(Z_inf, "command_print: %s\n", buf);
 	char *rv = malloc(strlen(buf)+1);
 	strcpy(rv, buf);
 	
@@ -282,12 +375,16 @@ char *xdpk_command_print(xdpk_command_t *cmd)
 void delete_commands(xdpk_command_t **cmds, int numcmds)
 {
 	Z_die_if(cmds == NULL, "");
+
 	for (int i = 0; i < numcmds; i++) {
-		Z_die_if(cmds[i] == NULL, "");
+		if (cmds[i] == NULL)
+			continue;
 		switch (cmds[i]->type) {
 		case CMD_IF_TYPE:
 			if (cmds[i]->intf.name != NULL)
 				free(cmds[i]->intf.name);
+			if (cmds[i]->intf.value != NULL)
+				free(cmds[i]->intf.value);
 			break;
 		case CMD_FLD_TYPE:
 			if (cmds[i]->field.name != NULL)
@@ -298,14 +395,24 @@ void delete_commands(xdpk_command_t **cmds, int numcmds)
 		case CMD_ACTION_TYPE:
 			if (cmds[i]->action.name != NULL)
 				free(cmds[i]->action.name);
+			if (cmds[i]->action.value != NULL)
+				free(cmds[i]->action.value);
 			break;
 		case CMD_MATCH_TYPE:
 			if (cmds[i]->match.name != NULL)
 				free(cmds[i]->match.name);
+			if (cmds[i]->match.intf != NULL)
+				free(cmds[i]->match.intf);
+			if (cmds[i]->match.sel != NULL)
+				// delete the selector;
+			if (cmds[i]->match.action != NULL)
+				free(cmds[i]->match.action);
 			break;
 		default:
 			continue;
 		}
+
+		free(cmds[i]);
 	}
 
 out:
@@ -745,25 +852,23 @@ int64_t parse_32bit(const char *begin, size_t len, bool *err) {
 }
 
 /*	parse_uint8()
- * Parse an unsigned 8-bit integer from an ASCII string.  32-bits is returned
- * so that this doesn't have to account for overflow.  Caller can truncate.
+ * Parse an unsigned 8-bit integer from an ASCII string.
  */
-uint32_t parse_uint8(const char *begin, size_t len, bool *err) {
+uint8_t parse_uint8(const char *begin, size_t len, bool *err) {
 	int64_t num = parse_16bit(begin, len, err);
 	if ((num < 0) || (num > 0x00FF)) *err = true;
 	
-	return (uint32_t)num;
+	return (uint8_t)num;
 }
 
 /*	parse_uint16()
- * Parse an unsigned 16-bit integer from an ASCII string.  32-bits is returned
- * so that this doesn't have to account for overflow.  Caller can truncate.
+ * Parse an unsigned 16-bit integer from an ASCII string.  
  */
-uint32_t parse_uint16(const char *begin, size_t len, bool *err) {
+uint16_t parse_uint16(const char *begin, size_t len, bool *err) {
 	int64_t num = parse_16bit(begin, len, err);
 	if ((num < 0) || (num > 0xFFFF)) *err = true;
 	
-	return (uint32_t)num;
+	return (uint16_t)num;
 }
 
 /*	parse_int16()
