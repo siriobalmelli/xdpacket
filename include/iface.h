@@ -1,15 +1,18 @@
-#ifndef IFACE_H
-#define IFACE_H
+#ifndef iface_h_
+#define iface_h_
 
+/*	iface.h
+ * A data structure describing a physical interface on the machine,
+ * and the matcher chains associated with it.
+ */
 #include <xdpk.h> /* must always be first */
-
 #include <unistd.h>
 #include <stdint.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <Judy.h>
 #include <epoll_track.h>
-
 #include <matcher.h>
+
 
 /*	fixed-size strings FTW
 The largest address is '[0-9]{12}' + '\.{3}' + '\0'
@@ -52,14 +55,24 @@ struct iface {
 	Pvoid_t		JS_mch_in;
 };
 
-void	iface_free(struct iface *sk);
-struct	iface *iface_new(const char *ifname);
-void	iface_callback(int fd, uint32_t events, epoll_data_t context);
 
-Word_t		iface_mch_ins(struct iface *sk, bool in,
-				struct matcher *mch, const char *name);
-struct matcher	*iface_mch_del(struct iface *sk, bool in, const char *name);
-Word_t		iface_mch_iter(struct iface *sk, bool in,
+void		iface_free(struct iface *sk);
+struct iface	*iface_new(const char *ifname);
+void		iface_callback(int fd,
+				uint32_t events,
+				epoll_data_t context);
+
+Word_t		iface_mch_ins(struct iface *sk,
+				bool in,
+				struct matcher *mch,
+				const char *name);
+
+struct matcher	*iface_mch_del(struct iface *sk,
+				bool in,
+				const char *name);
+
+Word_t		iface_mch_iter(struct iface *sk,
+				bool in,
 				void(*exec)(struct matcher *mch));
 
-#endif /* IFACE_H */
+#endif /* iface_h_ */

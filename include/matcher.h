@@ -6,9 +6,6 @@
  * and associated manipulation functions.
  * (c) 2018 Alan Morrissett and Sirio Balmelli
  */
-
-/* TODO: @alan: merge matcher2.h into this one, clean it up, delete matcher2.h */
-
 #include <xdpk.h> /* must always be first */
 #include <Judy.h>
 #include <stdbool.h>
