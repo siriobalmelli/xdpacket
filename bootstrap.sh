@@ -27,7 +27,7 @@ for cc in $compilers; do
 done
 
 # Index codebase
-cscope -b -q -U -I ./include -s ./src -s ./util -s ./test
+cscope -b -q -U -I ./include -s ./src -s ./lib -s ./util -s ./test
 
 # run valgrind
 # TODO: won't fly on a 3.13.0-32-generic (ubuntu 12.04 EOL)

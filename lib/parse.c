@@ -29,7 +29,7 @@ int parse_commands(char *cmdstr, size_t cmdlen,
 	if (!yaml_parser_load(&parser, &document)) {
 		yaml_mark_t *mark = &parser.context_mark;
 		Z_die_if(true, "Invalid YAML, "
-				"parse failed at position %d", mark->column);
+				"parse failed at position %zu", mark->column);
 	}
 
 	yaml_node_t *root = yaml_document_get_root_node(&document);

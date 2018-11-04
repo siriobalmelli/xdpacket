@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 				parse_check = true;
 				break;
 			default:
-				fprintf(stderr, "Usage: %s [-n]\n");
+				fprintf(stderr, "Usage: %s [-n]\n", argv[0]);
 				exit(EXIT_FAILURE);
 			}
 		}

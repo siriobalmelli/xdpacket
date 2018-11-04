@@ -84,7 +84,6 @@ void interactive_command_check()
 			if (cmds != NULL)
 				delete_commands(&cmds, num_cmds);
 		}
-
 	}
 }
 
