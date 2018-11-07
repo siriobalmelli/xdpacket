@@ -7,7 +7,26 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-/*	xdpk_free()
+/*	hook_free()
+ */
+void hook_free(struct hook *hk)
+{
+
+}
+struct hook	*hook_new	();
+
+Word_t		hook_insert	(struct hook *hk,
+				struct matcher *mch,
+				const char *name);
+
+struct matcher	*hook_delete	(struct hook *hk,
+				const char *name);
+
+Word_t		hook_iter	(struct hook *hk,
+				void(*exec)(struct matcher *mch));
+
+
+/*	iface_free()
  */
 void iface_free(struct iface *sk)
 {
@@ -28,7 +47,7 @@ void iface_free(struct iface *sk)
 	free(sk);
 }
 
-/*	xdpk_open()
+/*	iface_open()
  * open an interface
  */
 struct iface *iface_new(const char *ifname)
@@ -130,7 +149,7 @@ void iface_callback(int fd, uint32_t events, epoll_data_t context)
 	}
 }
 
-/* iface_mch_ins()
+/*	iface_mch_ins()
  * Insert 'mch' into 'in' or 'out' list as 'name'.
  *
  * Returns 0 on success, -1 on error;
@@ -152,7 +171,7 @@ Word_t iface_mch_ins(struct iface *sk, bool in, struct matcher *mch, const char 
 	return 0;
 }
 
-/* iface_mch_del()
+/*	iface_mch_del()
  * Delete 'name' from 'in' or 'out' list.
  *
  * Returns the matcher at 'name' or NULL if nothing found to delete.
@@ -177,7 +196,7 @@ struct matcher	*iface_mch_del(struct iface *sk, bool in, const char *name)
 	return ret;
 }
 
-/* iface_mch_iter()
+/*	iface_mch_iter()
  * Iterate through all matchers of 'in' or 'out' list and call 'exec'
  * on each.
  * Returns number of matchers processed.

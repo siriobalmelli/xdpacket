@@ -10,22 +10,34 @@
 #include <matcher.h>
 #include "offset_defs.h"
 
-static const char *cmd_usage = 
-		"[xdpk:|if:|field:|action:|match:] { <command body> }";
+static const char *cmd_usage =
+	"[xdpk:|if:|field:|action:|match:] { <command body> }";
 
-/*	parse_commands
- * Parses a string and returns an array of xdpk_command.  Caller
- * owns the storage.  Returns 0 on success.
+static const char *if_usage =
+	"if: { [add: <name>|show: <ere>|del: <if>] }";
+
+static const char *field_usage =
+	"field: { add: <name>, offt: <offt>, len: <len>, [mask: <mask>] }"
+	"\n"
+	"field: { show: <ere> }";
+
+
+
+/*	parse_commands()
+ * Parses a string and returns an array of xdpk_command.
+ * Caller owns the storage.
+ * Returns 0 on success.
  */
 int parse_commands(char *cmdstr, size_t cmdlen, 
-				xdpk_command_t *cmds[], int *numcmds) 
+				xdpk_command_t **cmds, int *numcmds) 
 {
 	int err_cnt = 0;
 	yaml_parser_t parser;
-	yaml_document_t document;
 
 	yaml_parser_initialize(&parser);
 	yaml_parser_set_input_string(&parser, (yaml_char_t*)cmdstr, cmdlen);
+
+	yaml_document_t document;
 	if (!yaml_parser_load(&parser, &document)) {
 		yaml_mark_t *mark = &parser.context_mark;
 		Z_die_if(true, "Invalid YAML, "
@@ -33,12 +45,14 @@ int parse_commands(char *cmdstr, size_t cmdlen,
 	}
 
 	yaml_node_t *root = yaml_document_get_root_node(&document);
-	Z_die_if((root->type != YAML_MAPPING_NODE) || 
-		(yaml_map_count(root) > 1), "Usage: '%s'", cmd_usage);
+	Z_die_if((root->type != YAML_MAPPING_NODE)
+			|| (yaml_map_count(root) > 1)
+		, "Usage: '%s'", cmd_usage);
 
-	yaml_node_pair_t *i_node_p;
-	for (i_node_p = root->data.mapping.pairs.start; 
-			i_node_p < root->data.mapping.pairs.top; i_node_p++) {
+	for (yaml_node_pair_t *i_node_p = root->data.mapping.pairs.start;
+		i_node_p < root->data.mapping.pairs.top;
+		i_node_p++)
+	{
 		yaml_node_t *key_node_p = 
 			yaml_document_get_node(&document, i_node_p->key);
 		yaml_node_t *val_node_p = 
@@ -47,19 +61,19 @@ int parse_commands(char *cmdstr, size_t cmdlen,
 		int keylen = strlen(key);
 		
 		if (!strncmp("xdpk", key, keylen)) {
-			Z_die_if(parse_xdpk(&document, val_node_p, 
+			Z_die_if(parse_xdpk(&document, val_node_p,
 				cmds, numcmds), "Failed parse of xdpk");
 		} else if (!strncmp("if", key, keylen)) {
-			Z_die_if(parse_if(&document, val_node_p, 
+			Z_die_if(parse_if(&document, val_node_p,
 				cmds, numcmds), "Failed parse of if");
 		} else if (!strncmp("field", key, keylen)) {
-			Z_die_if(parse_field(&document, val_node_p, 
+			Z_die_if(parse_field(&document, val_node_p,
 				cmds, numcmds), "Failed parse of field");
 		} else if (!strncmp("action", key, keylen)) {
-			Z_die_if(parse_action(&document, val_node_p, 
+			Z_die_if(parse_action(&document, val_node_p,
 				cmds, numcmds), "Failed parse of action");
 		} else if (!strncmp("match", key, keylen)) {
-			Z_die_if(parse_match(&document, val_node_p, 
+			Z_die_if(parse_match(&document, val_node_p,
 				cmds, numcmds), "Failed parse of match");
 		} else {
 			Z_die_if(true, "Usage: '%s'", cmd_usage);
@@ -70,9 +84,9 @@ out:
 	return err_cnt;
 }
 
-static const char *if_usage = 
-	"if: { [add: <name>|show: <ere>|del: <if>] }";
 
+/*	parse_if()
+ */
 int parse_if(yaml_document_t *document, yaml_node_t *node, 
 					xdpk_command_t **cmds, int *numcmd) 
 {
@@ -83,8 +97,10 @@ int parse_if(yaml_document_t *document, yaml_node_t *node,
 	cmd = calloc(sizeof(xdpk_command_t), 1);
 	cmd->type = CMD_IF_TYPE;
 
-	for (yaml_node_pair_t *i_node_p = node->data.mapping.pairs.start; 
-			i_node_p < node->data.mapping.pairs.top; i_node_p++) {
+	for (yaml_node_pair_t *i_node_p = node->data.mapping.pairs.start;
+		i_node_p < node->data.mapping.pairs.top;
+		i_node_p++)
+	{
 		yaml_node_t *key_node_p = 
 			yaml_document_get_node(document, i_node_p->key);
 		char *key = (char*)key_node_p->data.scalar.value;
@@ -116,11 +132,6 @@ out:
 	numcmd = 0;
 	return err_cnt;
 }
-
-static const char *field_usage = 
-	"field: { add: <name>, offt: <offt>, len: <len>, [mask: <mask>] }"
-	"\n"
-	"field: { show: <ere> }";
 
 int parse_field(yaml_document_t *document, yaml_node_t *node, 
 					xdpk_command_t **cmds, int *numcmd) 
