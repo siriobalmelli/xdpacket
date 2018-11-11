@@ -1,4 +1,8 @@
-/* multiple possible interfaces */
+/*	xdpacket
+ * The direct, ad-hoc userland packet mangler with a sane YAML interface
+ *
+ * (c) 2018 Sirio Balmelli and Alan Morrissett
+ */
 #include <Judy.h>
 #include <nonlibc.h>
 #include <stdbool.h>
@@ -13,16 +17,13 @@ union {
 struct {
 	int32_t		offt;
 	uint16_t	len;
-	uint8_t		mask; /* must not be 0 for a field */
-	uint8_t		ff;  /* must be 0xff for a field */
+	uint8_t		mask;	/* must not be 0 for a field */
+	uint8_t		ff;	/* must be 0xff for a field */
 }__attribute__((packed));
-	uint64_t	bytes; /* can be used as "unique field ID" */
-	struct field_arr *arr; /* lower bits will *always* be zero (on any sane system) */
+	uint64_t	bytes;	/* can be used as "unique field ID" */
+	struct field_arr *arr;	/* lower bits will *always* be zero (on any sane system) */
 };
 }__attribute__((packed));
-
-extern Pvoid_t	J_fields; /* (struct field) -> (char *field_name) */
-extern Pvoid_t	JS_fields; /* (char *field_name) -> (struct field) */
 
 
 /*	field_arr
@@ -41,7 +42,7 @@ struct field_arr {
 
 
 /*	field_parse
- * canonical input for a new field: parse from yaml or insert inline in new() call
+ * Input params for a new field: parse from yaml or insert inline in call to new()
  */
 struct field_parse {
 	int32_t		offt;
@@ -49,25 +50,20 @@ struct field_parse {
 	uint8_t		mask;
 };
 
-/*	field_free()
- * Always pass any 'field' to this function - it may need deallocation.
- */
 void		field_free	(struct field fld);
-/*	field_new()
- * Return a new field or FIELD_NULL
- */
-struct field	field_new	(struct field_parse parse);
-/*	field_append()
- * Append 'add' to 'fld' (whether it is a field or already an array).
- */
 struct field	field_append	(struct field fld,
-				struct field add,
+				struct field_parse add,
 				bool logic_or);
+NLC_INLINE
+struct field	field_new(struct field_parse add)
+{
+	return field_append(FIELD_NULL, add, false);
+}
 
 
 /*	field_hash
  * Contains:
- * 1. the result of hashing either:
+ * 1. the result of hashing a packet against either:
  *	- one field
  *	- all fields in an AND list
  *	- one field (or sublist of fields) in an OR list
@@ -77,12 +73,12 @@ struct field	field_append	(struct field fld,
  */
 struct field_hash {
 	uint64_t	fnv64;
-	size_t		idx;
+	size_t		state;
 }__attribute__((packed));
 
 
 #define FIELD_HASH_BEGIN ((struct field_hash){ 0 })
-#define FIELD_HASH_IS_DONE(fhs) (fhs.idx == -1)
+#define FIELD_HASH_IS_DONE(fhs) (fhs.state == -1)
 
 
 /*	field_hash_next()
@@ -100,16 +96,28 @@ struct field_hash	field_hash_next	(struct field fld,
 					struct field_hash state);
 
 
+extern Pvoid_t	field_J;	/* (struct field) -> (char *field_name) */
+extern Pvoid_t	field_JS;	/* (char *field_name) -> (struct field) */
+extern Pvoid_t	field_hash_J;	/* (struct field) -> (uint64_t value_hash) -> (char *value_name) */
+
+
+
+struct action {
+};
+
 
 
 struct matcher {
-	size_t		field_cnt;
+	char		*name;
 	struct field	fields;
+	Pvoid_t		match_J;	/* (uint64_t value_hash) -> (struct action *action) */
 };
 
-struct action {
-	struct iface	*ifc;
-};
+
+extern Pvoid_t	matcher_JS;	/* (char *matcher_name) -> (struct matcher *matcher) */
+
+
+
 
 struct hook {
 	void		*rcu_matchers;
