@@ -2,36 +2,27 @@
 #include <Judy.h>
 #include <nonlibc.h>
 #include <stdbool.h>
+#include <yaml.h>
 
 
 /*	field
  * This is expressly a uint64_t size and meant to be passed by *value*.
- * Passing by value *eliminates* memory management (refcounts)
- * and pointer chasing.
  */
 struct field {
 union {
 struct {
 	int32_t		offt;
 	uint16_t	len;
-	uint8_t		mask; /* must not be 0 */
-	uint8_t		ff;  /* must be 0xff */
+	uint8_t		mask; /* must not be 0 for a field */
+	uint8_t		ff;  /* must be 0xff for a field */
 }__attribute__((packed));
 	uint64_t	bytes; /* can be used as "unique field ID" */
 	struct field_arr *arr; /* lower bits will *always* be zero (on any sane system) */
 };
 }__attribute__((packed));
 
-/*	field_meta
- * The "master description" of a field, so the user can refer to it by name.
- */
-struct field_meta {
-	char		*name;
-	struct field	field;
-};
-
-extern Pvoid_t	J_fields; /* (uint64_t field_bytes) -> (char *field_name) */
-extern Pvoid_t	JS_fields; /* (char *field_name) -> (uint64_t field_bytes) */
+extern Pvoid_t	J_fields; /* (struct field) -> (char *field_name) */
+extern Pvoid_t	JS_fields; /* (char *field_name) -> (struct field) */
 
 
 /*	field_arr
@@ -49,22 +40,29 @@ struct field_arr {
 #define FIELD_IS_NULL(fld) (fld.bytes != 0)
 
 
+/*	field_parse
+ * canonical input for a new field: parse from yaml or insert inline in new() call
+ */
+struct field_parse {
+	int32_t		offt;
+	uint16_t	len;
+	uint8_t		mask;
+};
+
 /*	field_free()
  * Always pass any 'field' to this function - it may need deallocation.
  */
-void		field_free		(struct field fld);
+void		field_free	(struct field fld);
 /*	field_new()
  * Return a new field or FIELD_NULL
  */
-struct field	field_new		(size_t offt,
-					size_t len,
-					uint8_t mask);
+struct field	field_new	(struct field_parse parse);
 /*	field_append()
  * Append 'add' to 'fld' (whether it is a field or already an array).
  */
-struct field	field_append		(struct field fld,
-					struct field add,
-					bool logic_or);
+struct field	field_append	(struct field fld,
+				struct field add,
+				bool logic_or);
 
 
 /*	field_hash
@@ -101,7 +99,6 @@ struct field_hash	field_hash_next	(struct field fld,
 					void *packet, size_t len,
 					struct field_hash state);
 
-char			*field_prn	(struct field ptr);
 
 
 
@@ -124,3 +121,24 @@ struct iface {
 	struct hook	*out;
 };
 extern Pvoid_t	JS_ifaces; /* name -> (struct iface *) */
+
+
+
+/*
+ *	parsing and printing
+ */
+enum parse_type {
+	PARSE_INVALID = 0,
+	PARSE_FIELD
+};
+
+struct parse {
+	enum parse_type		type;
+union {
+	struct field_parse	field;
+};
+};
+
+int			parse_field	(yaml_document_t *document, yaml_node_t *node,
+					struct parse **cmds, int *numcmd);
+char			*dump_field	(struct field ptr);
