@@ -10,6 +10,12 @@
 
 
 /*	field
+ * The notion of a "field" is simply a range of bytes, with an optional mask,
+ * which can be used to:
+ * - specify which parts of a packet to hash, when matching incoming packets.
+ * - specify which bytes to write to (and possibly also read from),
+ *	when mangling packet contents.
+ *
  * This is expressly a uint64_t size and meant to be passed by *value*.
  */
 struct field {
@@ -17,28 +23,29 @@ union {
 struct {
 	int32_t		offt;
 	uint16_t	len;
-	uint8_t		mask;	/* must not be 0 for a field */
+	uint8_t		mask;	/* default 0xff, must no be 0 for a field */
 	uint8_t		ff;	/* must be 0xff for a field */
 }__attribute__((packed));
-	uint64_t	bytes;	/* can be used as "unique field ID" */
+	uint64_t	bytes;
 	struct field_arr *arr;	/* lower bits will *always* be zero (on any sane system) */
 };
 }__attribute__((packed));
 
 
 /*	field_arr
- * Array of fields.
- * Their logical relationship is AND, unless 'logic_or' is specified.
+ * An opaque 'struct field' (above) may actually be a pointer to a packed
+ * array of fields; meaning that *multiple* fields are to be hashed
+ * in sequence.
  */
 struct field_arr {
-	uint32_t	len;
-	bool		logic_or;
+	size_t		len;
 	struct field	arr[];
 };
 
 
 #define FIELD_NULL ((struct field){ .bytes = 0 })
 #define FIELD_IS_NULL(fld) (fld.bytes != 0)
+#define FIELD_IS_ARRAY(fld) (fld.ff == 0)
 
 
 /*	field_parse
@@ -48,105 +55,69 @@ struct field_parse {
 	int32_t		offt;
 	uint16_t	len;
 	uint8_t		mask;
-};
+} __attribute__((packed));
 
-void		field_free	(struct field fld);
-struct field	field_append	(struct field fld,
-				struct field_parse add,
-				bool logic_or);
+
+/*	field_free()
+ * A field may be a *pointer* to an allocated field array;
+ * always dispose of fields by calling field_free.
+ */
 NLC_INLINE
-struct field	field_new(struct field_parse add)
+void		field_free	(struct field fld)
 {
-	return field_append(FIELD_NULL, add, false);
+	if (!FIELD_IS_NULL(fld) && FIELD_IS_ARRAY(fld))
+		free(fld.arr);
 }
 
-
-/*	field_hash
- * Contains:
- * 1. the result of hashing a packet against either:
- *	- one field
- *	- all fields in an AND list
- *	- one field (or sublist of fields) in an OR list
- * 2. a 'state' variable used to:
- *	- indicate completion (-1)
- *	- continue with the the next field/field group
+/*	field_id()
+ * Returns the unique ID of a field or field array,
+ * which is the fnv1a-64 hash of field parameters.
+ * This ID is the *starting* seed used matching packets (see field_hash()),
+ * so that the resulting hash represents a *unique* field+content fingerprint.
  */
-struct field_hash {
-	uint64_t	fnv64;
-	size_t		state;
-}__attribute__((packed));
+uint64_t	field_id	(struct field fld);
 
-
-#define FIELD_HASH_BEGIN ((struct field_hash){ 0 })
-#define FIELD_HASH_IS_DONE(fhs) (fhs.state == -1)
-
-
-/*	field_hash_next()
- * Return the result of hashing the "next" field (according to 'state')
- * in 'fld' against 'packet' of 'len' bytes.
- *
- * The returned "state" variable must be passed
- * to successive calls of field_hash_next(),
- * until either:
- * 1. the 'fnv64' in "state" matches an action
- * 2. FIELD_HASH_IS_DONE(state) is true
+/*	field_append()
+ * Appends 'add' to 'fld' (which may be a field or array),
+ * Writes the fnv1a-64 hash of field contents to '*field_id_out'.
  */
-struct field_hash	field_hash_next	(struct field fld,
-					void *packet, size_t len,
-					struct field_hash state);
+struct field	field_append	(struct field fld,
+				struct field_parse add,
+				uint64_t *field_id_out);
+
+/*	field_new()
+ */
+NLC_INLINE
+struct field	field_new	(struct field_parse add,
+				uint64_t *field_id_out)
+{
+	return field_append(FIELD_NULL, add, field_id_out);
+}
+
+/*	field_hash()
+ * Hashes 'packet' of 'len' bytes against 'fld'.
+ * NOTE: 'fld' may be a single field or a field list.
+ * Returns non-zero on failure to hash
+ * (e.g. packet too short to allow for the offset specified in 'fld').
+ * On success, sets '*out_hash' to the hashed value,
+ * otherwise its value is undefined (possibly mangled).
+ */
+int	field_hash		(struct field fld,
+				void *packet, size_t len,
+				uint64_t *out_hash);
 
 
-extern Pvoid_t	field_J;	/* (struct field) -> (char *field_name) */
-extern Pvoid_t	field_JS;	/* (char *field_name) -> (struct field) */
-extern Pvoid_t	field_hash_J;	/* (struct field) -> (uint64_t value_hash) -> (char *value_name) */
+extern Pvoid_t	field_J;	/* (struct field field) -> (char *field_name) */
+extern Pvoid_t	field_JS;	/* (char *field_name) -> (struct field field) */
 
 
 
 struct action {
+	/* TODO: implement */
 };
 
 
 
-struct matcher {
-	char		*name;
-	struct field	fields;
-	Pvoid_t		match_J;	/* (uint64_t value_hash) -> (struct action *action) */
+struct node {
+	struct field	match;
 };
-
-
-extern Pvoid_t	matcher_JS;	/* (char *matcher_name) -> (struct matcher *matcher) */
-
-
-
-
-struct hook {
-	void		*rcu_matchers;
-};
-
-struct iface {
-	char		*name;
-	struct hook	*in;
-	struct hook	*out;
-};
-extern Pvoid_t	JS_ifaces; /* name -> (struct iface *) */
-
-
-
-/*
- *	parsing and printing
- */
-enum parse_type {
-	PARSE_INVALID = 0,
-	PARSE_FIELD
-};
-
-struct parse {
-	enum parse_type		type;
-union {
-	struct field_parse	field;
-};
-};
-
-int			parse_field	(yaml_document_t *document, yaml_node_t *node,
-					struct parse **cmds, int *numcmd);
-char			*dump_field	(struct field ptr);

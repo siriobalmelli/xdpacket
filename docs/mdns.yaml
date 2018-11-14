@@ -5,103 +5,80 @@
 # eth1 == 10.1.1.1/24 -> chromecast 10.1.1.20
 xdpk:
   # field: a set of bytes to be hashed or written
-  - field: ip src addr
+  - field: ip proto
+    offt: 25
+    len: 1
+  - field: ip src
     offt: 26
     len: 4
-  - field: ip dst addr
+  - field: ip dst
     offt: 32
     len: 4
   - field: mdns rec
-    offt: -14
+    offt: 377
     len: 2
   - field: mdns rec addr
     offt: -4
     len: 4
 
-
-  # tag: a field and some corresponding value (to be hashed or written)
-  - tag: from client
-    field: ip src addr
-    value: 192.168.1.20
-  - tag: to client
-    field: ip dst addr
-    value: 192.168.1.20
-
-  - tag: from chrome
-    field: ip src addr
-    value: 10.1.1.20
-  - tag: to chrome
-    field: ip dst addr
-    value: 10.1.1.20
-
-  - tag: to mdns
-    field: ip dst addr
-    value: 224.0.0.251
-  - tag: mdns A
-    field: mdns rec
-    value: 0x0001
-  - tag: mdns A val
-    field: mdns rec val
-    subst: ip src addr
-
-  - tag: from client if
-    field: ip src addr
-    value: 192.168.1.1/24
-  - tag: from chrome if
-    field: ip src addr
-    value: 10.1.1.1/24
-
-
-  # action: some series of tranformations to be applied to a packet
-  - action: to chrome
-    seq:
-      - mangle: to chrome
-      - mangle: from chrome if
-      - out: eth1
-  - action: to chrome mdns
-    seq:
-      - mangle: to mdns
-      - mangle: from chrome if
+  - node: client unicast
+    match:
+      - in: eth0
+      - ip proto: 0x1  ## ICMP
+      - ip src: 192.168.1.20
+      - ip dst: 192.168.1.1
+    action:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.20
       - out: eth1
 
-  - action: to client
-    seq:
-      - mangle: to client
-      - mangle: from client if
+  - node: client 2 unicast
+    match:
+      - in: eth0
+      - ip proto: 0x1  ## ICMP
+      - ip src: 192.168.1.21
+      - ip dst: 192.168.1.1
+    action:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.21
+      - out: eth1
+
+  - node: chrome unicast
+    match:
+      - in: eth1
+      - ip src: 10.1.1.20
+      - ip dst: 10.1.1.1
+    action:
+      - ip src: 192.168.1.20
+      - ip dst: 192.168.1.1
       - out: eth0
-  - action: to client mdns
-    seq:
-      - mangle: to mdns
-      - mangle: from client if
+
+  - node: client mdns
+    field:
+      - in: eth0
+      - ip src: 192.168.1.20
+      - ip dst: 224.0.0.251
+    action:
+      - ip src: 10.1.1.20
+      - out: eth1
+
+  - node: chrome mdns A
+    field:
+      - in: eth1
+      - ip src: 10.1.1.20
+      - ip dst: 224.0.0.251
+      - mdns rec: 0x0001  # DNS A record
+    action:
+      - ip src: 192.168.1.20
+      - mdns rec addr: 192.168.1.20
       - out: eth0
-  - action: to client mdns A
-    seq:
-      - mangle: to mdns
-      - mangle: from client if
-      - mangle: mdns A val
+
+  # MUST be matched AFTER preceding (more specific) 'A' rule
+  - node: chrome mdns
+    field:
+      - in: eth1
+      - ip src: 10.1.1.20
+      - ip dst: 224.0.0.251
+    action:
+      - ip src: 192.168.1.20
       - out: eth0
-
-
-  # matcher: a series of tags to match (in an and/or relationship)
-  # matched with an action
-  - matcher: joe
-    and:
-      - icmp
-      - from joe
-    do: spoof joe
-  - matcher: bill
-    and:
-      - icmp
-      - from bill
-    do: spoof bill
-
-
-  # iface
-  # a physical interface, with a list of matchers for 'in' and 'out' directions
-  - iface: eth0
-    in:
-      - joe
-  - iface: eth1
-    in:
-      - bill
-...
