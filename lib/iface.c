@@ -7,25 +7,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-/*	hook_free()
- */
-void hook_free(struct hook *hk)
-{
-
-}
-struct hook	*hook_new	();
-
-Word_t		hook_insert	(struct hook *hk,
-				struct matcher *mch,
-				const char *name);
-
-struct matcher	*hook_delete	(struct hook *hk,
-				const char *name);
-
-Word_t		hook_iter	(struct hook *hk,
-				void(*exec)(struct matcher *mch));
-
-
 /*	iface_free()
  */
 void iface_free(struct iface *sk)
@@ -34,12 +15,8 @@ void iface_free(struct iface *sk)
 		return;
 	Z_log(Z_inf, "close "XDPK_SOCK_PRN(sk));
 
-	/* clean up matchers */
-	iface_mch_iter(sk, true, matcher_free);
-	iface_mch_iter(sk, false, matcher_free);
-	int Rc_word;
-	JSLFA(Rc_word, sk->JS_mch_in);
-	JSLFA(Rc_word, sk->JS_mch_out);
+	hook_free(sk->in);
+	hook_free(sk->out);
 
 	if (sk->fd != -1)
 		close(sk->fd);
@@ -57,6 +34,13 @@ struct iface *iface_new(const char *ifname)
 		ret = calloc(sizeof(struct iface), 1)
 		), "alloc size %zu", sizeof(struct iface));
 	snprintf(ret->name, IFNAMSIZ, "%s", ifname);
+
+	/* hooks */
+	Z_die_if(!(
+		ret->in = hook_new()
+		) || !(
+		ret->out = hook_new()
+		), "");
 
 	/* socket */
 	ret->fd = -1;	
@@ -128,95 +112,8 @@ void iface_callback(int fd, uint32_t events, epoll_data_t context)
 
 	/* handle packet */
 	struct iface *sk = (struct iface *)context.ptr;
-
-	/* get proper matcher list, increment counters */
-	Pvoid_t *array;
-	if (addr.sll_pkttype == PACKET_OUTGOING) {
-		array = &sk->JS_mch_out;
-		sk->out_cnt++;
-	} else {
-		array = &sk->JS_mch_in;
-		sk->in_cnt++;
-	}
-
-	Word_t *PValue;
-	uint8_t index[MAXLINELEN] = { '\0' };
-	JSLF(PValue, *array, index);
-	while (PValue) {
-		if (matcher_do((struct matcher *)(*PValue), buf, res))
-			break;
-		JSLN(PValue, *array, index);
-	}
-}
-
-/*	iface_mch_ins()
- * Insert 'mch' into 'in' or 'out' list as 'name'.
- *
- * Returns 0 on success, -1 on error;
- * attempting to insert a duplicate item is an error.
- */
-Word_t iface_mch_ins(struct iface *sk, bool in, struct matcher *mch, const char *name)
-{
-	Pvoid_t *array;
-	if (in)
-		array = &sk->JS_mch_in;
-	else
-		array = &sk->JS_mch_out;
-
-	Word_t *PValue;
-	JSLI(PValue, *array, (uint8_t*)name);
-	if (*PValue)
-		return -1;
-	*PValue = (Word_t)mch;
-	return 0;
-}
-
-/*	iface_mch_del()
- * Delete 'name' from 'in' or 'out' list.
- *
- * Returns the matcher at 'name' or NULL if nothing found to delete.
- * Caller is responsible for use or free() of returned matcher.
- */
-struct matcher	*iface_mch_del(struct iface *sk, bool in, const char *name)
-{
-	Pvoid_t *array;
-	if (in)
-		array = &sk->JS_mch_in;
-	else
-		array = &sk->JS_mch_out;
-
-	Word_t *PValue;
-	JSLG(PValue, *array, (uint8_t *)name);
-	if (!PValue)
-		return NULL;
-
-	struct matcher *ret = (void *)(*PValue);
-	int Rc_int; /* we already know it exists, ignore this */
-	JSLD(Rc_int, *array, (uint8_t*)name);
-	return ret;
-}
-
-/*	iface_mch_iter()
- * Iterate through all matchers of 'in' or 'out' list and call 'exec'
- * on each.
- * Returns number of matchers processed.
- */
-Word_t iface_mch_iter(struct iface *sk, bool in, void(*exec)(struct matcher *mch))
-{
-	Pvoid_t *array;
-	if (in)
-		array = &sk->JS_mch_in;
-	else
-		array = &sk->JS_mch_out;
-
-	Word_t *PValue;
-	uint8_t index[MAXLINELEN] = { '\0' };
-	JSLF(PValue, *array, index);
-	Word_t ret = 0;
-	while (PValue) {
-		exec((struct matcher *)(*PValue));
-		JSLN(PValue, *array, index);
-		ret++;
-	}
-	return ret;
+	struct hook *hk = sk->in;
+	if (addr.sll_pkttype == PACKET_OUTGOING)
+		hk = sk->out;
+	hook_callback(hk, buf, res);
 }

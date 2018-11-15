@@ -22,6 +22,10 @@ struct hook {
 void		hook_free	(struct hook *hk);
 struct hook	*hook_new	();
 
+void		hook_callback	(struct hook *hk,
+				void *buf,
+				size_t len);
+
 Word_t		hook_insert	(struct hook *hk,
 				struct matcher *mch,
 				const char *name);

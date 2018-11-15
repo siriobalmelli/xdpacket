@@ -1,4 +1,5 @@
 lib_files = [
+	'hook.c',
     'iface.c',
     'field.c',
     'matcher.c',
