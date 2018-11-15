@@ -55,7 +55,7 @@ struct field_parse {
 	int32_t		offt;
 	uint16_t	len;
 	uint8_t		mask;
-} __attribute__((packed));
+};
 
 
 /*	field_free()
@@ -112,8 +112,32 @@ extern Pvoid_t	field_JS;	/* (char *field_name) -> (struct field field) */
 
 
 
+enum action_type {
+	ACTION_INVALID = 0,
+	ACTION_MANGLE = 1,	/* value -> field */
+	ACTION_COPY = 2,	/* field -> field */
+	ACTION_OUTPUT = 3	/* out_interface */
+};
+
+struct action_parse {
+	char	*source;
+};
+
 struct action {
-	/* TODO: implement */
+	enum action_type	type;
+	union {
+		struct field		field;
+		uint64_t		u64_be;
+		uint32_t		u32_be;
+		uint16_t		u16_be;
+		uint8_t			u8;
+		uint8_t			bytes[4];
+		char			*mem;
+	}			source;
+	union {
+		/* TODO: interface */
+		struct field		field;
+	}			dest;
 };
 
 

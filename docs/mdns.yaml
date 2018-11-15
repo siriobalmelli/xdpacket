@@ -28,8 +28,8 @@ xdpk:
       - ip src: 192.168.1.20
       - ip dst: 192.168.1.1
     action:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.20
+      - set: {ip src: 10.1.1.1}
+      - set: {ip dst: 10.1.1.20}
       - out: eth1
 
   - node: client 2 unicast
@@ -39,8 +39,8 @@ xdpk:
       - ip src: 192.168.1.21
       - ip dst: 192.168.1.1
     action:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.21
+      - set: {ip src: 10.1.1.1}
+      - set: {ip dst: 10.1.1.21}
       - out: eth1
 
   - node: chrome unicast
@@ -49,8 +49,8 @@ xdpk:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
     action:
-      - ip src: 192.168.1.20
-      - ip dst: 192.168.1.1
+      - set: {ip src: 192.168.1.20}
+      - set: {ip dst: 192.168.1.1}
       - out: eth0
 
   - node: client mdns
@@ -59,7 +59,7 @@ xdpk:
       - ip src: 192.168.1.20
       - ip dst: 224.0.0.251
     action:
-      - ip src: 10.1.1.20
+      - set: {ip src: 10.1.1.20}
       - out: eth1
 
   - node: chrome mdns A
@@ -69,8 +69,8 @@ xdpk:
       - ip dst: 224.0.0.251
       - mdns rec: 0x0001  # DNS A record
     action:
-      - ip src: 192.168.1.20
-      - mdns rec addr: 192.168.1.20
+      - set: {ip src: 192.168.1.20}
+      - set: {mdns rec addr: 192.168.1.20}
       - out: eth0
 
   # MUST be matched AFTER preceding (more specific) 'A' rule
@@ -80,5 +80,5 @@ xdpk:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
     action:
-      - ip src: 192.168.1.20
+      - set: {ip src: 192.168.1.20}
       - out: eth0
