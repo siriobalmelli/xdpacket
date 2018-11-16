@@ -8,6 +8,8 @@
  * (c) 2018 Sirio Balmelli
  */
 
+#include <yaml.h>
+
 
 
 #endif /* parse2_h_ */

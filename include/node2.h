@@ -17,6 +17,7 @@
  */
 struct node_parse {
 	char			*iface_name; /* input interface */
+	unsigned int		seq		/* unique sequence _and_ id */;
 	size_t			match_cnt;
 	struct match_parse	*matches;
 	size_t			xform_cnt;

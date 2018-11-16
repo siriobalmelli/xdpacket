@@ -103,16 +103,22 @@ int main()
 	Z_die_if(!
 		yaml_parser_initialize(&parser)
 		, "");
-	yaml_parser_set_input_file(&parser, stdin);
 
-	/* a non-zero return indicates we did not error */
-	while (yaml_parser_parse(&parser, &event)) {
-		Z_log(Z_inf, "valid event");
-		if (event.type == YAML_STREAM_END_EVENT) {
-			Z_log(Z_inf, "end token");
-			break;
+	unsigned char buf[PIPE_BUF];
+	int infd = fileno(stdin);
+	ssize_t ret;
+
+	while ((ret = read(infd, buf, PIPE_BUF)) > 0) {
+		yaml_parser_set_input_string(&parser, buf, ret);
+		/* a non-zero return indicates we did not error */
+		while (yaml_parser_parse(&parser, &event)) {
+			Z_log(Z_inf, "valid event");
+			if (event.type == YAML_STREAM_END_EVENT) {
+				Z_log(Z_inf, "end token");
+				break;
+			}
+			yaml_event_delete(&event);
 		}
-		yaml_event_delete(&event);
 	}
 	yaml_parser_delete(&parser);
 #endif
