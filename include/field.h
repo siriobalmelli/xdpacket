@@ -7,7 +7,7 @@
  *
  * (c) 2018 Alan Morrissett and Sirio Balmelli
  */
-#include <xdpk.h> /* must always be first */
+#include <xdpacket.h> /* must always be first */
 #include <nonlibc.h>
 #include <stdint.h>
 #include <stdbool.h>

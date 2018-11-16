@@ -1,31 +1,29 @@
 #ifndef iface_h_
 #define iface_h_
 
-/*	iface.h
- * A data structure describing a physical interface on the machine,
- * and the matcher chains associated with it.
+/*	iface2.h
+ * An iface is a promiscuous socket on an actual system network interface.
+ * The entry point for packet handling is iface_callback() invoked by epoll()
+ * on data ready to read/write.
+ * (c) 2018 Sirio Balmelli
  */
-#include <xdpk.h> /* must always be first */
+
+#include <xdpacket.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <netinet/in.h> /* sockaddr_in */
-#include <Judy.h>
 #include <epoll_track.h>
 #include <hook.h>
 
 
-/*	fixed-size strings FTW
-The largest address is '[0-9]{12}' + '\.{3}' + '\0'
-*/
-#define XDPK_ADDR_MAX 16
+/*	iface_parse
+ * Parse user-supplied interface parameters.
+ */
+struct iface_parse {
+	char		*name;
+};
 
-#define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
-#define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
-#define XDPK_SOCK_PRN(sk_p) "%d: %s %s "XDPK_MAC_PROTO" mtu %d", \
-		sk_p->ifindex, sk_p->name, sk_p->ip_prn, \
-		sk_p->hwaddr.sa_data[0], sk_p->hwaddr.sa_data[1], sk_p->hwaddr.sa_data[2], \
-		sk_p->hwaddr.sa_data[3], sk_p->hwaddr.sa_data[4], sk_p->hwaddr.sa_data[5], \
-		sk_p->mtu
+extern Pvoid_t	iafce_parse_J; /* (char *iface_name) -> (struct iface_parse *parse) */
 
 
 /*	iface
@@ -40,13 +38,13 @@ The largest address is '[0-9]{12}' + '\.{3}' + '\0'
  */
 struct iface {
 	int		fd;
-	char		ip_prn[XDPK_ADDR_MAX];
+	char		ip_prn[MAXLINELEN];
 	/* taken directly from struct ifreq: */
 	int		ifindex;
 	int		mtu;
 	struct sockaddr	hwaddr;
 	struct sockaddr_in addr;
-	char		name[XDPK_ADDR_MAX];
+	char		name[MAXLINELEN];
 
 	struct hook	*in;
 	struct hook	*out;

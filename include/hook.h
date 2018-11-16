@@ -4,7 +4,7 @@
  * A 'hook' is the top-level of the packet matching stack.
  *  (c) 2018 Sirio Balmelli
  */
-#include <xdpk.h> /* must always be first */
+#include <xdpacket.h> /* must always be first */
 #include <matcher.h>
 
 

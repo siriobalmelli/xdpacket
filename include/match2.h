@@ -5,6 +5,7 @@
  * Describes use of fields to hash-match data inside a packet.
  * (c) 2018 Sirio Balmelli
  */
+
 #include <field2.h>
 #include <Judy.h>
 
@@ -17,8 +18,7 @@ struct match_parse {
 	char		*value;
 };
 
-
-extern Pvoid_t	match_parse_J;
+extern Pvoid_t	match_parse_J; /* (uint64_t match_id) -> (struct match_parse *parse) */
 
 
 #endif /* match2_h_ */

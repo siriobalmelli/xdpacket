@@ -7,8 +7,10 @@
  * Relies on fields for *all* specification of data location+size
  * (c) 2018 Sirio Balmelli
  */
+
 #include <stdint.h>
 #include <field2.h>
+#include <match2.h>
 
 
 enum xform_type {

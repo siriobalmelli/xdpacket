@@ -5,7 +5,7 @@
  * A data structure for representing a packet
  * (c) 2018 Alan Morrissett and Sirio Balmelli
  */
-#include <xdpk.h> /* must always be first */
+#include <xdpacket.h> /* must always be first */
 #include <field.h>
 #include <stdint.h>
 

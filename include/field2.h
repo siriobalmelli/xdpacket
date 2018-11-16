@@ -2,17 +2,13 @@
 #define field2_h_
 
 /*	field2.h
- *
- * Fast-path structures for fields.
- *
- * The notion of a "field" is simply a range of bytes, with an optional mask,
- * which can be used to:
+ * A "field" is a range of bytes, with an optional mask, which can be used to:
  * - specify which parts of a packet to hash, when matching incoming packets.
  * - specify which bytes to write to (and possibly also read from),
  *	when mangling packet contents.
- *
  * (c) 2018 Sirio Balmelli
  */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <nonlibc.h>
@@ -29,8 +25,8 @@ struct field_parse {
 	uint8_t		mask;
 };
 
-extern Pvoid_t	field_id_parse;	/* (uint64_t field_id) -> (struct field_parse *parse) */
 extern Pvoid_t	field_name_parse; /* (char *field_name) -> (struct field_parse *parse) */
+extern Pvoid_t	field_id_parse;	/* (uint64_t field_id) -> (struct field_parse *parse) */
 
 
 /*	field

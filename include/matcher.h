@@ -6,7 +6,7 @@
  * and associated manipulation functions.
  * (c) 2018 Alan Morrissett and Sirio Balmelli
  */
-#include <xdpk.h> /* must always be first */
+#include <xdpacket.h> /* must always be first */
 #include <Judy.h>
 #include <stdbool.h>
 
