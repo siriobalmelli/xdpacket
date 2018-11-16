@@ -16,16 +16,21 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <nonlibc.h>
+#include <Judy.h>
 
 
 /*	field_parse
- * Input params for a new field: parse from yaml or insert inline in call to new()
+ * User-supplied parameters describing a field.
  */
 struct field_parse {
-	int32_t		offt;
-	uint16_t	len;
+	char		*name;
+	ssize_t		offt;
+	size_t		len;
 	uint8_t		mask;
 };
+
+extern Pvoid_t	field_id_parse;	/* (uint64_t field_id) -> (struct field_parse *parse) */
+extern Pvoid_t	field_name_parse; /* (char *field_name) -> (struct field_parse *parse) */
 
 
 /*	field
