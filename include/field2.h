@@ -1,22 +1,39 @@
-/*	xdpacket
- * The direct, ad-hoc userland packet mangler with a sane YAML interface
+#ifndef field2_h_
+#define field2_h_
+
+/*	field2.h
  *
- * (c) 2018 Sirio Balmelli and Alan Morrissett
- */
-#include <Judy.h>
-#include <nonlibc.h>
-#include <stdbool.h>
-#include <yaml.h>
-
-
-/*	field
+ * Fast-path structures for fields.
+ *
  * The notion of a "field" is simply a range of bytes, with an optional mask,
  * which can be used to:
  * - specify which parts of a packet to hash, when matching incoming packets.
  * - specify which bytes to write to (and possibly also read from),
  *	when mangling packet contents.
  *
+ * (c) 2018 Sirio Balmelli
+ */
+#include <stdint.h>
+#include <stdlib.h>
+#include <nonlibc.h>
+
+
+/*	field_parse
+ * Input params for a new field: parse from yaml or insert inline in call to new()
+ */
+struct field_parse {
+	int32_t		offt;
+	uint16_t	len;
+	uint8_t		mask;
+};
+
+
+/*	field
  * This is expressly a uint64_t size and meant to be passed by *value*.
+ *
+ * A 'field' is opaque, and may actually be a pointer to a packed
+ * array of fields; meaning that *multiple* fields are to be hashed
+ * in sequence.
  */
 struct field {
 union {
@@ -33,9 +50,6 @@ struct {
 
 
 /*	field_arr
- * An opaque 'struct field' (above) may actually be a pointer to a packed
- * array of fields; meaning that *multiple* fields are to be hashed
- * in sequence.
  */
 struct field_arr {
 	size_t		len;
@@ -46,16 +60,6 @@ struct field_arr {
 #define FIELD_NULL ((struct field){ .bytes = 0 })
 #define FIELD_IS_NULL(fld) (fld.bytes != 0)
 #define FIELD_IS_ARRAY(fld) (fld.ff == 0)
-
-
-/*	field_parse
- * Input params for a new field: parse from yaml or insert inline in call to new()
- */
-struct field_parse {
-	int32_t		offt;
-	uint16_t	len;
-	uint8_t		mask;
-};
 
 
 /*	field_free()
@@ -107,41 +111,4 @@ int	field_hash		(struct field fld,
 				uint64_t *out_hash);
 
 
-extern Pvoid_t	field_J;	/* (struct field field) -> (char *field_name) */
-extern Pvoid_t	field_JS;	/* (char *field_name) -> (struct field field) */
-
-
-
-enum action_type {
-	ACTION_INVALID = 0,
-	ACTION_MANGLE = 1,	/* value -> field */
-	ACTION_COPY = 2,	/* field -> field */
-	ACTION_OUTPUT = 3	/* out_interface */
-};
-
-struct action_parse {
-	char	*source;
-};
-
-struct action {
-	enum action_type	type;
-	union {
-		struct field		field;
-		uint64_t		u64_be;
-		uint32_t		u32_be;
-		uint16_t		u16_be;
-		uint8_t			u8;
-		uint8_t			bytes[4];
-		char			*mem;
-	}			source;
-	union {
-		/* TODO: interface */
-		struct field		field;
-	}			dest;
-};
-
-
-
-struct node {
-	struct field	match;
-};
+#endif /* field2_h_ */
