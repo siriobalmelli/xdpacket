@@ -1,8 +1,12 @@
-exe_files = [ 'xdpk.c' ]
-
-xdpk = executable(meson.project_name(),
-			exe_files,
+xdpk = executable('xdpk',
+			['xdpk.c'] + lib_files,
 			dependencies : deps,
-			link_with: internal_static,
 			include_directories : inc,
 			)
+
+xdpacket = executable(meson.project_name(),
+			['xdpacket.c'] + lib_files,
+			dependencies : deps,
+			include_directories : inc,
+			)
+
