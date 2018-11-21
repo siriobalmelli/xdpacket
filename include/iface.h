@@ -23,7 +23,7 @@ struct iface_parse {
 	char		*name;
 };
 
-extern Pvoid_t	iafce_parse_J; /* (char *iface_name) -> (struct iface_parse *parse) */
+extern Pvoid_t	iface_parse_J; /* (char *iface_name) -> (struct iface_parse *parse) */
 
 
 /*	iface

@@ -8,6 +8,9 @@
 #include <sys/types.h>
 
 
+Pvoid_t	iface_parse_J; /* (char *iface_name) -> (struct iface_parse *parse) */
+
+
 #define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 #define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
 #define XDPK_SOCK_PRN(sk_p) "%d: %s %s "XDPK_MAC_PROTO" mtu %d", \
