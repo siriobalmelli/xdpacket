@@ -56,7 +56,6 @@ void parse_callback(int fd, uint32_t events, epoll_data_t context)
 	size_t bcnt = 0;
 	ssize_t res = 0;
 	do {
-		bcnt += res;
 		Z_log(Z_inf, "loop read on %d @%zu", ps->fdin, bcnt);
 		/* extend memory as needed */
 		if (bcnt + PIPE_BUF > ps->buf_len) {
@@ -66,6 +65,8 @@ void parse_callback(int fd, uint32_t events, epoll_data_t context)
 				), "size %zu", ps->buf_len);
 		}
 		res = read(ps->fdin, &ps->buf[bcnt], PIPE_BUF);
+		if (res > 0)
+			bcnt += res;
 	} while (res == PIPE_BUF); /* a read of < PIPE_BUF implies no data left */
 
 	yaml_parser_t parser;
