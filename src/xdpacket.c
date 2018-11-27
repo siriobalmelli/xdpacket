@@ -6,13 +6,14 @@
 #include <limits.h> /* PIPE_BUF */
 #include <unistd.h>
 #include <fcntl.h> /* fcntl() for nonblocking I/O */
-
+#include <parse_util.h>
 
 struct parse {
 	int		fdin;
 	int		fdout;
 	unsigned char	*buf;
 	size_t		buf_len;
+	size_t		buf_pend;
 };
 
 
@@ -68,6 +69,8 @@ void parse_callback(int fd, uint32_t events, epoll_data_t context)
 		if (res > 0)
 			bcnt += res;
 	} while (res == PIPE_BUF); /* a read of < PIPE_BUF implies no data left */
+	Z_log(Z_inf, "read %zu: %s", bcnt, ps->buf);
+	return;
 
 	yaml_parser_t parser;
 	Z_die_if(!
@@ -75,17 +78,37 @@ void parse_callback(int fd, uint32_t events, epoll_data_t context)
 		, "");
 	yaml_parser_set_input_string(&parser, ps->buf, bcnt);
 
-	/* a non-zero return indicates we did not error */
-	yaml_event_t event;
-	while (yaml_parser_parse(&parser, &event)) {
-		Z_log(Z_inf, "valid event");
-		if (event.type == YAML_STREAM_END_EVENT) {
-			Z_log(Z_inf, "end token");
-			break;
-		}
-		yaml_event_delete(&event);
+	yaml_document_t document;
+	if (!yaml_parser_load(&parser, &document)) {
+		yaml_mark_t *mark = &parser.context_mark;
+		Z_die_if(true, "Invalid YAML, "
+				"parse failed at position %zu", mark->column);
 	}
+
+	yaml_node_t *root = yaml_document_get_root_node(&document);
+	Z_die_if(!root
+		|| (root->type != YAML_MAPPING_NODE)
+		|| (yaml_map_count(root) > 1)
+		, "");
+
+	for (yaml_node_pair_t *i_node_p = root->data.mapping.pairs.start;
+		i_node_p < root->data.mapping.pairs.top;
+		i_node_p++)
+	{
+		yaml_node_t *key_node_p =
+			yaml_document_get_node(&document, i_node_p->key);
+		yaml_node_t *val_node_p =
+			yaml_document_get_node(&document, i_node_p->value);
+
+		Z_log(Z_inf, "%s: %s",
+			key_node_p->data.scalar.value,
+			val_node_p->data.scalar.value
+			);
+	}
+
+	/* TODO: clean up */
 	yaml_parser_delete(&parser);
+
 	return;
 out:
 	psg_kill(); /* the body cannot survive without the mind */

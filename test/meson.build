@@ -12,7 +12,7 @@ foreach t : tests
 	name_spaced = ' '.join(name.split('_'))
 
 	a_test = executable(name + '_shared',
-			[t] + lib_files,
+			[t] + src_files,
 			dependencies : deps,
 			include_directories : inc)
 	test(name_spaced, a_test, timeout : 45)

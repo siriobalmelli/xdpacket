@@ -1,11 +1,21 @@
+src_files = files([
+	'hook.c',
+    'iface.c',
+    'field.c',
+    'matcher.c',
+    'packet.c',
+    'parse.c',
+	'parse_util.c'
+])
+
 xdpk = executable('xdpk',
-			['xdpk.c'] + lib_files,
+			['xdpk.c'] + src_files,
 			dependencies : deps,
 			include_directories : inc,
 			)
 
 xdpacket = executable(meson.project_name(),
-			['xdpacket.c'] + lib_files,
+			['xdpacket.c'] + src_files,
 			dependencies : deps,
 			include_directories : inc,
 			)

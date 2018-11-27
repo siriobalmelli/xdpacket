@@ -63,6 +63,5 @@ deps = [nonlibc, judy, yaml]
 
 #build
 inc = include_directories('include')
-subdir('lib')
 subdir('src')
 subdir('test')

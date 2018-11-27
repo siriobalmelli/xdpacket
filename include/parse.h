@@ -14,6 +14,7 @@
 #include <yaml.h>
 #include <field.h>
 #include <matcher.h>
+#include <parse_util.h>
 
 typedef enum cmd_type { 
 	CMD_NO_TYPE = 0, 
