@@ -13,7 +13,7 @@ struct parse {
 	int		fdout;
 	unsigned char	*buf;
 	size_t		buf_len;
-	size_t		buf_pend;
+	size_t		buf_pos;
 };
 
 
@@ -35,11 +35,11 @@ struct parse *parse_new(int fdin, int fdout)
 	Z_die_if(!(
 		ret = calloc(sizeof(struct parse), 1)
 		), "alloc %zu", sizeof(struct parse));
-	/* input fd must be nonblocking */
+	/* if we can make input fd nonblocking, we are inputting from a terminal */
 	Z_die_if(
 		fcntl(fdin, F_SETFL, fcntl(fdin, F_GETFL) | O_NONBLOCK)
-		, "");
-	ret->fdin = fdin;
+		, "")
+		ret->fdin = fdin;
 	ret->fdout = fdout;
 	return ret;
 out:
@@ -47,49 +47,26 @@ out:
 	return NULL;
 }
 
-/*	parse_callback()
+
+/*	parse_exec()
  */
-void parse_callback(int fd, uint32_t events, epoll_data_t context)
+void parse_exec(const unsigned char *doc, size_t doc_len)
 {
-	struct parse *ps = context.ptr;
+	yaml_parser_t parser = { 0 };
+	yaml_document_t document = { {0} };
 
-	/* read all available bytes into our contiguous buffer without blocking */
-	size_t bcnt = 0;
-	ssize_t res = 0;
-	do {
-		Z_log(Z_inf, "loop read on %d @%zu", ps->fdin, bcnt);
-		/* extend memory as needed */
-		if (bcnt + PIPE_BUF > ps->buf_len) {
-			ps->buf_len += PIPE_BUF;
-			Z_die_if(!(
-				ps->buf = realloc(ps->buf, ps->buf_len)
-				), "size %zu", ps->buf_len);
-		}
-		res = read(ps->fdin, &ps->buf[bcnt], PIPE_BUF);
-		if (res > 0)
-			bcnt += res;
-	} while (res == PIPE_BUF); /* a read of < PIPE_BUF implies no data left */
-	Z_log(Z_inf, "read %zu: %s", bcnt, ps->buf);
-	return;
-
-	yaml_parser_t parser;
 	Z_die_if(!
 		yaml_parser_initialize(&parser)
 		, "");
-	yaml_parser_set_input_string(&parser, ps->buf, bcnt);
+	yaml_parser_set_input_string(&parser, doc, doc_len);
 
-	yaml_document_t document;
-	if (!yaml_parser_load(&parser, &document)) {
-		yaml_mark_t *mark = &parser.context_mark;
-		Z_die_if(true, "Invalid YAML, "
-				"parse failed at position %zu", mark->column);
-	}
+	Z_die_if(!
+		yaml_parser_load(&parser, &document)
+		, "Invalid YAML, parse failed at position %zu",
+		parser.context_mark.column);
 
 	yaml_node_t *root = yaml_document_get_root_node(&document);
-	Z_die_if(!root
-		|| (root->type != YAML_MAPPING_NODE)
-		|| (yaml_map_count(root) > 1)
-		, "");
+	Z_die_if(!root || (root->type != YAML_MAPPING_NODE), "");
 
 	for (yaml_node_pair_t *i_node_p = root->data.mapping.pairs.start;
 		i_node_p < root->data.mapping.pairs.top;
@@ -106,13 +83,43 @@ void parse_callback(int fd, uint32_t events, epoll_data_t context)
 			);
 	}
 
-	/* TODO: clean up */
-	yaml_parser_delete(&parser);
-
-	return;
 out:
-	psg_kill(); /* the body cannot survive without the mind */
+	yaml_parser_delete(&parser);
+	yaml_document_delete(&document);
 	return;
+}
+
+
+/*	parse_callback()
+ */
+void parse_callback(int fd, uint32_t events, epoll_data_t context)
+{
+	struct parse *ps = context.ptr;
+
+	/* read all available bytes into our contiguous buffer without blocking */
+	ssize_t res = 0;
+	do {
+		/* extend memory as needed */
+		if (ps->buf_pos + PIPE_BUF > ps->buf_len) {
+			ps->buf_len += PIPE_BUF;
+			Z_die_if(!(
+				ps->buf = realloc(ps->buf, ps->buf_len)
+				), "size %zu", ps->buf_len);
+		}
+		res = read(ps->fdin, &ps->buf[ps->buf_pos], PIPE_BUF);
+		if (res > 0)
+			ps->buf_pos += res;
+	} while (res == PIPE_BUF); /* a read of < PIPE_BUF implies no data left */
+	/* a line with only '\n' is our cue to parse all accumulated text as one document */
+	if (res != 1 || ps->buf[ps->buf_pos-1] != '\n')
+		return;
+	/* force string termination */
+	ps->buf[ps->buf_pos] = '\0';
+
+	parse_exec(ps->buf, ps->buf_pos);
+
+out:
+	ps->buf_pos = 0; /* always reset input buffer */
 }
 
 
