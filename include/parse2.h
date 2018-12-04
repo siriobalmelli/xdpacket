@@ -9,7 +9,20 @@
  */
 
 #include <yaml.h>
+#include <stdint.h>
 
+struct parse {
+	int		fdin;
+	int		fdout;
+	unsigned char	*buf;
+	size_t		buf_len;
+	size_t		buf_pos;
+};
+
+void parse_free(struct parse *ps);
+struct parse *parse_new(int fdin, int fdout);
+void parse_exec(const unsigned char *doc, size_t doc_len);
+void parse_callback(int fd, uint32_t events, void *context);
 
 
 #endif /* parse2_h_ */

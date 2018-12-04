@@ -14,14 +14,17 @@
 #include <netinet/in.h> /* sockaddr_in */
 #include <epoll_track.h>
 #include <hook.h>
-
+#include <yaml.h>
 
 /*	iface_parse
  * Parse user-supplied interface parameters.
  */
+/*
 struct iface_parse {
 	char		*name;
 };
+*/
+//int iface_parse();
 
 extern Pvoid_t	iface_parse_J; /* (char *iface_name) -> (struct iface_parse *parse) */
 

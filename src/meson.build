@@ -5,6 +5,7 @@ src_files = files([
     'matcher.c',
     'packet.c',
     'parse.c',
+    'parse2.c',
 	'parse_util.c'
 ])
 

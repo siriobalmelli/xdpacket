@@ -4,6 +4,10 @@
 # eth0 == 192.168.1.1/24 -> client 192.168.1.20
 # eth1 == 10.1.1.1/24 -> chromecast 10.1.1.20
 xdpk:
+  # iface is a system interface
+  - iface: eth0
+  - iface: eth1
+
   # field: a set of bytes to be hashed or written
   - field: ip proto
     offt: 25
