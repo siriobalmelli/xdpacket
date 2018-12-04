@@ -5,6 +5,15 @@
 #include <limits.h> /* PIPE_BUF */
 #include <parse_util.h>
 
+
+const char *parse_modes[] = {
+	"PARSE_INVALID",
+	"PARSE_ADD",
+	"PARSE_DEL",
+	"PARSE_PRN"
+};
+
+
 /*	parse_free()
  */
 void parse_free(struct parse *ps)
@@ -23,11 +32,7 @@ struct parse *parse_new(int fdin, int fdout)
 	Z_die_if(!(
 		ret = calloc(sizeof(struct parse), 1)
 		), "alloc %zu", sizeof(struct parse));
-	/* if we can make input fd nonblocking, we are inputting from a terminal */
-	Z_die_if(
-		fcntl(fdin, F_SETFL, fcntl(fdin, F_GETFL) | O_NONBLOCK)
-		, "")
-		ret->fdin = fdin;
+	ret->fdin = fdin;
 	ret->fdout = fdout;
 	return ret;
 out:
@@ -56,19 +61,79 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 	yaml_node_t *root = yaml_document_get_root_node(&document);
 	Z_die_if(!root || (root->type != YAML_MAPPING_NODE), "");
 
-	for (yaml_node_pair_t *i_node_p = root->data.mapping.pairs.start;
-		i_node_p < root->data.mapping.pairs.top;
-		i_node_p++)
+	/* Only a 'mode' is a valid root node;
+	 * under a mode we expect a list of directives. e.g.:
+	 * Establish the mode; then handle each directive in the list.
+	 */
+	for (yaml_node_pair_t *node = root->data.mapping.pairs.start;
+		node < root->data.mapping.pairs.top;
+		node++)
 	{
-		yaml_node_t *key_node_p =
-			yaml_document_get_node(&document, i_node_p->key);
-		yaml_node_t *val_node_p =
-			yaml_document_get_node(&document, i_node_p->value);
+		yaml_node_t *key = yaml_document_get_node(&document, node->key);
+		const char *keyname = (const char *)key->data.scalar.value;
+		yaml_node_t *val = yaml_document_get_node(&document, node->value);
+		enum parse_mode mode = PARSE_INVALID;
 
-		Z_log(Z_inf, "%s: %s",
-			key_node_p->data.scalar.value,
-			val_node_p->data.scalar.value
-			);
+		/* sanity */
+		if (val->type != YAML_SEQUENCE_NODE) {
+			Z_log(Z_err, "node '%s' not a sequence (list)\n"
+				"toplevel node should be a mode, e.g.\n"
+				"'xdpk' || 'add' || 'del' || 'prn';\n"
+				"containing a list of directives e.g.\n"
+				"\n"
+				"```yaml\n"
+				"add:\n"
+				"  - iface: eth0\n"
+				"```\n",
+				keyname);
+			continue;
+		}
+
+		/* get mode */
+		if (!strcmp("xdpk", keyname)
+			|| !strcmp("add", keyname)
+			|| !strcmp("a", keyname))
+		{
+			mode = PARSE_ADD;
+		} else if (!strcmp("delete", keyname)
+			|| !strcmp("del", keyname)
+			|| !strcmp("d", keyname))
+		{
+			mode = PARSE_DEL;
+		} else if (!strcmp("print", keyname)
+			|| !strcmp("prn", keyname)
+			|| !strcmp("p", keyname))
+		{
+			mode = PARSE_PRN;
+		} else {
+			Z_log(Z_err, "'%s' is not a valid mode", keyname);
+			continue;
+		}
+		Z_log(Z_inf, "mode %s", parse_mode_prn(mode));
+
+		/* what's this got to do with the price of fish? */
+		if (val->data.sequence.style == YAML_BLOCK_SEQUENCE_STYLE) {
+			Z_log(Z_inf, "block sequence");
+		} else if (val->data.sequence.style == YAML_FLOW_SEQUENCE_STYLE) {
+			Z_log(Z_inf, "flow sequence");
+		}
+
+		/* process children */
+		for (yaml_node_item_t *child = val->data.sequence.items.start;
+			child < val->data.sequence.items.start;
+			child++)
+		{
+			Z_log(Z_inf, "item %d", *child);
+#if 0
+			child->
+			yaml_node_t *ckey = yaml_document_get_node(&document, child->key);
+			yaml_node_t *cval = yaml_document_get_node(&document, child->value);
+			Z_log(Z_inf, "%s: %s",
+				ckey->data.scalar.value,
+				cval->data.scalar.value
+				);
+#endif
+		}
 	}
 
 out:
@@ -99,9 +164,16 @@ void parse_callback(int fd, uint32_t events, void *context)
 			ps->buf_pos += res;
 	} while (res == PIPE_BUF); /* a read of < PIPE_BUF implies no data left */
 
+	/* read of 0 means end of doc when piping from file or stdin */
+	if (res == 0)
+		close(fd); /* we will never be called again */
+
 	/* a line with only '\n' is our cue to parse all accumulated text as one document */
-	if (res != 1 || ps->buf[ps->buf_pos-1] != '\n')
+	else if (res != 1 || ps->buf[ps->buf_pos-1] != '\n')
 		return;
+
+	//Z_log(Z_inf, "process %zu bytes", ps->buf_pos);
+
 	/* force string termination */
 	ps->buf[ps->buf_pos] = '\0';
 

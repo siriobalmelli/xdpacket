@@ -25,8 +25,7 @@ int main()
 
 	/* all user input dealt with by parse_callback() */
 	Z_die_if(
-		eptk_register(tk, ps->fdin, EPOLLIN,
-			parse_callback, (epoll_data_t)(void*)ps)
+		eptk_register(tk, ps->fdin, EPOLLIN, parse_callback, ps)
 		, "fd_in %d", fileno(stdin));
 
 	/* epoll loop */
