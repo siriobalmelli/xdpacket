@@ -8,9 +8,6 @@
 #include <sys/types.h>
 
 
-Pvoid_t	iface_parse_J; /* (char *iface_name) -> (struct iface_parse *parse) */
-
-
 #define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 #define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
 #define XDPK_SOCK_PRN(sk_p) "%d: %s %s "XDPK_MAC_PROTO" mtu %d", \
@@ -43,6 +40,7 @@ void iface_free(struct iface *sk)
 struct iface *iface_new(const char *ifname)
 {
 	struct iface *ret = NULL;
+	Z_die_if(!ifname, "cannot create interface without name");
 	Z_die_if(!(
 		ret = calloc(sizeof(struct iface), 1)
 		), "alloc size %zu", sizeof(struct iface));
@@ -111,6 +109,7 @@ out:
 	return NULL;
 }
 
+
 /*	iface_callback()
  */
 void iface_callback(int fd, uint32_t events, epoll_data_t context)
@@ -129,4 +128,71 @@ void iface_callback(int fd, uint32_t events, epoll_data_t context)
 	if (addr.sll_pkttype == PACKET_OUTGOING)
 		hk = sk->out;
 	hook_callback(hk, buf, res);
+}
+
+
+
+Pvoid_t	iface_parse_JS; /* (char *iface_name) -> (struct iface_parse *parse) */
+
+/*	iface_parse()
+ * Parse 'root' according to 'mode' (add | rem | prn).
+ * Returns 0 on success.
+ */
+int iface_parse(enum parse_mode mode, yaml_document_t *doc, yaml_node_t *node)
+{
+	int err_cnt = 0;
+	const char *name = NULL;
+	struct iface *iface = NULL;
+
+	/* parse node */
+	for (yaml_node_pair_t *pair = node->data.mapping.pairs.start;
+		pair < node->data.mapping.pairs.top;
+		pair++)
+	{
+		yaml_node_t *key = yaml_document_get_node(doc, pair->key);
+		const char *keyname = (const char *)key->data.scalar.value;
+		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
+		const char *valtxt = (const char *)val->data.scalar.value;
+
+		/* sanity */
+		if (val->type != YAML_SCALAR_NODE) {
+			Z_log_err("'%s' in iface not a scalar.\n"
+				"Example iface node:\n"
+				"```yaml\n"
+				"iface: eth0\n"
+				"```\n",
+				keyname);
+			continue;
+		}
+
+		/* Match field names and populate 'local' */
+		if (!strcmp("iface", keyname)) {
+			name = valtxt;
+		} else {
+			Z_log_err("'iface' does not implement '%s'", keyname);
+		};
+	}
+
+	/* execute mode */
+	switch (mode) {
+	case PARSE_ADD:
+	{
+		Z_die_if(!(
+			iface = iface_new(name)
+			), "");
+		/* TODO: add to JS array */
+		break;
+	}
+	case PARSE_DEL:
+		/* TODO: find and delete */
+		break;
+	case PARSE_PRN:
+		/* TODO: treat 'name' as a regex for filtering interfaces to print */
+		break;
+	default:
+		Z_log_err("unknown mode %s", parse_mode_prn(mode));
+	};
+
+out:
+	return err_cnt;
 }

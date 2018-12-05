@@ -1,9 +1,11 @@
 #include <parse2.h>
+#include <parse_util.h>
 #include <zed_dbg.h>
 #include <unistd.h> /* read() */
-#include <fcntl.h> /* fcntl() for nonblocking I/O */
 #include <limits.h> /* PIPE_BUF */
-#include <parse_util.h>
+
+/* subsystems which implement parsers */
+#include <iface.h>
 
 
 const char *parse_modes[] = {
@@ -45,6 +47,7 @@ out:
  */
 void parse_exec(const unsigned char *doc, size_t doc_len)
 {
+	int err_cnt = 0;
 	yaml_parser_t parser = { 0 };
 	yaml_document_t document = { {0} };
 
@@ -65,18 +68,18 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 	 * under a mode we expect a list of directives. e.g.:
 	 * Establish the mode; then handle each directive in the list.
 	 */
-	for (yaml_node_pair_t *node = root->data.mapping.pairs.start;
-		node < root->data.mapping.pairs.top;
-		node++)
+	for (yaml_node_pair_t *pair = root->data.mapping.pairs.start;
+		pair < root->data.mapping.pairs.top;
+		pair++)
 	{
-		yaml_node_t *key = yaml_document_get_node(&document, node->key);
+		yaml_node_t *key = yaml_document_get_node(&document, pair->key);
 		const char *keyname = (const char *)key->data.scalar.value;
-		yaml_node_t *val = yaml_document_get_node(&document, node->value);
+		yaml_node_t *val = yaml_document_get_node(&document, pair->value);
 		enum parse_mode mode = PARSE_INVALID;
 
 		/* sanity */
 		if (val->type != YAML_SEQUENCE_NODE) {
-			Z_log(Z_err, "node '%s' not a sequence (list)\n"
+			Z_log_err("node '%s' not a sequence (list)\n"
 				"toplevel node should be a mode, e.g.\n"
 				"'xdpk' || 'add' || 'del' || 'prn';\n"
 				"containing a list of directives e.g.\n"
@@ -106,37 +109,44 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 		{
 			mode = PARSE_PRN;
 		} else {
-			Z_log(Z_err, "'%s' is not a valid mode", keyname);
+			Z_log_err("'%s' is not a valid mode", keyname);
 			continue;
 		}
 		Z_log(Z_inf, "mode %s", parse_mode_prn(mode));
 
-		/* what's this got to do with the price of fish? */
-		if (val->data.sequence.style == YAML_BLOCK_SEQUENCE_STYLE) {
-			Z_log(Z_inf, "block sequence");
-		} else if (val->data.sequence.style == YAML_FLOW_SEQUENCE_STYLE) {
-			Z_log(Z_inf, "flow sequence");
-		}
-
-		/* process children */
+		/* process children list objects */
 		for (yaml_node_item_t *child = val->data.sequence.items.start;
-			child < val->data.sequence.items.start;
+			child < val->data.sequence.items.top;
 			child++)
 		{
-			Z_log(Z_inf, "item %d", *child);
-#if 0
-			child->
-			yaml_node_t *ckey = yaml_document_get_node(&document, child->key);
-			yaml_node_t *cval = yaml_document_get_node(&document, child->value);
-			Z_log(Z_inf, "%s: %s",
-				ckey->data.scalar.value,
-				cval->data.scalar.value
-				);
-#endif
+			yaml_node_t *node = yaml_document_get_node(&document, *child);
+
+			/* peek into node:
+			 * first pair _must_ contain "subsystem: name" tuple.
+			 */
+			yaml_node_pair_t *pair = node->data.mapping.pairs.start;
+			yaml_node_t *key = yaml_document_get_node(&document, pair->key);
+			const char *subsystem = (const char *)key->data.scalar.value;
+
+			/* match 'subsystem' and hand off to the relevant parser */
+			if (!strcmp("iface", subsystem)) {
+				err_cnt += iface_parse(mode, &document, node);
+
+			} else if (!strcmp("field", subsystem)) {
+				Z_log_err("'field' not implemented yet");
+
+			} else if (!strcmp("node", subsystem)) {
+				Z_log_err("'node' not implemented yet");
+
+			} else {
+				Z_log_err("subsystem '%s' unknown", subsystem);
+			}
 		}
 	}
 
 out:
+	if (err_cnt)
+		printf("parser finished with %d errors\n", err_cnt);
 	yaml_parser_delete(&parser);
 	yaml_document_delete(&document);
 	return;
