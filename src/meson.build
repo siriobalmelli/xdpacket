@@ -18,5 +18,6 @@ xdpacket = executable(meson.project_name(),
 			['xdpacket.c'] + src_files,
 			dependencies : deps,
 			include_directories : inc,
+			install: true
 			)
 

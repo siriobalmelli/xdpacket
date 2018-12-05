@@ -90,6 +90,7 @@ nixpkgs.stdenv.mkDerivation rec {
               --license "${meta.license.spdxId}" \
               --url "${meta.homepage}" \
               --maintainer "${builtins.head meta.maintainers}" \
+              -x "nix-support" \
               "$out/=/"
           then
               echo "ERROR (non-fatal): could not build $pk package" >&2
