@@ -82,7 +82,15 @@ nixpkgs.stdenv.mkDerivation rec {
 
   # Build packages outside $out then move them in: fpm seems to ignore
   #+	the '-x' flag that we need to avoid packaging packages inside packages
+  # NOTE also the `''` escape so that Nix will leave `${` alone (facepalms internally)
   postFixup = ''
+      # manual dependency listing
+      declare -A DEPS=( \
+          ["deb"]="-d nonlibc -d libyaml-dev -d libjudy-dev" \
+          ["rpm"]="-d nonlibc -d libyaml -d libjudy" \
+          ["tar"]="" \
+          ["zip"]="")
+
       mkdir temp
       for pk in "deb" "rpm" "tar" "zip"; do
           if ! fpm -f -t $pk -s dir -p temp/ -n $name -v $version \
@@ -91,6 +99,7 @@ nixpkgs.stdenv.mkDerivation rec {
               --url "${meta.homepage}" \
               --maintainer "${builtins.head meta.maintainers}" \
               -x "nix-support" \
+              ''${DEPS[$pk]} \
               "$out/=/"
           then
               echo "ERROR (non-fatal): could not build $pk package" >&2
