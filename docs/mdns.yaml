@@ -53,8 +53,8 @@ xdpk:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
     xform:
-      - set: {ip src: 192.168.1.20}
-      - set: {ip dst: 192.168.1.1}
+      - set: {ip src: 192.168.1.1}
+      - set: {ip dst: 192.168.1.20}
       - out: eth0
 
   - node: client mdns
@@ -63,7 +63,7 @@ xdpk:
       - ip src: 192.168.1.20
       - ip dst: 224.0.0.251
     xform:
-      - set: {ip src: 10.1.1.20}
+      - set: {ip src: 10.1.1.1}
       - out: eth1
 
   - node: chrome mdns A
@@ -73,8 +73,8 @@ xdpk:
       - ip dst: 224.0.0.251
       - mdns rec: 0x0001  # DNS A record
     xform:
-      - set: {ip src: 192.168.1.20}
-      - set: {mdns rec addr: 192.168.1.20}
+      - set: {ip src: 192.168.1.1}
+      - set: {mdns rec addr: 192.168.1.1}
       - out: eth0
 
   # MUST be matched AFTER preceding (more specific) 'A' rule
@@ -84,5 +84,5 @@ xdpk:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
     xform:
-      - set: {ip src: 192.168.1.20}
+      - set: {ip src: 192.168.1.1}
       - out: eth0

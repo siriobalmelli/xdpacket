@@ -12,6 +12,10 @@ the eXtremely Direct Packet handler (in userland)
 
 ## Raison D'etre
 
+## Grammar
+
+WIP, currently [mdns.yaml](docs/mdns.yaml) shows the grammar being worked on.
+
 ## TODO
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
