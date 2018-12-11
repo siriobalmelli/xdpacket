@@ -1,4 +1,4 @@
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include "field.h"
 
 /*	field_valid_check()
@@ -26,12 +26,12 @@ int field_valid_check()
 
 	for (int i=0; i < NLC_ARRAY_LEN(tests); i++) {
 		bool valid = xdpk_field_valid(tests[i].field);
-		Z_err_if((valid ^ tests[i].expect), 
+		NB_err_if((valid ^ tests[i].expect),
 			"xpdk_field_valid({%d, %u}) == %d, expected %d",
 			tests[i].field.offt, tests[i].field.len, valid, tests[i].expect);
 	}
 
-	Z_log(Z_inf, "number of field_valid tests == %ld",
+	NB_inf("number of field_valid tests == %ld",
 			NLC_ARRAY_LEN(tests));
 
 	return err_cnt;

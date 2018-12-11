@@ -13,7 +13,7 @@ struct xdpk_offt {
 	uint16_t offt;
 };
 
-static struct xdpk_offt xdpk_offt_sym[] = 
+static struct xdpk_offt xdpk_offt_sym[] =
 {
 	{"udp.sport", 34},
 	{"tcp.flags", 46},

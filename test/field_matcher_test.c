@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <nonlibc.h>
 #include <binhex.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include "field.h"
 #include "packet.h"
 
@@ -33,17 +33,17 @@ int matcher_check()
 		struct pkt *pkt = &pkts[mt->npkt];
 		const uint64_t hash = mt->hash;
 		bool is_match = xdpk_match(match, pkt->data, pkt->len, hash);
-		Z_log(Z_inf, "test %d match == %d, len == %ld", i, is_match, pkt->len);
+		NB_inf("test %d match == %d, len == %ld", i, is_match, pkt->len);
 
 		if (mt->pos_test) {
-			Z_err_if(is_match != true, "Tag %s: %d != %d, len %zu",
+			NB_err_if(is_match != true, "Tag %s: %d != %d, len %zu",
 				mt->tag, is_match, true, pkt->len);
 		} else {
-			Z_err_if(is_match == true, "Tag %s: %d != %d, len %zu",
+			NB_err_if(is_match == true, "Tag %s: %d != %d, len %zu",
 				mt->tag, is_match, true, pkt->len);
 		}
 	}
-	Z_log(Z_inf, "number of matcher tests == %ld",
+	NB_inf("number of matcher tests == %ld",
 			NLC_ARRAY_LEN(matcher_tests));
 
 	free_pkts(npkts, &pkts);

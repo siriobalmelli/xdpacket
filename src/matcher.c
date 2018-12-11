@@ -1,6 +1,6 @@
 #include <matcher.h>
 #include <field.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 /* matcher_free()
  */
@@ -40,7 +40,7 @@ bool xdpk_match(const struct xdpk_matcher *match,
 	uint64_t *p = NULL;
 	for (int i = 0; i < XDPK_MATCH_FIELD_MAX; i++) {
 		struct xdpk_field fld = match->fields[i];
-		if (!xdpk_field_valid(fld)) 
+		if (!xdpk_field_valid(fld))
 			break;
 		h = xdpk_field_hash(fld, pkt, plen, p);
 		p = &h;

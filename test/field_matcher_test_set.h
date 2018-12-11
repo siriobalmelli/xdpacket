@@ -5,7 +5,6 @@
  */
 #include <nonlibc.h>
 #include <stdio.h>
-#include <zed_dbg.h>
 #include "field.h"
 #include "matcher.h"
 
@@ -17,7 +16,7 @@
  * @pos_test = if test supposed to succeed or fail
  */
 
- /* TODO: size XDPK_MATCH_FIELD_MAX might change.  
+ /* TODO: size XDPK_MATCH_FIELD_MAX might change.
   * Make this resistant to that by creating local structure
   * size and only copying in what will fit.
   */

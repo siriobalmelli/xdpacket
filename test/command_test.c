@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <yaml.h>
 #include <parse.h>
+#include <ndebug.h>
 
 /* Keep definitions separate to make more readable */
 #include "command_test_set.h"
@@ -23,23 +24,23 @@ int bulk_command_check()
 
 	for (int i = 0; i < NLC_ARRAY_LEN(cmd_tests); i++) {
 		const struct ctuple *ct = &cmd_tests[i];
-		Z_log(Z_inf, "Parse '%s'", ct->cmdstr);
+		NB_inf("Parse '%s'", ct->cmdstr);
 		xdpk_command_t *cmds;
 		int num_cmds;
-		err_cnt = parse_commands(ct->cmdstr, strlen(ct->cmdstr), 
+		err_cnt = parse_commands(ct->cmdstr, strlen(ct->cmdstr),
 							&cmds, &num_cmds);
 
 		if (ct->pos_test) {
-			Z_err_if(err_cnt || (num_cmds != ct->expected_num_cmds), 
+			NB_err_if(err_cnt || (num_cmds != ct->expected_num_cmds),
 				"tag: '%s', err_cnt: %d, num_cmds: %d, expected_num: %d",
 				ct->tag, err_cnt, num_cmds, ct->expected_num_cmds);
 		} else {
-			Z_err_if(!err_cnt || (num_cmds == ct->expected_num_cmds), 
+			NB_err_if(!err_cnt || (num_cmds == ct->expected_num_cmds),
 				"tag: '%s', err_cnt: %d, num_cmds: %d, expected_num: %d",
 				ct->tag, err_cnt, num_cmds, ct->expected_num_cmds);
 		}
 	}
-	Z_log(Z_inf, "Number of command parse tests == %ld",
+	NB_inf("Number of command parse tests == %ld",
 			NLC_ARRAY_LEN(cmd_tests));
 
 	return err_cnt;
@@ -67,7 +68,7 @@ void interactive_command_check()
 		len = strlen(buf);
 		if (buf[len-1] == '\n')
 			buf[--len] = '\0';
-		if (len == 0) 
+		if (len == 0)
 			continue;
 		printf("You entered: '%s'\n", buf);
 		if (parse_commands(buf, len, &cmds, &num_cmds)) {

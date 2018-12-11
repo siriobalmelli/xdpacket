@@ -5,7 +5,6 @@
  */
 #include <nonlibc.h>
 #include <stdio.h>
-#include <zed_dbg.h>
 #include "field.h"
 #include "matcher.h"
 
@@ -26,7 +25,6 @@ struct ptuple {
 };
 
 const struct ptuple parse_tests[] = {
-	//
 	{
 		"{ offset: 34, len: 2, val: 6501 }",
 		{34, 16, 0xff, 0},

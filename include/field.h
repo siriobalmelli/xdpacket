@@ -32,8 +32,8 @@ struct xdpk_field {
  * (they are 64b ergo will fit in a register)
  * and if so should use XDPK_FIELD_INVALID to signal
  * an error.
- * 
- * A field may have 0 offset, but a 0 len or a 0 mask are invalid. 
+ *
+ * A field may have 0 offset, but a 0 len or a 0 mask are invalid.
  */
 NLC_INLINE bool			xdpk_field_valid(struct xdpk_field field)
 {

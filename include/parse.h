@@ -16,36 +16,36 @@
 #include <matcher.h>
 #include <parse_util.h>
 
-typedef enum cmd_type { 
-	CMD_NO_TYPE = 0, 
-	CMD_IF_TYPE = 1, 
-	CMD_FLD_TYPE = 2, 
-	CMD_ACTION_TYPE = 3, 
-	CMD_MATCH_TYPE = 4 
+typedef enum cmd_type {
+	CMD_NO_TYPE = 0,
+	CMD_IF_TYPE = 1,
+	CMD_FLD_TYPE = 2,
+	CMD_ACTION_TYPE = 3,
+	CMD_MATCH_TYPE = 4
 } cmd_type_t;
 
-typedef enum if_cmd_type { 
-	IF_CMD_NONE = 0, 
-	IF_CMD_ADD = 1, 
-	IF_CMD_SHOW = 2, 
-	IF_CMD_DEL = 3 
+typedef enum if_cmd_type {
+	IF_CMD_NONE = 0,
+	IF_CMD_ADD = 1,
+	IF_CMD_SHOW = 2,
+	IF_CMD_DEL = 3
 } if_cmd_type_t;
 
-typedef enum fld_cmd_type { 
-	FLD_CMD_NONE = 0, 
-	FLD_CMD_ADD = 1, 
-	FLD_CMD_SHOW = 2 
+typedef enum fld_cmd_type {
+	FLD_CMD_NONE = 0,
+	FLD_CMD_ADD = 1,
+	FLD_CMD_SHOW = 2
 } fld_cmd_type_t;
 
 typedef enum action_cmd_type {
-	ACTION_CMD_NONE = 0, 
+	ACTION_CMD_NONE = 0,
 	ACTION_CMD_ADD = 1,
 	ACTION_CMD_DEL = 2
 } action_cmd_type_t;
 
-typedef enum match_cmd_type { 
-	MATCH_CMD_NONE = 0, 
-	MATCH_CMD_ADD = 1, 
+typedef enum match_cmd_type {
+	MATCH_CMD_NONE = 0,
+	MATCH_CMD_ADD = 1,
 	MATCH_CMD_DEL = 2
 } match_cmd_type_t;
 
@@ -72,7 +72,7 @@ typedef struct xdpk_command {
 
 			struct xdpk_field fld;
 		} field;
-		
+
 		struct {
 			action_cmd_type_t cmdtype;
 			char *name;
@@ -87,7 +87,7 @@ typedef struct xdpk_command {
 			char *intf;
 			direction_type_t dir;
 			selector_t *sel;
-			char *action;	
+			char *action;
 		} match;
 	};
 } xdpk_command_t;
@@ -115,7 +115,7 @@ uint16_t parse_uint16(const char *begin, size_t len, bool *err);
 
 int32_t parse_int16(const char *begin, size_t len, bool *err);
 
-uint64_t parse_value(const char *begin, size_t blen, 
+uint64_t parse_value(const char *begin, size_t blen,
 				size_t flen, uint8_t mask, bool *err);
 
 int32_t parse_offset(const char *begin, size_t len, bool *err);

@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <ndebug.h>
 
 
 #define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
@@ -23,7 +24,7 @@ void iface_free(struct iface *sk)
 {
 	if (!sk)
 		return;
-	Z_log(Z_inf, "close "XDPK_SOCK_PRN(sk));
+	NB_inf("close "XDPK_SOCK_PRN(sk));
 
 	hook_free(sk->in);
 	hook_free(sk->out);
@@ -40,22 +41,22 @@ void iface_free(struct iface *sk)
 struct iface *iface_new(const char *ifname)
 {
 	struct iface *ret = NULL;
-	Z_die_if(!ifname, "cannot create interface without name");
-	Z_die_if(!(
+	NB_die_if(!ifname, "cannot create interface without name");
+	NB_die_if(!(
 		ret = calloc(sizeof(struct iface), 1)
 		), "alloc size %zu", sizeof(struct iface));
 	snprintf(ret->name, IFNAMSIZ, "%s", ifname);
 
 	/* hooks */
-	Z_die_if(!(
+	NB_die_if(!(
 		ret->in = hook_new()
 		) || !(
 		ret->out = hook_new()
 		), "");
 
 	/* socket */
-	ret->fd = -1;	
-	Z_die_if((
+	ret->fd = -1;
+	NB_die_if((
 		ret->fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
 		) < 0, "");
 	struct ifreq ifr = {{{0}}};
@@ -64,23 +65,23 @@ struct iface *iface_new(const char *ifname)
 	/* grok interface
 	 * ordered by increasing field size: avoid zeroing the union between calls
 	 */
-	Z_die_if(
+	NB_die_if(
 		ioctl(ret->fd, SIOCGIFINDEX, &ifr)
 		, "");
 	ret->ifindex = ifr.ifr_ifindex;
-	Z_die_if(
+	NB_die_if(
 		ioctl(ret->fd, SIOCGIFMTU, &ifr)
 		, "");
 	ret->mtu = ifr.ifr_mtu;
-	Z_die_if(
+	NB_die_if(
 		ioctl(ret->fd, SIOCGIFADDR, &ifr)
 		, "");
 	memcpy(&ret->addr, &ifr.ifr_addr, sizeof(ret->addr));
-	Z_die_if(!(
+	NB_die_if(!(
 		inet_ntop(ret->addr.sin_family, &ret->addr.sin_addr,
 			ret->ip_prn, sizeof(ret->ip_prn))
 		), "");
-	Z_die_if(
+	NB_die_if(
 		ioctl(ret->fd, SIOCGIFHWADDR, &ifr)
 		, "");
 	memcpy(&ret->hwaddr, &ifr.ifr_hwaddr, sizeof(ret->hwaddr));
@@ -97,14 +98,14 @@ struct iface *iface_new(const char *ifname)
 		.sll_hatype = 0,
 		.sll_pkttype = 0
 	};
-	Z_die_if(
+	NB_die_if(
 		bind(ret->fd, (struct sockaddr *)&saddr, sizeof(saddr))
 		, "");
 
-	Z_log(Z_inf, "add "XDPK_SOCK_PRN(ret));
+	NB_inf("add "XDPK_SOCK_PRN(ret));
 
 	return ret;
-out:
+die:
 	iface_free(ret);
 	return NULL;
 }
@@ -156,7 +157,7 @@ int iface_parse(enum parse_mode mode, yaml_document_t *doc, yaml_node_t *node)
 
 		/* sanity */
 		if (val->type != YAML_SCALAR_NODE) {
-			Z_log_err("'%s' in iface not a scalar.\n"
+			NB_err("'%s' in iface not a scalar.\n"
 				"Example iface node:\n"
 				"```yaml\n"
 				"iface: eth0\n"
@@ -169,7 +170,7 @@ int iface_parse(enum parse_mode mode, yaml_document_t *doc, yaml_node_t *node)
 		if (!strcmp("iface", keyname)) {
 			name = valtxt;
 		} else {
-			Z_log_err("'iface' does not implement '%s'", keyname);
+			NB_err("'iface' does not implement '%s'", keyname);
 		};
 	}
 
@@ -177,7 +178,7 @@ int iface_parse(enum parse_mode mode, yaml_document_t *doc, yaml_node_t *node)
 	switch (mode) {
 	case PARSE_ADD:
 	{
-		Z_die_if(!(
+		NB_die_if(!(
 			iface = iface_new(name)
 			), "");
 		/* TODO: add to JS array */
@@ -190,9 +191,9 @@ int iface_parse(enum parse_mode mode, yaml_document_t *doc, yaml_node_t *node)
 		/* TODO: treat 'name' as a regex for filtering interfaces to print */
 		break;
 	default:
-		Z_log_err("unknown mode %s", parse_mode_prn(mode));
+		NB_err("unknown mode %s", parse_mode_prn(mode));
 	};
 
-out:
+die:
 	return err_cnt;
 }

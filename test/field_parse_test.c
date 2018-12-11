@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <nonlibc.h>
 #include <binhex.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <parse.h>
 #include "field.h"
 
@@ -24,10 +24,10 @@ int parse_check()
 	for (int i = 0; i < NLC_ARRAY_LEN(parse_tests); i++) {
 		const struct ptuple *pt = &parse_tests[i];
 		uint64_t hash = 0;
-		struct xdpk_field fld = xdpk_field_parse(pt->grammar, 
+		struct xdpk_field fld = xdpk_field_parse(pt->grammar,
 						strlen(pt->grammar), &hash);
 
-		Z_log(Z_inf, "offt == %d, len == %d, mask == 0x%0x, hash == 0x%0lx", 
+		NB_inf("offt == %d, len == %d, mask == 0x%0x, hash == 0x%0lx",
 				fld.offt, fld.len, fld.mask, hash);
 
 		bool match = (	(fld.offt == pt->expected_fld.offt)
@@ -36,23 +36,23 @@ int parse_check()
 			     &&	(hash == pt->expected_hash));
 
 		if (pt->pos_test) {
-			Z_err_if(!match, 
+			NB_err_if(!match,
 				"Tag %s: (offt %d, len %u, mask 0x%0x, hash 0x%0lx)"
 				" != expected (offt %d, len %u, mask %0x, hash 0x%0lx)\n",
 				pt->tag, fld.offt, fld.len, fld.mask, hash,
-				pt->expected_fld.offt, pt->expected_fld.len, 
+				pt->expected_fld.offt, pt->expected_fld.len,
 				pt->expected_fld.mask, pt->expected_hash);
 		} else {
-			Z_err_if(match, 
+			NB_err_if(match,
 				"Tag %s: (offt %d, len %u, mask 0x%0x, hash 0x%0lx)"
 				" == expected (offt %d, len %u, mask %0x, hash 0x%0lx)\n",
 				pt->tag, fld.offt, fld.len, fld.mask, hash,
-				pt->expected_fld.offt, pt->expected_fld.len, 
+				pt->expected_fld.offt, pt->expected_fld.len,
 				pt->expected_fld.mask, pt->expected_hash);
 		}
 		printf("match == %d\n", match);
 	}
-	Z_log(Z_inf, "number of matcher tests == %ld",
+	NB_inf("number of matcher tests == %ld",
 			NLC_ARRAY_LEN(parse_tests));
 
 	return err_cnt;

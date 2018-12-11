@@ -15,7 +15,7 @@ typedef struct selector {
 } selector_t;
 
 typedef struct matcher {
-	/* TODO: implement */	
+	/* TODO: implement */
 	size_t sel_cnt;
 	struct selector sel[];
 } matcher_t;

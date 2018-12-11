@@ -5,7 +5,6 @@
  */
 #include <nonlibc.h>
 #include <stdio.h>
-#include <zed_dbg.h>
 #include "field.h"
 #include "matcher.h"
 

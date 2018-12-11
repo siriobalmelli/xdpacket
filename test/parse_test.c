@@ -45,7 +45,7 @@ void interactive_parse_check()
 		len = strlen(buf);
 		if (buf[len-1] == '\n')
 			buf[--len] = '\0';
-		if (len == 0) 
+		if (len == 0)
 			continue;
 		printf("You entered: '%s'\n", buf);
 
@@ -55,7 +55,7 @@ void interactive_parse_check()
 			yaml_mark_t *mark = &parser.context_mark;
 			fprintf(stderr, "parse failed: %s\n", parser.problem);
 			fprintf(stderr, "%s\n", buf);
-			for (int i = 0; i <= mark->column; i++) 
+			for (int i = 0; i <= mark->column; i++)
 				fprintf(stderr, " ");
 			fprintf(stderr, "^\n");
 			continue;
@@ -91,7 +91,7 @@ void interactive_parse_check()
 		yaml_emitter_set_output_string(&emitter, (yaml_char_t*)buf, BUF_SIZE, &written);
 		yaml_emitter_dump(&emitter, &document);
 		yaml_emitter_flush(&emitter);
-		printf("%s\n", buf);		
+		printf("%s\n", buf);
 
 		yaml_parser_delete(&parser);
 		yaml_emitter_close(&emitter);

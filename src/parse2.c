@@ -1,6 +1,6 @@
 #include <parse2.h>
 #include <parse_util.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <unistd.h> /* read() */
 #include <limits.h> /* PIPE_BUF */
 
@@ -31,13 +31,13 @@ void parse_free(struct parse *ps)
 struct parse *parse_new(int fdin, int fdout)
 {
 	struct parse *ret = NULL;
-	Z_die_if(!(
+	NB_die_if(!(
 		ret = calloc(sizeof(struct parse), 1)
 		), "alloc %zu", sizeof(struct parse));
 	ret->fdin = fdin;
 	ret->fdout = fdout;
 	return ret;
-out:
+die:
 	free(ret);
 	return NULL;
 }
@@ -51,18 +51,18 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 	yaml_parser_t parser = { 0 };
 	yaml_document_t document = { {0} };
 
-	Z_die_if(!
+	NB_die_if(!
 		yaml_parser_initialize(&parser)
 		, "");
 	yaml_parser_set_input_string(&parser, doc, doc_len);
 
-	Z_die_if(!
+	NB_die_if(!
 		yaml_parser_load(&parser, &document)
 		, "Invalid YAML, parse failed at position %zu",
 		parser.context_mark.column);
 
 	yaml_node_t *root = yaml_document_get_root_node(&document);
-	Z_die_if(!root || (root->type != YAML_MAPPING_NODE), "");
+	NB_die_if(!root || (root->type != YAML_MAPPING_NODE), "");
 
 	/* Only a 'mode' is a valid root node;
 	 * under a mode we expect a list of directives. e.g.:
@@ -79,7 +79,7 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 
 		/* sanity */
 		if (val->type != YAML_SEQUENCE_NODE) {
-			Z_log_err("node '%s' not a sequence (list)\n"
+			NB_err("node '%s' not a sequence (list)\n"
 				"toplevel node should be a mode, e.g.\n"
 				"'xdpk' || 'add' || 'del' || 'prn';\n"
 				"containing a list of directives e.g.\n"
@@ -109,10 +109,10 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 		{
 			mode = PARSE_PRN;
 		} else {
-			Z_log_err("'%s' is not a valid mode", keyname);
+			NB_err("'%s' is not a valid mode", keyname);
 			continue;
 		}
-		Z_log(Z_inf, "mode %s", parse_mode_prn(mode));
+		NB_inf("mode %s", parse_mode_prn(mode));
 
 		/* process children list objects */
 		for (yaml_node_item_t *child = val->data.sequence.items.start;
@@ -133,18 +133,18 @@ void parse_exec(const unsigned char *doc, size_t doc_len)
 				err_cnt += iface_parse(mode, &document, node);
 
 			} else if (!strcmp("field", subsystem)) {
-				Z_log_err("'field' not implemented yet");
+				NB_err("'field' not implemented yet");
 
 			} else if (!strcmp("node", subsystem)) {
-				Z_log_err("'node' not implemented yet");
+				NB_err("'node' not implemented yet");
 
 			} else {
-				Z_log_err("subsystem '%s' unknown", subsystem);
+				NB_err("subsystem '%s' unknown", subsystem);
 			}
 		}
 	}
 
-out:
+die:
 	if (err_cnt)
 		printf("parser finished with %d errors\n", err_cnt);
 	yaml_parser_delete(&parser);
@@ -165,7 +165,7 @@ void parse_callback(int fd, uint32_t events, void *context)
 		/* extend memory as needed */
 		if (ps->buf_pos + PIPE_BUF > ps->buf_len) {
 			ps->buf_len += PIPE_BUF;
-			Z_die_if(!(
+			NB_die_if(!(
 				ps->buf = realloc(ps->buf, ps->buf_len)
 				), "size %zu", ps->buf_len);
 		}
@@ -182,14 +182,14 @@ void parse_callback(int fd, uint32_t events, void *context)
 	else if (res != 1 || ps->buf[ps->buf_pos-1] != '\n')
 		return;
 
-	//Z_log(Z_inf, "process %zu bytes", ps->buf_pos);
+	//NB_inf("process %zu bytes", ps->buf_pos);
 
 	/* force string termination */
 	ps->buf[ps->buf_pos] = '\0';
 
 	parse_exec(ps->buf, ps->buf_pos);
 
-out:
+die:
 	ps->buf_pos = 0; /* always reset input buffer */
 }
 

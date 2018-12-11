@@ -1,5 +1,5 @@
 #include <hook.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 /*	hook_free()
  */
@@ -22,11 +22,11 @@ void hook_free(struct hook *hk)
 struct hook *hook_new ()
 {
 	struct hook *ret = NULL;
-	Z_die_if(!(
+	NB_die_if(!(
 		ret = calloc(sizeof(*ret), 1)
 		), "alloc size %zu", sizeof(*ret));
 
-out:
+die:
 	free(ret);
 	return NULL;
 }

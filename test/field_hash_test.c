@@ -10,7 +10,7 @@
 #include <getopt.h>
 #include <binhex.h>
 #include <arpa/inet.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <fnv.h>
 #include <parse.h>
 #include "field.h"
@@ -38,16 +38,16 @@ int field_check()
 		uint64_t hash = xdpk_field_hash(tt->matcher,
 				pkt->data, pkt->len, NULL);
 		if (tt->pos_test) {
-			Z_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx, len %zu, '%c'",
-				tt->tag, hash, tt->hash, pkt->len, 
+			NB_err_if(hash != tt->hash, "Tag %s: 0x%lx != 0x%lx, len %zu, '%c'",
+				tt->tag, hash, tt->hash, pkt->len,
 				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
 		} else {
-			Z_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx, len %zu, '%c'",
-				tt->tag, hash, tt->hash, pkt->len, 
+			NB_err_if(hash == tt->hash, "Tag %s: 0x%lx == 0x%lx, len %zu, '%c'",
+				tt->tag, hash, tt->hash, pkt->len,
 				(char)xdpk_field_start_byte(tt->matcher, pkt->data, pkt->len));
 		}
 	}
-	Z_log(Z_inf, "number of field_check tests == %ld",
+	NB_inf("number of field_check tests == %ld",
 			NLC_ARRAY_LEN(hash_tests));
 
 	free_pkts(npkts, &pkts);
@@ -91,7 +91,7 @@ void interactive_hash_check()
 		printf("Enter <len> [<mask>==0xff] <value>: ");
 		if (fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
-			
+
 		nparam = sscanf(buf, "%s %s %s", lenbuf, buf2, buf3);
 
 		switch (nparam) {
@@ -114,7 +114,7 @@ void interactive_hash_check()
 		default:
 			printf("Error: 2 or 3 parameters needed.\n");
 			continue;
-		}	
+		}
 	}
 }
 
@@ -137,7 +137,7 @@ void interactive_parse_check()
 			buf[--len] = '\0';
 		fld = xdpk_field_parse(buf, strlen(buf), &hash);
 
-		printf("offt == %u, len == %d, mask == 0x%02x, hash == 0x%016lx\n", 
+		printf("offt == %u, len == %d, mask == 0x%02x, hash == 0x%016lx\n",
 					fld.offt, fld.len, fld.mask, hash);
 	}
 }

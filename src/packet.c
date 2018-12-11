@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <nonlibc.h>
 #include <binhex.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <stdio.h>
 #include "field.h"
 #include "packet.h"
@@ -14,8 +14,8 @@ void init_pkts(char *cpkts[], int npkts, struct pkt **pkts) {
 
 	for (int i = 0; i < npkts; i++) {
 		uint16_t slen = strlen(cpkts[i]);
-		
-		Z_die_if(slen & 0x1, "odd number of chars in cpkts #%d", i);
+
+		NB_die_if(slen & 0x1, "odd number of chars in cpkts #%d", i);
 		(*pkts)[i].len = slen/2;
 		(*pkts)[i].data = malloc((*pkts)[i].len);
 		for (int j = 0; j < slen; j+=2) {
@@ -26,7 +26,7 @@ void init_pkts(char *cpkts[], int npkts, struct pkt **pkts) {
 		}
 	}
 
-out:
+die:
 	return;
 }
 
@@ -40,13 +40,4 @@ void free_pkts(int npkts, struct pkt **pkts) {
 	pkts = NULL;
 
 	return;
-}
-
-void dump_pkt(struct pkt *pkt)
-{
-	Z_log(Z_inf, "dump_pkt len == %lu", pkt->len);
-	Z_log(Z_inf, "packet == '");
-	for (int i = 0; i < pkt->len; i++)
-		Z_log(Z_inf, "%c", ((char*)pkt->data)[i]);
-	Z_log(Z_inf, "");
 }
