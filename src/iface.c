@@ -24,7 +24,7 @@ void iface_free(struct iface *sk)
 {
 	if (!sk)
 		return;
-	NB_inf("close "XDPK_SOCK_PRN(sk));
+	NB_wrn("close "XDPK_SOCK_PRN(sk));
 
 	hook_free(sk->in);
 	hook_free(sk->out);
@@ -58,7 +58,7 @@ struct iface *iface_new(const char *ifname)
 	ret->fd = -1;
 	NB_die_if((
 		ret->fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
-		) < 0, "");
+		) < 0, "unable to open socket on %s", ret->name);
 	struct ifreq ifr = {{{0}}};
 	snprintf (ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ifname);
 

@@ -26,16 +26,5 @@ void		hook_callback	(struct hook *hk,
 				void *buf,
 				size_t len);
 
-Word_t		hook_insert	(struct hook *hk,
-				struct matcher *mch,
-				const char *name);
-
-struct matcher	*hook_delete	(struct hook *hk,
-				const char *name);
-
-Word_t		hook_iter	(struct hook *hk,
-				void(*exec)(struct matcher *mch));
-
-
 
 #endif /* hook_h_ */
