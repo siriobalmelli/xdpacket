@@ -30,7 +30,6 @@ nixpkgs.stdenv.mkDerivation rec {
 
   buildInputs = [
     nixpkgs.gcc
-    nixpkgs.gdb
     nixpkgs.clang
     nixpkgs.meson
     nixpkgs.ninja

@@ -39,5 +39,6 @@ int main()
 die:
 	parse_free(ps);
 	eptk_free(tk, false);
+	iface_free_all();
 	return err_cnt;
 }

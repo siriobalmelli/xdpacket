@@ -3,6 +3,7 @@
 #include <ndebug.h>
 #include <unistd.h> /* read() */
 #include <limits.h> /* PIPE_BUF */
+#include <yamlutils.h>
 
 /* subsystems which implement parsers */
 #include <iface.h>
@@ -56,6 +57,7 @@ die:
 	return NULL;
 }
 
+
 /*	parse_callback()
  */
 void parse_callback(int fd, uint32_t events, void *context)
@@ -81,15 +83,19 @@ void parse_callback(int fd, uint32_t events, void *context)
 	if (res == 0)
 		close(fd); /* we will never be called again */
 
-	/* a line with only '\n' is our cue to parse all accumulated text as one document */
-	else if (res != 1 || ps->buf[ps->buf_pos-1] != '\n')
+	/* Possible conditions for "document complete":
+	 * - two newlines in a row (and buffer not empty)
+	 * - the standard YAML termination sequence '...' on it's own line
+	 * Until then, wait for more data.
+	 */
+	if (!((res == 1 && ps->buf[ps->buf_pos-1] == '\n')
+		|| (res == 4 && !strncmp("...\n", (char*)&ps->buf[ps->buf_pos-4], 4))))
+	{
 		return;
+	}
 
-	//NB_inf("process %zu bytes", ps->buf_pos);
-
-	/* force string termination */
+	/* force string termination before parsing */
 	ps->buf[ps->buf_pos] = '\0';
-
 	parse(ps->buf, ps->buf_pos, ps->fdout);
 
 die:
@@ -107,7 +113,7 @@ die:
  * Use e.g. NB_err(), NB_wrn() etc - they will write to stderr which is fair game.
  *
  * PROTIP for all those who aren't intimately familiar with the YAML spec:
- * 0. a "scalar" is a string (should *also* be e.g. a number, but doesn't seem to be the case)
+ * 0. a "scalar" is a string
  * 1. a "sequence" is a list
  * 2. a "mapping" is an object
  * 3. "flow style" is JSONish and "block style" is YAMLish
@@ -118,7 +124,7 @@ static void parse(const unsigned char *buf, size_t buf_len, int outfd)
 	int outroot = 0;
 	yaml_document_t doc = {{0}};
 	yaml_document_t outdoc = {{0}};
-	yaml_document_t virgin_doc = {{0}};
+	yaml_document_t virgin_doc = {{0}}; /* ascertain whether outdoc actually initialized */
 	yaml_parser_t parser = {0};
 	yaml_emitter_t emitter = {0};
 
@@ -148,32 +154,30 @@ static void parse(const unsigned char *buf, size_t buf_len, int outfd)
 		, "Invalid YAML, parse failed at position %zu",
 		parser.context_mark.column);
 	yaml_node_t *root = yaml_document_get_root_node(&doc);
-	NB_die_if(!root || (root->type != YAML_MAPPING_NODE), "");
 
-	/* execute directives */
-	err_cnt = parse_exec(&doc, root, &outdoc, outroot);
+	/* If document parses correctly but doesn't yield the expected
+	 * structure, ignore it silently.
+	 * By "silently" is meant DO NOT EMIT (in 'die' block below).
+	 */
+	if (root && root->type == YAML_MAPPING_NODE)
+		err_cnt = parse_exec(&doc, root, &outdoc, outroot);
+	else
+		outroot = 0;
 
 die:
 	/* serialize err_cnt and dump outdoc if at all possible */
 	if (outroot && memcmp(&outdoc, &virgin_doc, sizeof(outdoc))) {
-		int key, val;
-		char tx[8];
-		key = yaml_document_add_scalar(&outdoc, NULL,
-			(yaml_char_t *)"parse errors", -1, YAML_PLAIN_SCALAR_STYLE);
-		int sz = snprintf(tx, sizeof(tx), "%d", err_cnt);
-		val = yaml_document_add_scalar(&outdoc, NULL,
-			(yaml_char_t *)tx, sz, YAML_PLAIN_SCALAR_STYLE);
-		NB_err_if(!key || !val, "serialize 'parse errors'");
-		NB_err_if(!
-			yaml_document_append_mapping_pair(&outdoc, outroot, key, val)
-			, "append error to outdoc");
+		NB_err_if(
+			yml_insert_pair_nf(&outdoc, outroot, "errors", 8, "%d", err_cnt)
+			, "error emitting 'errors'");
 		/* This will destroy 'outdoc', don't call yaml_document_delete() */
 		yaml_emitter_dump(&emitter, &outdoc);
 
 	} else {
-		NB_err("could not serialize 'parse errors: %d'", err_cnt);
 		yaml_document_delete(&outdoc);
 	}
+	NB_err_if(write(outfd, "\n", 1)
+		!= 1, "outfd %d broken", outfd);
 
 	yaml_emitter_delete(&emitter);
 	yaml_parser_delete(&parser);
@@ -236,12 +240,24 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 			continue;
 		}
 
+		/* add mode into emitter as a sequence:
+		 * output of child functions will be added to this node.
+		 */
+		int mode_key = yaml_document_add_scalar(outdoc, NULL,
+					(yaml_char_t *)keyname, -1,
+					YAML_PLAIN_SCALAR_STYLE);
+		int mode_val_list = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
+
 		/* process children list objects */
 		for (yaml_node_item_t *child = val->data.sequence.items.start;
 			child < val->data.sequence.items.top;
 			child++)
 		{
 			yaml_node_t *node = yaml_document_get_node(doc, *child);
+			if (node->type != YAML_MAPPING_NODE) {
+				NB_err("node not a map");
+				continue;
+			}
 
 			/* peek into node:
 			 * first pair _must_ contain "subsystem: name" tuple.
@@ -252,7 +268,7 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 
 			/* match 'subsystem' and hand off to the relevant parser */
 			if (!strcmp("iface", subsystem)) {
-				err_cnt += iface_parse(mode, doc, node);
+				err_cnt += iface_parse(mode, doc, node, outdoc, mode_val_list);
 
 			} else if (!strcmp("field", subsystem)) {
 				NB_err("'field' not implemented yet");
@@ -264,6 +280,9 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 				NB_err("subsystem '%s' unknown", subsystem);
 			}
 		}
+
+		/* emit sequence of "reply mappings" from subroutines */
+		yaml_document_append_mapping_pair(outdoc, outroot, mode_key, mode_val_list);
 	}
 	return err_cnt;
 }
@@ -280,6 +299,6 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
  */
 static int parse_write_handler(void *data, unsigned char *buffer, size_t size)
 {
-	ssize_t ret = write((int)data, buffer, size);
+	ssize_t ret = write((int)(uintptr_t)data, buffer, size);
 	return (ret == size);
 }

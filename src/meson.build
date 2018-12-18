@@ -5,7 +5,8 @@ src_files = files([
     'matcher.c',
     'packet.c',
     'parse.c',
-    'parse2.c'
+    'parse2.c',
+    'yamlutils.c'
 ])
 
 xdpk = executable('xdpk',

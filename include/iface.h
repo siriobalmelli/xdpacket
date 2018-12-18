@@ -43,6 +43,7 @@ struct iface {
 
 
 void		iface_free	(struct iface *sk);
+void		iface_free_all	();
 
 struct iface	*iface_new	(const char *ifname);
 
@@ -51,7 +52,14 @@ void		iface_callback	(int fd,
 				epoll_data_t context);
 
 
-int iface_parse(enum parse_mode mode, yaml_document_t *doc, yaml_node_t *node);
+int iface_parse(enum parse_mode	mode,
+		yaml_document_t	*doc,
+		yaml_node_t	*mapping,
+		yaml_document_t	*outdoc,
+		int		outlist);
 
+int iface_emit(struct iface	*iface,
+		yaml_document_t	*outdoc,
+		int		outlist);
 
 #endif /* iface_h_ */
