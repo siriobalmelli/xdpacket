@@ -28,7 +28,7 @@ nixpkgs.stdenv.mkDerivation rec {
   libjudy = nixpkgs.libjudy or import ./libjudy {};
   nonlibc = nixpkgs.nonlibc or import ./nonlibc {};
 
-  buildInputs = [
+  inputs = [
     nixpkgs.gcc
     nixpkgs.clang
     nixpkgs.meson
@@ -40,6 +40,11 @@ nixpkgs.stdenv.mkDerivation rec {
     nixpkgs.rpm
     nixpkgs.zip
   ];
+  buildInputs = if ! lib.inNixShell then inputs else inputs ++ [
+    nixpkgs.gdb
+    nixpkgs.valgrind
+    nixpkgs.which
+  ];
   propagatedBuildInputs = [
     nixpkgs.libyaml
     libjudy
@@ -47,7 +52,7 @@ nixpkgs.stdenv.mkDerivation rec {
   ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
-  src = ./.;
+  src = if lib.inNixShell then null else ./.;
 
   # Override the setupHook in the meson nix derviation,
   # so that meson doesn't automatically get invoked from there.

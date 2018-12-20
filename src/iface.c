@@ -24,10 +24,11 @@ static Pvoid_t iface_parse_JS = NULL; /* (char *iface_name) -> (struct iface_par
 
 /*	iface_free()
  */
-void iface_free(struct iface *sk)
+void iface_free(void *arg)
 {
-	if (!sk)
+	if (!arg)
 		return;
+	struct iface *sk = arg;
 	js_delete(&iface_parse_JS, sk->name);
 	NB_wrn("close "XDPK_SOCK_PRN(sk));
 
@@ -135,7 +136,7 @@ die:
 
 /*	iface_callback()
  */
-void iface_callback(int fd, uint32_t events, epoll_data_t context)
+int iface_callback(int fd, uint32_t events, epoll_data_t context)
 {
 	/* receive packet and discard outgoing packets */
 	struct sockaddr_ll addr;
@@ -143,7 +144,7 @@ void iface_callback(int fd, uint32_t events, epoll_data_t context)
 	char buf[16384];
 	ssize_t res = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &addr_len);
 	if (res < 1)
-		return;
+		return 1;
 
 	/* handle packet */
 	struct iface *sk = (struct iface *)context.ptr;
@@ -151,8 +152,12 @@ void iface_callback(int fd, uint32_t events, epoll_data_t context)
 	if (addr.sll_pkttype == PACKET_OUTGOING)
 		hk = sk->out;
 	hook_callback(hk, buf, res);
+
+	return 0;
 }
 
+
+//extern struct epoll_track *tk; /* TODO: stopgap measure, find a way to pass this cleanly */
 
 /*	iface_parse()
  * Parse 'root' according to 'mode' (add | rem | prn).
@@ -166,42 +171,41 @@ int iface_parse(enum parse_mode	mode,
 	const char *name = NULL;
 	struct iface *iface = NULL;
 
-	/* parse node */
+	/* parse mapping */
 	for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
 		pair < mapping->data.mapping.pairs.top;
 		pair++)
 	{
+		/* loop boilerplate */
 		yaml_node_t *key = yaml_document_get_node(doc, pair->key);
 		const char *keyname = (const char *)key->data.scalar.value;
-		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
-		const char *valtxt = (const char *)val->data.scalar.value;
 
-		/* sanity */
+		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
 		if (val->type != YAML_SCALAR_NODE) {
-			NB_err("'%s' in iface not a scalar.\n"
-				"Example iface node:\n"
-				"```yaml\n"
-				"iface: eth0\n"
-				"```\n",
-				keyname);
+			NB_err("'%s' in iface not a scalar", keyname);
 			continue;
 		}
+		const char *valtxt = (const char *)val->data.scalar.value;
 
 		/* Match field names and populate 'local' */
-		if (!strcmp("iface", keyname)) {
+		if (!strcmp("iface", keyname))
 			name = valtxt;
-		} else {
+		else
 			NB_err("'iface' does not implement '%s'", keyname);
-		};
 	}
 
-	/* execute */
+	/* process based on 'mode' */
 	switch (mode) {
 	case PARSE_ADD:
 	{
 		NB_die_if(!(
 			iface = iface_new(name)
 			), "");
+		/* TODO: how to cleanly access 'tk' without a bunch of global state??
+		NB_die_if(
+			eptk_register(tk, iface->fd, EPOLLIN, iface_callback, iface, iface_free)
+			, "could not register epoll on '%s'", iface->name);
+		*/
 		NB_die_if(iface_emit(iface, outdoc, outlist), "");
 		break;
 	}
@@ -218,7 +222,9 @@ int iface_parse(enum parse_mode	mode,
 		/* if nothing is given, print all */
 		if (!strcmp("", name))
 			JS_LOOP(&iface_parse_JS,
-				NB_die_if(iface_emit(val, outdoc, outlist), "");
+				NB_die_if(
+					iface_emit(val, outdoc, outlist)
+					, "");
 				);
 		/* otherwise, search for a literal match */
 		else if ((iface = js_get(&iface_parse_JS, name)))
@@ -241,7 +247,7 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	int err_cnt = 0;
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
-		yml_insert_pair(outdoc, reply, "iface", iface->name)
+		y_insert_pair(outdoc, reply, "iface", iface->name)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)

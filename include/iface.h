@@ -28,30 +28,33 @@
  * @JS_mch_in	: input matchers in alphabetical order
  */
 struct iface {
+	char		name[MAXLINELEN];
+	char		ip_prn[INET_ADDRSTRLEN];
+
 	int		fd;
-	char		ip_prn[MAXLINELEN];
 	/* taken directly from struct ifreq: */
 	int		ifindex;
 	int		mtu;
 	struct sockaddr	hwaddr;
 	struct sockaddr_in addr;
-	char		name[MAXLINELEN];
 
 	struct hook	*in;
 	struct hook	*out;
 };
 
 
-void		iface_free	(struct iface *sk);
+void		iface_free	(void *arg);
 void		iface_free_all	();
 
 struct iface	*iface_new	(const char *ifname);
 
-void		iface_callback	(int fd,
+int		iface_callback	(int fd,
 				uint32_t events,
 				epoll_data_t context);
 
 
+/* integrate into parse2.h
+ */
 int iface_parse(enum parse_mode	mode,
 		yaml_document_t	*doc,
 		yaml_node_t	*mapping,

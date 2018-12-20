@@ -2,7 +2,6 @@
 #include <parse_util.h>
 #include <ndebug.h>
 #include <unistd.h> /* read() */
-#include <limits.h> /* PIPE_BUF */
 #include <yamlutils.h>
 
 /* subsystems which implement parsers */
@@ -14,7 +13,7 @@
 static void parse(const unsigned char *buf,
 			size_t buf_len,
 			int outfd);
-static int parse_exec(yaml_document_t *doc,
+static int parse_mapping(yaml_document_t *doc,
 			yaml_node_t *root,
 			yaml_document_t *outdoc,
 			int outroot);
@@ -33,10 +32,18 @@ const char *parse_modes[] = {
 
 /*	parse_free()
  */
-void parse_free(struct parse *ps)
+void parse_free(void *arg)
 {
-	if (!ps)
+	if (!arg)
 		return;
+	struct parse *ps = arg;
+
+	NB_wrn("close parse fd %d", ps->fdin);
+	if (ps->fdin != -1)
+		close(ps->fdin);
+	if (ps->fdout != -1 && ps->fdout != ps->fdin)
+		close(ps->fdout);
+
 	free(ps->buf);
 	free(ps);
 }
@@ -46,21 +53,35 @@ void parse_free(struct parse *ps)
 struct parse *parse_new(int fdin, int fdout)
 {
 	struct parse *ret = NULL;
+	NB_die_if(fdin < 0 || fdout < 0,
+		"input '%d' output '%d' not sane", fdin, fdout);
 	NB_die_if(!(
 		ret = calloc(sizeof(struct parse), 1)
 		), "alloc %zu", sizeof(struct parse));
 	ret->fdin = fdin;
 	ret->fdout = fdout;
+	NB_wrn("open parse fd %d", ret->fdin);
 	return ret;
 die:
 	free(ret);
 	return NULL;
 }
 
+/*	parse_cmptail()
+ * strcmp() the _tail_ end of 'buf' against 'check', with some sanity checks for buf_len.
+ * Return semantics identical to strcmp().
+ */
+static int parse_cmptail(const char *check, const unsigned char *buf, size_t buf_pos)
+{
+	size_t check_len = strlen(check);
+	if (check_len > buf_pos)
+		return -1;
+	return strncmp(check, (const char *)&buf[buf_pos-check_len], check_len);
+}
 
 /*	parse_callback()
  */
-void parse_callback(int fd, uint32_t events, void *context)
+int parse_callback(int fd, uint32_t events, void *context)
 {
 	struct parse *ps = context;
 
@@ -69,6 +90,8 @@ void parse_callback(int fd, uint32_t events, void *context)
 	do {
 		/* extend memory as needed */
 		if (ps->buf_pos + PIPE_BUF > ps->buf_len) {
+			NB_die_if(ps->buf_len >= PARSE_BUF_MAX,
+				"parse buffer exceeds max %zuB", PARSE_BUF_MAX);
 			ps->buf_len += PIPE_BUF;
 			NB_die_if(!(
 				ps->buf = realloc(ps->buf, ps->buf_len)
@@ -79,27 +102,34 @@ void parse_callback(int fd, uint32_t events, void *context)
 			ps->buf_pos += res;
 	} while (res == PIPE_BUF); /* a read of < PIPE_BUF implies no data left */
 
-	/* read of 0 means end of doc when piping from file or stdin */
+	/* Read of 0 means end of doc when piping from file (or stdin)
+	 * or client closed if this is a net socket.
+	 * We return non-0 to indicate we should be deregistered from epoll
+	 * and our destructor (parse_free)executed.
+	 */
 	if (res == 0)
-		close(fd); /* we will never be called again */
+		return 1;
 
 	/* Possible conditions for "document complete":
 	 * - two newlines in a row (and buffer not empty)
 	 * - the standard YAML termination sequence '...' on it's own line
 	 * Until then, wait for more data.
+	 * NOTE complication because some inputs terminate lines with LF
+	 * while others with CRLF.
 	 */
-	if (!((res == 1 && ps->buf[ps->buf_pos-1] == '\n')
-		|| (res == 4 && !strncmp("...\n", (char*)&ps->buf[ps->buf_pos-4], 4))))
-	{
-		return;
-	}
+	if (parse_cmptail("\n\n", ps->buf, ps->buf_pos)
+			&& parse_cmptail("\r\n\r\n", ps->buf, ps->buf_pos)
+			&& parse_cmptail("...\n", ps->buf, ps->buf_pos)
+			&& parse_cmptail("...\r\n", ps->buf, ps->buf_pos))
+		return 0;
 
 	/* force string termination before parsing */
 	ps->buf[ps->buf_pos] = '\0';
 	parse(ps->buf, ps->buf_pos, ps->fdout);
 
 die:
-	ps->buf_pos = 0; /* always reset input buffer */
+	ps->buf_pos = 0; /* reset input buffer */
+	return 0;
 }
 
 
@@ -117,19 +147,23 @@ die:
  * 1. a "sequence" is a list
  * 2. a "mapping" is an object
  * 3. "flow style" is JSONish and "block style" is YAMLish
+ *
+ * TODO: parse multiple documents in a text stream
  */
 static void parse(const unsigned char *buf, size_t buf_len, int outfd)
 {
 	int err_cnt = 0;
-	int outroot = 0;
+
 	yaml_document_t doc = {{0}};
-	yaml_document_t outdoc = {{0}};
-	yaml_document_t virgin_doc = {{0}}; /* ascertain whether outdoc actually initialized */
+	yaml_node_t *root = NULL;
 	yaml_parser_t parser = {0};
+
+	yaml_document_t outdoc = {{0}};
+	int outroot = 0; /* use to test successful init of 'outdoc' */
 	yaml_emitter_t emitter = {0};
 
-	/* Init emitter and output doc first: error count can then be dumped
-	 * if there are later failures.
+	/* Init emitter and output doc first:
+	 * error count can then be dumped if there are later failures.
 	 */
 	NB_die_if(!
 		yaml_emitter_initialize(&emitter)
@@ -153,22 +187,22 @@ static void parse(const unsigned char *buf, size_t buf_len, int outfd)
 		yaml_parser_load(&parser, &doc)
 		, "Invalid YAML, parse failed at position %zu",
 		parser.context_mark.column);
-	yaml_node_t *root = yaml_document_get_root_node(&doc);
+	root = yaml_document_get_root_node(&doc);
 
 	/* If document parses correctly but doesn't yield the expected
 	 * structure, ignore it silently.
 	 * By "silently" is meant DO NOT EMIT (in 'die' block below).
 	 */
 	if (root && root->type == YAML_MAPPING_NODE)
-		err_cnt = parse_exec(&doc, root, &outdoc, outroot);
+		err_cnt += parse_mapping(&doc, root, &outdoc, outroot);
 	else
 		outroot = 0;
 
 die:
 	/* serialize err_cnt and dump outdoc if at all possible */
-	if (outroot && memcmp(&outdoc, &virgin_doc, sizeof(outdoc))) {
+	if (outroot) {
 		NB_err_if(
-			yml_insert_pair_nf(&outdoc, outroot, "errors", 8, "%d", err_cnt)
+			y_insert_pair_nf(&outdoc, outroot, "errors", "%d", err_cnt)
 			, "error emitting 'errors'");
 		/* This will destroy 'outdoc', don't call yaml_document_delete() */
 		yaml_emitter_dump(&emitter, &outdoc);
@@ -176,8 +210,6 @@ die:
 	} else {
 		yaml_document_delete(&outdoc);
 	}
-	NB_err_if(write(outfd, "\n", 1)
-		!= 1, "outfd %d broken", outfd);
 
 	yaml_emitter_delete(&emitter);
 	yaml_parser_delete(&parser);
@@ -185,18 +217,20 @@ die:
 	return;
 }
 
-/*	parse_exec()
+/*	parse_mapping()
+ * Parse a top-level mapping should contain one or more "mode" mappings,
+ * e.g. "add || prn || del".
+ * Each mode-mapping should contain a list of "directive" mappings.
+ * Example:
+ * ```
+ * add: [iface: enp0s3]
+ * ```
  */
-static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
+static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 		yaml_document_t *outdoc, int outroot)
 {
 	int err_cnt = 0;
 
-	/* Process document.
-	 * NOTE: only a 'mode' is a valid root node;
-	 * under a mode we expect a list of directives. e.g.:
-	 * Establish the mode; then handle each directive in the list.
-	 */
 	for (yaml_node_pair_t *pair = root->data.mapping.pairs.start;
 		pair < root->data.mapping.pairs.top;
 		pair++)
@@ -208,14 +242,7 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 
 		/* sanity */
 		if (val->type != YAML_SEQUENCE_NODE) {
-			NB_err("node '%s' not a sequence (list).\n"
-				"Toplevel node should be a mode ('xdpk' || 'add' || 'del' || 'prn'),\n"
-				"containing a list of directives e.g.\n"
-				"```yaml\n"
-				"add:\n"
-				"  - iface: eth0\n"
-				"```",
-				keyname);
+			NB_err("node '%s' not a sequence (list)", keyname);
 			continue;
 		}
 
@@ -240,13 +267,9 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 			continue;
 		}
 
-		/* add mode into emitter as a sequence:
-		 * output of child functions will be added to this node.
-		 */
-		int mode_key = yaml_document_add_scalar(outdoc, NULL,
-					(yaml_char_t *)keyname, -1,
-					YAML_PLAIN_SCALAR_STYLE);
-		int mode_val_list = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
+		/* child functions will append replies here */
+		int reply_list = yaml_document_add_sequence(outdoc, NULL,
+					YAML_BLOCK_SEQUENCE_STYLE);
 
 		/* process children list objects */
 		for (yaml_node_item_t *child = val->data.sequence.items.start;
@@ -268,7 +291,7 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 
 			/* match 'subsystem' and hand off to the relevant parser */
 			if (!strcmp("iface", subsystem)) {
-				err_cnt += iface_parse(mode, doc, node, outdoc, mode_val_list);
+				err_cnt += iface_parse(mode, doc, node, outdoc, reply_list);
 
 			} else if (!strcmp("field", subsystem)) {
 				NB_err("'field' not implemented yet");
@@ -282,7 +305,11 @@ static int parse_exec(yaml_document_t *doc, yaml_node_t *root,
 		}
 
 		/* emit sequence of "reply mappings" from subroutines */
-		yaml_document_append_mapping_pair(outdoc, outroot, mode_key, mode_val_list);
+		int reply_key = yaml_document_add_scalar(outdoc, NULL,
+					(yaml_char_t *)keyname, -1,
+					YAML_PLAIN_SCALAR_STYLE);
+		yaml_document_append_mapping_pair(outdoc, outroot,
+					reply_key, reply_list);
 	}
 	return err_cnt;
 }

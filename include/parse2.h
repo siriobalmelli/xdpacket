@@ -11,6 +11,10 @@
 #include <yaml.h>
 #include <stdint.h>
 #include <nonlibc.h>
+#include <limits.h> /* PIPE_BUF */
+
+#define PARSE_BUF_MAX (size_t)(1024 * 128)
+NLC_ASSERT(parse_buf_max_check, PARSE_BUF_MAX % PIPE_BUF == 0);
 
 
 struct parse {
@@ -22,10 +26,9 @@ struct parse {
 };
 
 
-void parse_free(struct parse *ps);
-struct parse *parse_new(int fdin, int fdout);
-void parse_callback(int fd, uint32_t events, void *context);
-
+void		parse_free(void *arg);
+struct parse	*parse_new(int fdin, int fdout);
+int		parse_callback(int fd, uint32_t events, void *context);
 
 /* global "mode": how to treat nodes being parsed */
 enum parse_mode {

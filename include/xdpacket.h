@@ -9,5 +9,10 @@
 /* variable (interface, matcher, field) names are _short_ */
 #define MAXLINELEN 64
 
+/* TCP port for xdpacket socket.
+ * This is the 16bit fnv1a hash of "xdpacket"
+ */
+#define PORT "7044"
+
 
 #endif /* xdpacket_h_ */

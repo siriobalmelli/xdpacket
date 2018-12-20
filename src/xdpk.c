@@ -6,11 +6,12 @@
 #include <ndebug.h>
 #include <iface.h>
 
+static struct epoll_track *tk = NULL;
+
 /*	main()
  */
 int main(int argc, char **argv)
 {
-	struct epoll_track *tk = NULL;
 	struct iface *sk = NULL;
 
 	NB_die_if(
@@ -23,7 +24,7 @@ int main(int argc, char **argv)
 		sk = iface_new(argv[1])
 		), "failed to open socket on '%s'", argv[1]);
 	NB_die_if(
-		eptk_register(tk, sk->fd, EPOLLIN, iface_callback, (epoll_data_t){ .ptr = sk }),
+		eptk_register(tk, sk->fd, EPOLLIN, iface_callback, sk, iface_free),
 		"failed to register epoll on %d", sk->fd);
 
 	int res;
@@ -34,7 +35,6 @@ int main(int argc, char **argv)
 	}
 
 die:
-	eptk_free(tk, false);
-	iface_free(sk);
+	eptk_free(tk);
 	return 0;
 }
