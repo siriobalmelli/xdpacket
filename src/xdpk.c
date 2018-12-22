@@ -6,8 +6,6 @@
 #include <ndebug.h>
 #include <iface.h>
 
-static struct epoll_track *tk = NULL;
-
 /*	main()
  */
 int main(int argc, char **argv)

@@ -157,7 +157,6 @@ int iface_callback(int fd, uint32_t events, epoll_data_t context)
 }
 
 
-//extern struct epoll_track *tk; /* TODO: stopgap measure, find a way to pass this cleanly */
 
 /*	iface_parse()
  * Parse 'root' according to 'mode' (add | rem | prn).
@@ -201,11 +200,9 @@ int iface_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			iface = iface_new(name)
 			), "");
-		/* TODO: how to cleanly access 'tk' without a bunch of global state??
 		NB_die_if(
 			eptk_register(tk, iface->fd, EPOLLIN, iface_callback, iface, iface_free)
 			, "could not register epoll on '%s'", iface->name);
-		*/
 		NB_die_if(iface_emit(iface, outdoc, outlist), "");
 		break;
 	}
@@ -214,8 +211,15 @@ int iface_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			iface = js_get(&iface_parse_JS, name)
 			), "could not get iface '%s'", name);
-		NB_die_if(iface_emit(iface, outdoc, outlist), "");
-		iface_free(iface);
+		/* rely on eptk_remove() calling iface_free() (destructor) */
+		NB_die_if((
+			eptk_remove(tk, iface->fd)
+			) != 1, "could not remove '%s'", name);
+
+		js_delete(&iface_parse_JS, name);
+		NB_die_if(
+			iface_emit(iface, outdoc, outlist)
+			, "");
 		break;
 
 	case PARSE_PRN:

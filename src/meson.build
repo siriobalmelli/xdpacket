@@ -6,6 +6,7 @@ src_files = files([
     'packet.c',
     'parse.c',
     'parse2.c',
+    'xdpacket_globals.c',
     'yamlutils.c'
 ])
 

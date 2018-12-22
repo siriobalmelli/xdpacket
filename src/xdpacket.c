@@ -110,8 +110,6 @@ die:
 }
 
 
-static struct epoll_track *tk = NULL;
-
 /*	main()
  */
 int main()
