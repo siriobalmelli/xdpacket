@@ -2,6 +2,7 @@ src_files = files([
 	'hook.c',
     'iface.c',
     'field.c',
+    'field2.c',
     'matcher.c',
     'packet.c',
     'parse.c',

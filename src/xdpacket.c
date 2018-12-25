@@ -6,7 +6,6 @@
 #include <parse2.h>
 #include <ndebug.h>
 
-
 /* TCP socket
  */
 #include <sys/types.h>
