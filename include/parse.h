@@ -100,12 +100,9 @@ int parse_match(yaml_document_t *document, yaml_node_t *node, xdpk_command_t **c
 int parse_xdpk(yaml_document_t *document, yaml_node_t *node, xdpk_command_t **cmds, int *numcmd);
 void delete_commands(xdpk_command_t **cmds, int numcmds);
 const char * yaml_node_type(const yaml_node_t *node);
-int yaml_map_count(const yaml_node_t *node);
 char *xdpk_command_print(xdpk_command_t *cmd);
 
 struct xdpk_field xdpk_field_parse(char *fldstr, size_t len, uint64_t *hash);
-
-enum data_type { ASCII_TYPE = 0, DECIMAL_TYPE = 1, HEX_TYPE = 2, BIN_TYPE = 3};
 
 uint8_t parse_uint8(const char *begin, size_t len, bool *err);
 

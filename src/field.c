@@ -91,7 +91,6 @@ char *xdpk_field_print(struct xdpk_field field)
 	return rv;
 }
 
-
 /*
  * Return address of field start
  */

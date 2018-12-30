@@ -19,7 +19,7 @@
 		sk_p->mtu
 
 
-static Pvoid_t iface_parse_JS = NULL; /* (char *iface_name) -> (struct iface_parse *parse) */
+static Pvoid_t iface_parse_JS = NULL; /* (char *iface_name) -> (struct iface *iface) */
 
 
 /*	iface_free()
@@ -42,6 +42,7 @@ void iface_free(void *arg)
 }
 
 /*	iface_free_all()
+ * TODO: is this actually required??
  */
 void iface_free_all()
 {
@@ -187,10 +188,13 @@ int iface_parse(enum parse_mode	mode,
 		const char *valtxt = (const char *)val->data.scalar.value;
 
 		/* Match field names and populate 'local' */
-		if (!strcmp("iface", keyname))
+		if (!strcmp("iface", keyname)
+			|| !strcmp("i", keyname))
+		{
 			name = valtxt;
-		else
+		} else {
 			NB_err("'iface' does not implement '%s'", keyname);
+		}
 	}
 
 	/* process based on 'mode' */
@@ -211,28 +215,29 @@ int iface_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			iface = js_get(&iface_parse_JS, name)
 			), "could not get iface '%s'", name);
-		/* rely on eptk_remove() calling iface_free() (destructor) */
-		NB_die_if((
-			eptk_remove(tk, iface->fd)
-			) != 1, "could not remove '%s'", name);
-
-		js_delete(&iface_parse_JS, name);
 		NB_die_if(
 			iface_emit(iface, outdoc, outlist)
 			, "");
+		/* rely on eptk_remove() calling iface_free() (destructor),
+		 * which will also remove it from the JS array.
+		 */
+		NB_die_if((
+			eptk_remove(tk, iface->fd)
+			) != 1, "could not remove '%s'", name);
 		break;
 
 	case PARSE_PRN:
 		/* if nothing is given, print all */
-		if (!strcmp("", name))
+		if (!strcmp("", name)) {
 			JS_LOOP(&iface_parse_JS,
 				NB_die_if(
 					iface_emit(val, outdoc, outlist)
 					, "");
 				);
 		/* otherwise, search for a literal match */
-		else if ((iface = js_get(&iface_parse_JS, name)))
+		} else if ((iface = js_get(&iface_parse_JS, name))) {
 			NB_die_if(iface_emit(iface, outdoc, outlist), "");
+		}
 		break;
 
 	default:

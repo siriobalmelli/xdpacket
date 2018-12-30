@@ -45,4 +45,19 @@ die:
 int y_insert_pair_nf(yaml_document_t *doc, int mapping,
 			const char *key, const char *val, ...);
 
+
+/*	y_map_count()
+ */
+NLC_INLINE
+int y_map_count(const yaml_node_t *node)
+{
+	int cnt = 0;
+	NB_die_if(node->type != YAML_MAPPING_NODE, "Not a mapping node");
+	yaml_node_pair_t *i_node_p;
+	for (i_node_p = node->data.mapping.pairs.start; i_node_p < node->data.mapping.pairs.top; i_node_p++)
+		cnt++;
+die:
+	return cnt;
+}
+
 #endif /* yamlutils_h_ */

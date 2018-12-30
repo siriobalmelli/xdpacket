@@ -1,5 +1,4 @@
 #include <parse2.h>
-#include <parse_util.h>
 #include <ndebug.h>
 #include <unistd.h> /* read() */
 #include <yamlutils.h>
@@ -290,13 +289,20 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 			const char *subsystem = (const char *)key->data.scalar.value;
 
 			/* match 'subsystem' and hand off to the relevant parser */
-			if (!strcmp("iface", subsystem)) {
+			if (!strcmp("iface", subsystem)
+				|| !strcmp("i", subsystem))
+			{
 				err_cnt += iface_parse(mode, doc, node, outdoc, reply_list);
 
-			} else if (!strcmp("field", subsystem)) {
+			} else if (!strcmp("field", subsystem)
+				|| !strcmp("f", subsystem))
+			
+			{
 				NB_err("'field' not implemented yet");
 
-			} else if (!strcmp("node", subsystem)) {
+			} else if (!strcmp("node", subsystem)
+				|| !strcmp("n", subsystem))
+			{
 				NB_err("'node' not implemented yet");
 
 			} else {
