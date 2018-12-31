@@ -29,7 +29,9 @@ void node_free(void *arg)
 /*	node_new()
  * Create a new node.
  */
-struct node *node_new(const char *name, struct iface *in, uint64_t seq, struct iface *out)
+struct node *node_new(const char *name, uint64_t seq,
+		struct iface *in, struct iface *out,
+		Pvoid_t matches_JQ, Pvoid_t writes_JQ)
 {
 	struct node *ret = NULL;
 	NB_die_if(!name || !in, "no name or input iface given for node");
@@ -53,6 +55,8 @@ struct node *node_new(const char *name, struct iface *in, uint64_t seq, struct i
 		ret->in = in
 		), "node '%s' does not have a valid input interface", ret->name);
 	ret->out = out;
+	ret->matches_JQ = matches_JQ;
+	ret->writes_JQ = writes_JQ;
 
 	/* TODO: register with interface */
 

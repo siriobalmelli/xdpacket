@@ -3,6 +3,7 @@ src_files = files([
     'iface.c',
     'field.c',
     'field2.c',
+    'fval.c',
     'matcher.c',
     'node2.c',
     'packet.c',
