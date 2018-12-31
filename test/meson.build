@@ -1,9 +1,10 @@
 tests = [
+  'command_test.c',
   'field_hash_test.c',
-  'field_valid_test.c',
   'field_matcher_test.c',
   'field_parse_test.c',
-  'command_test.c',
+  'field_valid_test.c',
+  'overflow_test.c',
   'parse_test.c'
 ]
 

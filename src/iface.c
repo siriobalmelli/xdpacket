@@ -19,7 +19,7 @@
 		sk_p->mtu
 
 
-static Pvoid_t iface_parse_JS = NULL; /* (char *iface_name) -> (struct iface *iface) */
+static Pvoid_t iface_JS = NULL; /* (char *iface_name) -> (struct iface *iface) */
 
 
 /*	iface_free()
@@ -29,7 +29,7 @@ void iface_free(void *arg)
 	if (!arg)
 		return;
 	struct iface *sk = arg;
-	js_delete(&iface_parse_JS, sk->name);
+	js_delete(&iface_JS, sk->name);
 	NB_wrn("close "XDPK_SOCK_PRN(sk));
 
 	hook_free(sk->in);
@@ -42,11 +42,11 @@ void iface_free(void *arg)
 }
 
 /*	iface_free_all()
- * TODO: is this actually required??
  */
-void iface_free_all()
+void __attribute__((destructor)) iface_free_all()
 {
-	JS_LOOP(&iface_parse_JS,
+	JS_LOOP(&iface_JS,
+		NB_wrn("iface not freed, freeing by destructor");
 		iface_free(val);
 		);
 }
@@ -60,7 +60,7 @@ struct iface *iface_new(const char *ifname)
 	NB_die_if(!ifname, "cannot create interface without name");
 
 	/* check if interface already exists; if so return existing interface */
-	if ((ret = js_get(&iface_parse_JS, ifname)))
+	if ((ret = js_get(&iface_JS, ifname)))
 		return ret;
 
 	NB_die_if(!(
@@ -124,7 +124,7 @@ struct iface *iface_new(const char *ifname)
 		, "");
 
 	NB_die_if(
-		js_insert(&iface_parse_JS, ret->name, ret)
+		js_insert(&iface_JS, ret->name, ret)
 		, "");
 	NB_inf("add "XDPK_SOCK_PRN(ret));
 
@@ -181,10 +181,8 @@ int iface_parse(enum parse_mode	mode,
 		const char *keyname = (const char *)key->data.scalar.value;
 
 		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
-		if (val->type != YAML_SCALAR_NODE) {
-			NB_err("'%s' in iface not a scalar", keyname);
-			continue;
-		}
+		NB_die_if(val->type != YAML_SCALAR_NODE,
+			"'%s' in iface not a scalar", keyname);
 		const char *valtxt = (const char *)val->data.scalar.value;
 
 		/* Match field names and populate 'local' */
@@ -213,7 +211,7 @@ int iface_parse(enum parse_mode	mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			iface = js_get(&iface_parse_JS, name)
+			iface = js_get(&iface_JS, name)
 			), "could not get iface '%s'", name);
 		NB_die_if(
 			iface_emit(iface, outdoc, outlist)
@@ -229,13 +227,13 @@ int iface_parse(enum parse_mode	mode,
 	case PARSE_PRN:
 		/* if nothing is given, print all */
 		if (!strcmp("", name)) {
-			JS_LOOP(&iface_parse_JS,
+			JS_LOOP(&iface_JS,
 				NB_die_if(
 					iface_emit(val, outdoc, outlist)
 					, "");
 				);
 		/* otherwise, search for a literal match */
-		} else if ((iface = js_get(&iface_parse_JS, name))) {
+		} else if ((iface = js_get(&iface_JS, name))) {
 			NB_die_if(iface_emit(iface, outdoc, outlist), "");
 		}
 		break;

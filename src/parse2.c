@@ -5,6 +5,7 @@
 
 /* subsystems which implement parsers */
 #include <iface.h>
+#include <field2.h>
 
 
 /*	private parse functions
@@ -296,9 +297,8 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 
 			} else if (!strcmp("field", subsystem)
 				|| !strcmp("f", subsystem))
-			
 			{
-				NB_err("'field' not implemented yet");
+				err_cnt += field_parse(mode, doc, node, outdoc, reply_list);
 
 			} else if (!strcmp("node", subsystem)
 				|| !strcmp("n", subsystem))

@@ -44,7 +44,6 @@ struct iface {
 
 
 void		iface_free	(void *arg);
-void		iface_free_all	();
 
 struct iface	*iface_new	(const char *ifname);
 

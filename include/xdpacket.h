@@ -8,8 +8,10 @@
 
 #include <epoll_track.h>
 
-/* variable (interface, matcher, field) names are _short_ */
-#define MAXLINELEN 64
+/* variable (interface, matcher, field) names are _short_.
+ * A max of 56B leaves 8B (uint64_t) free to fill 1 cache line.
+ */
+#define MAXLINELEN 56
 
 /* TCP port for xdpacket socket.
  * This is the 16bit fnv1a hash of "xdpacket"

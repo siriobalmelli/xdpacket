@@ -20,37 +20,14 @@
 
 /*	field_matcher
  * This is expressly a uint64_t size and meant to be passed by _value_.
+ * See match2.h which uses this.
  */
 struct field_matcher {
 	int32_t			offt;
 	uint16_t		len;
 	uint8_t			mask;
-	uint8_t			setff; /* must be 00 (disambiguate from a pointer!) */
+	uint8_t			setff; /* must be ff (disambiguate from a pointer!) */
 }__attribute__((packed));
-
-
-#define FIELD_INVAL	0x0
-#define FIELD_AND	0x1
-#define FIELD_OR	0x2
-
-/*	field_array
- * This is a variable-sized array and is meant to be passed by _reference_.
- * See FIELD_IS_ARRAY_P() below.
- */
-struct field_array {
-	uint32_t		len;
-	uint16_t		flags; /* FIELD_AND, FIELD_OR, etc */
-	uint16_t		pad16;
-	struct field_matcher	arr[];
-}__attribute__((packed));
-
-/* FIELD_IS_ARRAY_P()
- * A pointer to a struct field_array (indeed, any pointer on a sane system)
- * will have the low 4B as 0x0, while a field will have the low 8B as 0xff.
- */
-#define FIELD_IS_ARRAY_(field_or_array_p) \
-	(((struct field_matcher)field_or_array_p).setff == 0)
-
 
 
 /*	field
@@ -58,18 +35,18 @@ struct field_array {
  */
 struct field {
 	char			name[MAXLINELEN];
-	struct field_matcher	matcher;
-};
+	struct field_matcher	mch;
+}__attribute__((packed));
 
 
 void		field_free	(void *arg);
 struct field	*field_new	(const char *name,
-				ssize_t offt,
-				size_t len,
-				uint8_t mask);
+				long offt,
+				long len,
+				long mask);
 
 
-/* integrate into parse2.h
+/* integrates into parse2.h
  */
 int		field_parse	(enum parse_mode mode,
 				yaml_document_t *doc,
