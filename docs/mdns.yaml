@@ -31,10 +31,10 @@ xdpk:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.20
       - ip dst: 192.168.1.1
-    xform:
-      - set: {ip src: 10.1.1.1}
-      - set: {ip dst: 10.1.1.20}
-      - out: eth1
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.20
+    out: eth1
 
   - node: client 2 unicast
     in: eth0
@@ -42,29 +42,29 @@ xdpk:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.21
       - ip dst: 192.168.1.1
-    xform:
-      - set: {ip src: 10.1.1.1}
-      - set: {ip dst: 10.1.1.21}
-      - out: eth1
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.21
+    out: eth1
 
   - node: chrome unicast
     in: eth1
     match:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
-    xform:
-      - set: {ip src: 192.168.1.1}
-      - set: {ip dst: 192.168.1.20}
-      - out: eth0
+    write:
+      ip src: 192.168.1.1
+      ip dst: 192.168.1.20
+    out: eth0
 
   - node: client mdns
     in: eth0
     match:
       - ip src: 192.168.1.20
       - ip dst: 224.0.0.251
-    xform:
-      - set: {ip src: 10.1.1.1}
-      - out: eth1
+    write:
+      - ip src: 10.1.1.1
+    out: eth1
 
   - node: chrome mdns A
     in: eth1
@@ -72,10 +72,10 @@ xdpk:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
       - mdns rec: 0x0001  # DNS A record
-    xform:
-      - set: {ip src: 192.168.1.1}
-      - set: {mdns rec addr: 192.168.1.1}
-      - out: eth0
+    write:
+      - ip src: 192.168.1.1
+      - mdns rec addr: 192.168.1.1
+    out: eth0
 
   # MUST be matched AFTER preceding (more specific) 'A' rule
   - node: chrome mdns
@@ -83,6 +83,6 @@ xdpk:
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
-    xform:
-      - set: {ip src: 192.168.1.1}
-      - out: eth0
+    write:
+      - ip src: 192.168.1.1
+    out: eth0

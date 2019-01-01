@@ -4,6 +4,7 @@ src_files = files([
     'field.c',
     'field2.c',
     'matcher.c',
+    'node2.c',
     'packet.c',
     'parse.c',
     'parse2.c',

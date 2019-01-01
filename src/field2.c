@@ -34,11 +34,22 @@ static void __attribute__((destructor)) field_free_all()
 struct field *field_new	(const char *name, long offt, long len, long mask)
 {
 	struct field *ret = NULL;
-	NB_die_if(!name || !len, "insane parameters");
+	NB_die_if(!name || !len, "no name or length given for field");
 
-	/* check if field already exists; if so return existing */
-	if ((ret = js_get(&field_JS, name)))
-		return ret;
+	/* A '0' mask is irrational.
+	 * If a mask is not provided, assume 0xff.
+	 * Do this _before_ checking for identical duplicates.
+	 */
+	if (!mask)
+		mask = 0xff;
+
+	/* return already existing ONLY if identical */
+	if ((ret = js_get(&field_JS, name))) {
+		if (ret->set.offt == offt && ret->set.len == len && ret->set.mask == mask)
+			return ret;
+		NB_wrn("field '%s' already exists but not identical: deleting", name);
+		field_free(ret);
+	}
 
 	NB_die_if(!(
 		ret = malloc(sizeof(struct field))
@@ -56,15 +67,8 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 		"offt '%ld' out of bounds", offt);
 	NB_die_if(__builtin_add_overflow(len, 0, &ret->set.len),
 		"len '%ld' out of bounds", len);
-	/* A '0' mask is irrational.
-	 * If a mask is not provided, assume 0xff.
-	 */
-	if (mask) {
-		NB_die_if(__builtin_add_overflow(mask, 0, &ret->set.mask),
-			"mask '%ld' out of bounds", mask);
-	} else {
-		ret->set.mask = 0xff;
-	}
+	NB_die_if(__builtin_add_overflow(mask, 0, &ret->set.mask),
+		"mask '%ld' out of bounds", mask);
 	#pragma GCC diagnostic pop
 
 	NB_die_if(

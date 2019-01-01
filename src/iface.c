@@ -57,9 +57,9 @@ static void __attribute__((destructor)) iface_free_all()
 struct iface *iface_new(const char *ifname)
 {
 	struct iface *ret = NULL;
-	NB_die_if(!ifname, "cannot create interface without name");
+	NB_die_if(!ifname, "no name given for iface");
 
-	/* check if interface already exists; if so return existing interface */
+	/* if already exists, return existing */
 	if ((ret = js_get(&iface_JS, ifname)))
 		return ret;
 

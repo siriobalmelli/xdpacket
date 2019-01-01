@@ -18,24 +18,47 @@
  * - we clearly show that 'fieldname' _must_ refer to a valid field
  * - we save a string lookup to get the field's 'set'
  * - this struct stays the size of a cacheline
+ * - we are forced to clean up dependant field_value structs when fields are freed
+ *   or else have dangling pointers
  */
 struct field_value {
 	char		value[MAXLINELEN];
 	struct field	*field;
 };
 
-
-/*	node_parse
+/*	node
+ * The basic atom of xdpacket; describes user intent in terms of
+ * input (seq) -> match -> write (aka: mangle) -> output
  */
-struct node_parse {
-	char			*iface_name; /* input interface */
-	unsigned int		seq; /* unique sequence _and_ id */
-	size_t			match_cnt;
-	struct match_parse	*matches;
-	size_t			xform_cnt;
-	struct xform_parse	*xforms;
+struct node {
+	char		name[MAXLINELEN];
+	struct iface	*in;
+	uint64_t	seq;
+	struct iface	*out;
+
+	struct field_value	*match_list;
+	size_t			match_count;
+
+	struct field_value	*write_list;
+	size_t			write_count;
+
 };
 
-extern Pvoid_t	node_parse_J; /* (char *node_name) -> (struct node_parse *parse) */
+
+void node_free(void *arg);
+
+struct node *node_new	(const char *name,
+			struct iface *in,
+			uint64_t seq,
+			struct iface *out);
+
+struct node *node_add_match(struct node *ne,
+			const char *value,
+			struct field *field);
+
+struct node *node_add_write(struct node *ne,
+			const char *value,
+			struct field *field);
+
 
 #endif /* node2_h_ */
