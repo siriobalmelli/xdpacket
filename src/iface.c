@@ -43,7 +43,7 @@ void iface_free(void *arg)
 
 /*	iface_free_all()
  */
-void __attribute__((destructor)) iface_free_all()
+static void __attribute__((destructor)) iface_free_all()
 {
 	JS_LOOP(&iface_JS,
 		NB_wrn("iface not freed, freeing by destructor");
@@ -51,7 +51,7 @@ void __attribute__((destructor)) iface_free_all()
 		);
 }
 
-/*	iface_open()
+/*	iface_new()
  * Open a socket on 'ifname' or return an already open socket.
  */
 struct iface *iface_new(const char *ifname)

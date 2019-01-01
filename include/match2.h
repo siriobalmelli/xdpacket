@@ -7,7 +7,12 @@
  */
 
 #include <field2.h>
-#include <Judy.h>
+
+
+
+
+
+
 
 #define FIELD_INVAL	0x0
 #define FIELD_AND	0x1
@@ -21,7 +26,7 @@ struct field_array {
 	uint32_t		len;
 	uint16_t		flags; /* FIELD_AND, FIELD_OR, etc */
 	uint16_t		pad16;
-	struct field_matcher	arr[];
+	struct field_set	arr[];
 }__attribute__((packed));
 
 /* FIELD_IS_ARRAY_P()
@@ -30,8 +35,6 @@ struct field_array {
  */
 #define FIELD_IS_ARRAY_(field_or_array_p) \
 	(((struct field_matcher)field_or_array_p).setff == 0)
-
-
 
 
 #endif /* match2_h_ */

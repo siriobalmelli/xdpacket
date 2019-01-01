@@ -16,13 +16,15 @@
 #include <Judy.h>
 #include <yaml.h>
 #include <parse2.h>
+#include <fnv.h>
 
 
-/*	field_matcher
+/*	field_set
+ * The set of parameters defining the extent of a field.
  * This is expressly a uint64_t size and meant to be passed by _value_.
  * See match2.h which uses this.
  */
-struct field_matcher {
+struct field_set {
 	int32_t			offt;
 	uint16_t		len;
 	uint8_t			mask;
@@ -35,8 +37,8 @@ struct field_matcher {
  */
 struct field {
 	char			name[MAXLINELEN];
-	struct field_matcher	mch;
-}__attribute__((packed));
+	struct field_set	set;
+};
 
 
 void		field_free	(void *arg);
@@ -45,6 +47,10 @@ struct field	*field_new	(const char *name,
 				long len,
 				long mask);
 
+int		field_hash	(struct field_set set,
+				void *pkt,
+				size_t plen,
+				uint64_t *outhash);
 
 /* integrates into parse2.h
  */

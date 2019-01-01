@@ -21,7 +21,7 @@ void field_free(void *arg)
 
 /*	field_free_all()
  */
-void __attribute__((destructor)) field_free_all()
+static void __attribute__((destructor)) field_free_all()
 {
 	JS_LOOP(&field_JS,
 		field_free(val);
@@ -52,12 +52,19 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	/* see 'test/overflow_test.c' for a proof that this is kosher */
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-	NB_die_if(__builtin_add_overflow(offt, 0, &ret->mch.offt),
+	NB_die_if(__builtin_add_overflow(offt, 0, &ret->set.offt),
 		"offt '%ld' out of bounds", offt);
-	NB_die_if(__builtin_add_overflow(len, 0, &ret->mch.len),
+	NB_die_if(__builtin_add_overflow(len, 0, &ret->set.len),
 		"len '%ld' out of bounds", len);
-	NB_die_if(__builtin_add_overflow(mask, 0, &ret->mch.mask),
-		"mask '%ld' out of bounds", mask);
+	/* A '0' mask is irrational.
+	 * If a mask is not provided, assume 0xff.
+	 */
+	if (mask) {
+		NB_die_if(__builtin_add_overflow(mask, 0, &ret->set.mask),
+			"mask '%ld' out of bounds", mask);
+	} else {
+		ret->set.mask = 0xff;
+	}
 	#pragma GCC diagnostic pop
 
 	NB_die_if(
@@ -69,6 +76,59 @@ die:
 	field_free(ret);
 	return NULL;
 }
+
+
+/*	field_hash()
+ * Adds the fnv1a hash of 'set' _and_ the bytes of 'pkt' described by 'set'
+ * to the fnv1a in 'outhash'.
+ *
+ * Returns 0 on success; non-zero return indicates inability to hash
+ * (e.g. 'pkt' is NULL, 'plen' shorter than offset in 'set', etc),
+ * and in this case the contents of 'outhash' are unchanged.
+ *
+ * These semantics are so that the caller can calculate the compound hash
+ * of multiple sets (ANDing multiple matches).
+ * Caller must PREPARE 'outhash' with a call to fnv_hash64()
+ * before the first call to field_hash(), e.g.:
+ * ```
+ * uint64_t le_hash = fnv_hash64(NULL, NULL, 0);
+ * field_hash(a_set, a_pkt, a_size, &le_hash);
+ * ```
+ */
+int field_hash(struct field_set set, void *pkt, size_t plen, uint64_t *outhash)
+{
+	/* Parameter sanity */
+	if (!pkt || !plen)
+		return 1;
+
+	/* Offset sanity.
+	 * 'offt' may be negative, in which case it denotes offset from
+	 * the end of the packet.
+	 */
+	const void *start = pkt + set.offt;
+	if (set.offt < 0)
+		start += plen;
+	if (start < pkt)
+		return 1;
+
+	/* Size sanity.
+	 * We rely on the invariant that no set may have length 0
+	 */
+	size_t flen = set.len;
+	//NB_wrn("flen  == 0x%lu, start == %p, plen == %lu", flen, start, plen);
+	if ((start + flen) > (pkt + plen))
+		return 1;
+
+	/* must not error after we start changing 'outhash' */
+	*outhash = fnv_hash64(outhash, &set, sizeof(set));
+	*outhash = fnv_hash64(outhash, start, flen-1);
+	/* last byte must be run through the mask */
+	uint8_t trailing = ((uint8_t*)start)[flen-1] & set.mask;
+	*outhash = fnv_hash64(outhash, &trailing, sizeof(trailing));
+
+	return 0;
+}
+
 
 /*	field_parse()
  * Parse 'root' according to 'mode' (add | rem | prn).
@@ -184,9 +244,9 @@ int field_emit(struct field *field, yaml_document_t *outdoc, int outlist)
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
 		y_insert_pair(outdoc, reply, "field", field->name)
-		|| y_insert_pair_nf(outdoc, reply, "offt", "%d", field->mch.offt)
-		|| y_insert_pair_nf(outdoc, reply, "len", "%u", field->mch.len)
-		|| y_insert_pair_nf(outdoc, reply, "mask", "0x%x", field->mch.mask)
+		|| y_insert_pair_nf(outdoc, reply, "offt", "%d", field->set.offt)
+		|| y_insert_pair_nf(outdoc, reply, "len", "%u", field->set.len)
+		|| y_insert_pair_nf(outdoc, reply, "mask", "0x%x", field->set.mask)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
