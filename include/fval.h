@@ -30,9 +30,13 @@ struct fval {
 };
 
 
-void		fval_free(void *arg);
+void		fval_free	(void *arg);
 
-struct fval	*fval_new(const char *field_name, const char *value);
+struct fval	*fval_new	(const char *field_name,
+				const char *value);
 
+int		fval_emit	(struct fval *fval,
+				yaml_document_t *outdoc,
+				int outlist);
 
 #endif /* fval_h_ */

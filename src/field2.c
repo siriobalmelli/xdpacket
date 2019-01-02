@@ -82,6 +82,14 @@ die:
 }
 
 
+/*	field_get()
+ */
+struct field *field_get (const char *field_name)
+{
+	return js_get(&field_JS, field_name);
+}
+
+
 /*	field_hash()
  * Adds the fnv1a hash of 'set' _and_ the bytes of 'pkt' described by 'set'
  * to the fnv1a in 'outhash'.

@@ -4,11 +4,7 @@
 # eth0 == 192.168.1.1/24 -> client 192.168.1.20
 # eth1 == 10.1.1.1/24 -> chromecast 10.1.1.20
 xdpk:
-  # iface is a system interface
-  - iface: eth0
-  - iface: eth1
-
-  # field: a set of bytes to be hashed or written
+  # field: a named set of bytes to be hashed or written
   - field: ip proto
     offt: 25
     len: 1
@@ -25,8 +21,8 @@ xdpk:
     offt: -4
     len: 4
 
+  # node is a named set of matches and mangles (bytes to be written)
   - node: client unicast
-    in: eth0
     match:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.20
@@ -34,10 +30,7 @@ xdpk:
     write:
       - ip src: 10.1.1.1
       - ip dst: 10.1.1.20
-    out: eth1
-
   - node: client 2 unicast
-    in: eth0
     match:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.21
@@ -45,29 +38,20 @@ xdpk:
     write:
       - ip src: 10.1.1.1
       - ip dst: 10.1.1.21
-    out: eth1
-
   - node: chrome unicast
-    in: eth1
     match:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
     write:
       ip src: 192.168.1.1
       ip dst: 192.168.1.20
-    out: eth0
-
   - node: client mdns
-    in: eth0
     match:
       - ip src: 192.168.1.20
       - ip dst: 224.0.0.251
     write:
       - ip src: 10.1.1.1
-    out: eth1
-
   - node: chrome mdns A
-    in: eth1
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
@@ -75,14 +59,22 @@ xdpk:
     write:
       - ip src: 192.168.1.1
       - mdns rec addr: 192.168.1.1
-    out: eth0
-
   # MUST be matched AFTER preceding (more specific) 'A' rule
   - node: chrome mdns
-    in: eth1
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
     write:
       - ip src: 192.168.1.1
-    out: eth0
+
+  # iface is a system interface and a sequence of node+output tuples to execute
+  - iface: eth0
+    nodes:
+      - client unicast: eth1
+      - client 2 unicast: eth1
+      - client mdns: eth1
+  - iface: eth1
+    nodes:
+      - chrome unicast: eth0
+      - chrome mdns A: eth0
+      - chrome mdns: eth0
