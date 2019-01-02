@@ -47,6 +47,8 @@ struct field	*field_new	(const char *name,
 				long len,
 				long mask);
 
+struct field	*field_get(const char *field_name);
+
 int		field_hash	(struct field_set set,
 				void *pkt,
 				size_t plen,

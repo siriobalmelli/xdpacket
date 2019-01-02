@@ -11,6 +11,8 @@
 #include <xform2.h>
 #include <match2.h>
 #include <iface.h>
+#include <fval.h>
+
 
 /*	node
  * The basic atom of xdpacket; describes user intent in terms of
@@ -21,8 +23,8 @@ struct node {
 	struct iface	*in;
 	uint64_t	seq;
 	struct iface	*out;
-	Pvoid_t		matches_JQ; /* queue of (struct field_value *mch) */
-	Pvoid_t		writes_JQ; /* queue of (struct field_value *wrt) */
+	Pvoid_t		matches_JQ; /* queue of (struct fval *mch) */
+	Pvoid_t		writes_JQ; /* queue of (struct fval *wrt) */
 };
 
 
@@ -34,14 +36,6 @@ struct node *node_new(const char *name,
 			struct iface *out,
 			Pvoid_t matches_JQ,
 			Pvoid_t writes_JQ);
-
-struct node *node_add_match(struct node *ne,
-			const char *value,
-			struct field *field);
-
-struct node *node_add_write(struct node *ne,
-			const char *value,
-			struct field *field);
 
 
 #endif /* node2_h_ */

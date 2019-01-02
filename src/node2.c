@@ -21,8 +21,13 @@ void node_free(void *arg)
 
 	js_delete(&node_JS, ne->name);
 
-	free(ne->match_list);
-	free(ne->write_list);
+	JL_LOOP(&ne->matches_JQ,
+		fval_free(val);
+	       );
+	JL_LOOP(&ne->writes_JQ,
+		fval_free(val);
+	       );
+
 	free(ne);
 }
 
@@ -58,6 +63,7 @@ struct node *node_new(const char *name, uint64_t seq,
 	ret->matches_JQ = matches_JQ;
 	ret->writes_JQ = writes_JQ;
 
+	/* TODO: add to sequence */
 	/* TODO: register with interface */
 
 	js_insert(&node_JS, ret->name, ret, true);
@@ -65,38 +71,4 @@ struct node *node_new(const char *name, uint64_t seq,
 die:
 	node_free(ret);
 	return NULL;
-}
-
-/*	node_add_match()
- */
-struct node *node_add_match(struct node *ne, const char *value, struct field *field)
-{
-	/* Basic sanity checking.
-	 * Past this point, any error will cause us to abort and free 'ne' entirely.
-	 */
-	if (!ne || !value || !field)
-		return ne;
-
-	size_t alloc = ++ne->match_count * sizeof(struct field_value);
-	NB_die_if(!(
-		ne->match_list = realloc(ne->match_list, alloc)
-		), "failed to realloc size %zu", alloc);
-
-	struct field_value *fv = &ne->match_list[ne->match_count-1];
-	fv->field = field;
-	NB_die_if((
-		snprintf(fv->value, sizeof(fv->value), "%s", value)
-		) >= sizeof(fv->value), "value overflow '%s'", value);
-
-	return ne;
-die:
-	node_free(ne);
-	return NULL;
-}
-
-/*	node_add_write()
- */
-struct node *node_add_write(struct node *ne, const char *value, struct field *field)
-{
-	/* TODO: generalize with preceding case and implement */
 }
