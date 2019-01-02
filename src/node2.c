@@ -8,6 +8,7 @@
 
 
 static Pvoid_t	node_JS = NULL; /* (char *node_name) -> (struct node *node) */
+static Pvoid_t	node_J = NULL; /* (uint64_t seq) -> (struct node *node) */
 
 
 /*	node_free()
@@ -55,7 +56,7 @@ struct node *node_new(const char *name, struct iface *in, uint64_t seq, struct i
 
 	/* TODO: register with interface */
 
-	js_insert(&node_JS, ret->name, ret);
+	js_insert(&node_JS, ret->name, ret, true);
 	return ret;
 die:
 	node_free(ret);

@@ -72,7 +72,7 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	#pragma GCC diagnostic pop
 
 	NB_die_if(
-		js_insert(&field_JS, ret->name, ret)
+		js_insert(&field_JS, ret->name, ret, true)
 		, "");
 
 	return ret;

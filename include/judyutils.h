@@ -15,26 +15,56 @@
 #include <nonlibc.h>
 
 
-/*	js_insert()
- * Insert (or update and clobber!) 'datum' at 'index' of 'array'.
- * Return 0 on success.
+/* Common internal logic for insert calls.
+ * These aren't the droids you are looking for.
+ * Move along.
  */
-NLC_INLINE int js_insert(Pvoid_t *array, const char *index, void *datum)
+#define JXX_INSERT_COMMON			\
+	if (pval) {				\
+		if (!clobber && (*pval))	\
+			return 1;		\
+		*pval = datum;			\
+		return 0;			\
+	}					\
+	return 1;				\
+
+
+/*	j[type]_insert()
+ * Insert 'datum' at 'index' of '*array'.
+ * If 'clobber' is true, then then any existing datum will be overwritten.
+ * Return 0 on success.
+ * NOTE this relies on 'datum' never being NULL/0.
+ */
+NLC_INLINE int jl_insert(Pvoid_t *array, uint64_t index, void *datum, bool clobber)
 {
+	if (!datum)
+		return 1;
+	void **pval;
+	JLI(pval, *array, index);
+	JXX_INSERT_COMMON
+}
+NLC_INLINE int js_insert(Pvoid_t *array, const char *index, void *datum, bool clobber)
+{
+	if (!datum)
+		return 1;
 	void **pval;
 	JSLI(pval, *array, (const uint8_t *)index);
-	if (pval) {
-		*pval = datum;
-		return 0;
-	}
-	return 1;
+	JXX_INSERT_COMMON
 }
 
-/*	js_get()
- * Get 'index' in array.
- * Return 'datum' or NULL if not found
- * (or NULL if 'datum' is NULL but please just don't put NULL datums in array).
+
+/*	j[type]_get()
+ * Get 'index' in '*array'.
+ * Return 'datum' or NULL if not found (NULL is not a valid array datum).
  */
+NLC_INLINE void *jl_get(Pvoid_t *array, uint64_t index)
+{
+	void **pval;
+	JLG(pval, *array, index);
+	if (pval)
+		return *pval;
+	return NULL;
+}
 NLC_INLINE void *js_get(Pvoid_t *array, const char *index)
 {
 	void **pval;
@@ -44,9 +74,15 @@ NLC_INLINE void *js_get(Pvoid_t *array, const char *index)
 	return NULL;
 }
 
-/*	js_delete()
- * Delete 'index' in array.
+
+/*	j[type]_delete()
+ * Delete 'index' in '*array'.
  */
+NLC_INLINE void j_delete(Pvoid_t *array, uint64_t index)
+{
+	int rc;
+	JLD(rc, *array, index);
+}
 NLC_INLINE void js_delete(Pvoid_t *array, const char *index)
 {
 	int rc;
@@ -54,7 +90,7 @@ NLC_INLINE void js_delete(Pvoid_t *array, const char *index)
 }
 
 
-/*	JS_LOOP()
+/*	J[type]_LOOP()
  * Execute 'statements' inside a loop iterating through all elements of '*array_ptr'.
  *
  * The following variables are available to 'statements':
@@ -72,17 +108,32 @@ NLC_INLINE void js_delete(Pvoid_t *array, const char *index)
  *		);
  * ```
  */
-#define JS_LOOP(array_ptr, statements) \
-do { \
-	uint8_t index[MAXLINELEN] = {0}; \
-	void **pval; \
-	Pvoid_t __attribute__((unused)) *parr = array_ptr; \
-	JSLF(pval, *array_ptr, index); \
-	while (pval) { \
-		void *val = *pval; \
-		statements; \
-		JSLN(pval, *array_ptr, index); \
-	} \
+#define JL_LOOP(array_ptr, statements)				\
+do {								\
+	uint64_t index = 0;					\
+	void **pval;						\
+	Pvoid_t __attribute__((unused)) *parr = array_ptr;	\
+	JLF(pval, *array_ptr, index);				\
+	while (pval) {						\
+		void *val = *pval;				\
+		/* user statements executed here */		\
+		statements;					\
+		JLN(pval, *array_ptr, index);			\
+	}							\
+} while(0)
+
+#define JS_LOOP(array_ptr, statements)				\
+do {								\
+	uint8_t index[MAXLINELEN] = {0};			\
+	void **pval;						\
+	Pvoid_t __attribute__((unused)) *parr = array_ptr;	\
+	JSLF(pval, *array_ptr, index);				\
+	while (pval) {						\
+		void *val = *pval;				\
+		/* user statements executed here */		\
+		statements;					\
+		JSLN(pval, *array_ptr, index);			\
+	}							\
 } while(0)
 
 

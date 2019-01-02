@@ -124,7 +124,7 @@ struct iface *iface_new(const char *ifname)
 		, "");
 
 	NB_die_if(
-		js_insert(&iface_JS, ret->name, ret)
+		js_insert(&iface_JS, ret->name, ret, true)
 		, "");
 	NB_inf("add "XDPK_SOCK_PRN(ret));
 
