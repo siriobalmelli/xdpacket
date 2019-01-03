@@ -22,6 +22,8 @@
  */
 
 #include <field2.h>
+#include <yaml.h>
+
 
 struct fval {
 	struct field	*field;

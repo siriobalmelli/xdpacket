@@ -135,6 +135,14 @@ die:
 }
 
 
+/*	iface_get()
+ */
+struct iface *iface_get (const char *name)
+{
+	return js_get(&iface_JS, name);
+}
+
+
 /*	iface_callback()
  */
 int iface_callback(int fd, uint32_t events, epoll_data_t context)
@@ -211,7 +219,7 @@ int iface_parse(enum parse_mode	mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			iface = js_get(&iface_JS, name)
+			iface = iface_get(name)
 			), "could not get iface '%s'", name);
 		NB_die_if(
 			iface_emit(iface, outdoc, outlist)
@@ -233,7 +241,7 @@ int iface_parse(enum parse_mode	mode,
 					, "");
 				);
 		/* otherwise, search for a literal match */
-		} else if ((iface = js_get(&iface_JS, name))) {
+		} else if ((iface = iface_get(name))) {
 			NB_die_if(iface_emit(iface, outdoc, outlist), "");
 		}
 		break;

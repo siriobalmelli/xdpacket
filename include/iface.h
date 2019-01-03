@@ -47,6 +47,8 @@ void		iface_free	(void *arg);
 
 struct iface	*iface_new	(const char *ifname);
 
+struct iface	*iface_get	(const char *name);
+
 int		iface_callback	(int fd,
 				uint32_t events,
 				epoll_data_t context);

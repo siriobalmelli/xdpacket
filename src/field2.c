@@ -176,26 +176,18 @@ int field_parse(enum parse_mode	mode,
 		const char *valtxt = (const char *)val->data.scalar.value;
 
 		/* Match field names and populate 'local' */
-		if (!strcmp("field", keyname)
-			|| !strcmp("f", keyname))
-		{
+		if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
 			name = valtxt;
 
-		} else if (!strcmp("offt", keyname)
-			|| !strcmp("o", keyname))
-		{
+		} else if (!strcmp("offt", keyname) || !strcmp("o", keyname)) {
 			offt = strtol(valtxt, NULL, 0);
 			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
 
-		} else if (!strcmp("len", keyname)
-			|| !strcmp("l", keyname))
-		{
+		} else if (!strcmp("len", keyname) || !strcmp("l", keyname)) {
 			len = strtol(valtxt, NULL, 0);
 			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
 
-		} else if (!strcmp("mask", keyname)
-			|| !strcmp("m", keyname))
-		{
+		} else if (!strcmp("mask", keyname) || !strcmp("m", keyname)) {
 			mask = strtol(valtxt, NULL, 0);
 			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
 
@@ -217,7 +209,7 @@ int field_parse(enum parse_mode	mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			field = js_get(&field_JS, name)
+			field = field_get(name)
 			), "could not get field '%s'", name);
 		NB_die_if(
 			field_emit(field, outdoc, outlist)

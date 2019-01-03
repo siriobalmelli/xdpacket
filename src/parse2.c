@@ -277,8 +277,8 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 			child < val->data.sequence.items.top;
 			child++)
 		{
-			yaml_node_t *node = yaml_document_get_node(doc, *child);
-			if (node->type != YAML_MAPPING_NODE) {
+			yaml_node_t *mapping = yaml_document_get_node(doc, *child);
+			if (mapping->type != YAML_MAPPING_NODE) {
 				NB_err("node not a map");
 				continue;
 			}
@@ -286,22 +286,22 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 			/* peek into node:
 			 * first pair _must_ contain "subsystem: name" tuple.
 			 */
-			yaml_node_pair_t *pair = node->data.mapping.pairs.start;
+			yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
 			yaml_node_t *key = yaml_document_get_node(doc, pair->key);
-			const char *subsystem = (const char *)key->data.scalar.value;
+			const char *keyval = (const char *)key->data.scalar.value;
 
 			/* match 'subsystem' and hand off to the relevant parser */
-			if (!strcmp("iface", subsystem) || !strcmp("i", subsystem))
-				err_cnt += iface_parse(mode, doc, node, outdoc, reply_list);
+			if (!strcmp("iface", keyval) || !strcmp("i", keyval))
+				err_cnt += iface_parse(mode, doc, mapping, outdoc, reply_list);
 
-			else if (!strcmp("field", subsystem) || !strcmp("f", subsystem))
-				err_cnt += field_parse(mode, doc, node, outdoc, reply_list);
+			else if (!strcmp("field", keyval) || !strcmp("f", keyval))
+				err_cnt += field_parse(mode, doc, mapping, outdoc, reply_list);
 
-			else if (!strcmp("node", subsystem) || !strcmp("n", subsystem))
-				err_cnt += node_parse(mode, doc, node, outdoc, reply_list);
+			else if (!strcmp("node", keyval) || !strcmp("n", keyval))
+				err_cnt += node_parse(mode, doc, mapping, outdoc, reply_list);
 
 			else
-				NB_err("subsystem '%s' unknown", subsystem);
+				NB_err("subsystem '%s' unknown", keyval);
 		}
 
 		/* emit sequence of "reply mappings" from subroutines */

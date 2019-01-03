@@ -16,12 +16,12 @@
 
 /*	node
  * The basic atom of xdpacket; describes user intent in terms of
- * input (seq) -> match -> mangle (aka: write bytes) -> output
+ * input (seq) -> match -> write (aka: mangle bytes) -> output
  */
 struct node {
 	char		name[MAXLINELEN];
 	Pvoid_t		matches_JQ; /* queue of (struct fval *mch) */
-	Pvoid_t		mangles_JQ; /* queue of (struct fval *wrt) */
+	Pvoid_t		writes_JQ; /* queue of (struct fval *wrt) */
 };
 
 
@@ -29,7 +29,7 @@ void		node_free	(void *arg);
 
 struct node	*node_new	(const char *name,
 				Pvoid_t matches_JQ,
-				Pvoid_t mangles_JQ);
+				Pvoid_t writes_JQ);
 
 struct node	*node_get	(const char *name);
 

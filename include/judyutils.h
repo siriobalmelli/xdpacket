@@ -53,6 +53,38 @@ NLC_INLINE int js_insert(Pvoid_t *array, const char *index, void *datum, bool cl
 }
 
 
+/*	j[type]_enqueue()
+ * Enqueue 'datum' in the FIRST AVAILABLE SLOT of '*array'.
+ * If '*array' contains no "holes", then the result, intuitively, "append at tail" 
+ * Otherwise, the first available gap will be filled.
+ * The reasons for this possibly weird approach are:
+ * - avoid having to migrate/shuffle/defragment array elements
+ * - most use cases are a SERIES of enqueue() operations followed by a series
+ *   of pop()s, which performs exactly as expected.
+ */
+NLC_INLINE int jl_enqueue(Pvoid_t *array, void *datum)
+{
+	uint64_t index;
+	int rc;
+	JLFE(rc, *array, index);
+	if (!rc)
+		return 1;
+	return jl_insert(array, index, datum, false);
+}
+
+
+/*	j[type]_pop()
+ * Pop 'datum' from the FIRST FILLED SLOT of '*array', removing it from the array.
+ * See enqueue() above for comments and caveats.
+ * Return 'datum' or NULL if not found (NULL is not a valid array datum).
+ */
+NLC_INLINE void *jl_pop(Pvoid_t *array)
+{
+	/* TODO: implement */
+	return NULL;
+}
+
+
 /*	j[type]_get()
  * Get 'index' in '*array'.
  * Return 'datum' or NULL if not found (NULL is not a valid array datum).
