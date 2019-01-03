@@ -6,6 +6,7 @@
 /* subsystems which implement parsers */
 #include <iface.h>
 #include <field2.h>
+#include <node2.h>
 
 
 /*	private parse functions
@@ -290,32 +291,23 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 			const char *subsystem = (const char *)key->data.scalar.value;
 
 			/* match 'subsystem' and hand off to the relevant parser */
-			if (!strcmp("iface", subsystem)
-				|| !strcmp("i", subsystem))
-			{
+			if (!strcmp("iface", subsystem) || !strcmp("i", subsystem))
 				err_cnt += iface_parse(mode, doc, node, outdoc, reply_list);
 
-			} else if (!strcmp("field", subsystem)
-				|| !strcmp("f", subsystem))
-			{
+			else if (!strcmp("field", subsystem) || !strcmp("f", subsystem))
 				err_cnt += field_parse(mode, doc, node, outdoc, reply_list);
 
-			} else if (!strcmp("node", subsystem)
-				|| !strcmp("n", subsystem))
-			{
-				NB_err("'node' not implemented yet");
+			else if (!strcmp("node", subsystem) || !strcmp("n", subsystem))
+				err_cnt += node_parse(mode, doc, node, outdoc, reply_list);
 
-			} else {
+			else
 				NB_err("subsystem '%s' unknown", subsystem);
-			}
 		}
 
 		/* emit sequence of "reply mappings" from subroutines */
-		int reply_key = yaml_document_add_scalar(outdoc, NULL,
-					(yaml_char_t *)keyname, -1,
-					YAML_PLAIN_SCALAR_STYLE);
-		yaml_document_append_mapping_pair(outdoc, outroot,
-					reply_key, reply_list);
+		NB_err_if(
+			y_insert_pair_obj(outdoc, outroot, keyname, reply_list)
+			, "");
 	}
 	return err_cnt;
 }

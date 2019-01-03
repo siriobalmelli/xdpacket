@@ -25,11 +25,24 @@ struct node {
 };
 
 
-void node_free(void *arg);
+void		node_free	(void *arg);
 
-struct node *node_new(const char *name,
-			Pvoid_t matches_JQ,
-			Pvoid_t mangles_JQ);
+struct node	*node_new	(const char *name,
+				Pvoid_t matches_JQ,
+				Pvoid_t mangles_JQ);
+
+struct node	*node_get	(const char *name);
+
+
+int		node_parse	(enum parse_mode mode,
+				yaml_document_t *doc,
+				yaml_node_t *mapping,
+				yaml_document_t *outdoc,
+				int outlist);
+
+int		node_emit	(struct node *node,
+				yaml_document_t *outdoc,
+				int outlist);
 
 
 #endif /* node2_h_ */

@@ -27,7 +27,7 @@ xdpk:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.20
       - ip dst: 192.168.1.1
-    write:
+    mangle:
       - ip src: 10.1.1.1
       - ip dst: 10.1.1.20
   - node: client 2 unicast
@@ -35,28 +35,28 @@ xdpk:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.21
       - ip dst: 192.168.1.1
-    write:
+    mangle:
       - ip src: 10.1.1.1
       - ip dst: 10.1.1.21
   - node: chrome unicast
     match:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
-    write:
+    mangle:
       ip src: 192.168.1.1
       ip dst: 192.168.1.20
   - node: client mdns
     match:
       - ip src: 192.168.1.20
       - ip dst: 224.0.0.251
-    write:
+    mangle:
       - ip src: 10.1.1.1
   - node: chrome mdns A
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
       - mdns rec: 0x0001  # DNS A record
-    write:
+    mangle:
       - ip src: 192.168.1.1
       - mdns rec addr: 192.168.1.1
   # MUST be matched AFTER preceding (more specific) 'A' rule
@@ -64,7 +64,7 @@ xdpk:
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
-    write:
+    mangle:
       - ip src: 192.168.1.1
 
   # iface is a system interface and a sequence of node+output tuples to execute
