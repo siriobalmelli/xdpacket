@@ -8,6 +8,10 @@
  * which increases legibility everywhere by avoiding casts.
  *
  * (c) 2018 Sirio Balmelli
+ *
+ * TODO: handle "Conditional jump or move depends on uninitialised value(s)"
+ * errors thrown by Valgrind when dealing with Judy
+ * ... until then use '--undef-value-errors=no'
  */
 
 #include <xdpacket.h>

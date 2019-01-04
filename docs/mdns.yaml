@@ -4,6 +4,10 @@
 # eth0 == 192.168.1.1/24 -> client 192.168.1.20
 # eth1 == 10.1.1.1/24 -> chromecast 10.1.1.20
 xdpk:
+  # iface is a system interface on which to open a socket
+  - iface: eth0
+  - iface: eth1
+
   # field: a named set of bytes to be hashed or written
   - field: ip proto
     offt: 25
@@ -21,7 +25,8 @@ xdpk:
     offt: -4
     len: 4
 
-  # node is a named set of matches and writes (bytes to be mangled in packet)
+  # node is a named set of matches and writes (bytes to be mangled in packet),
+  # using fields to describe them
   - node: client unicast
     match:
       - ip proto: 0x1  ## ICMP
@@ -43,8 +48,8 @@ xdpk:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
     write:
-      ip src: 192.168.1.1
-      ip dst: 192.168.1.20
+      - ip src: 192.168.1.1
+      - ip dst: 192.168.1.20
   - node: client mdns
     match:
       - ip src: 192.168.1.20
@@ -67,13 +72,14 @@ xdpk:
     write:
       - ip src: 192.168.1.1
 
-  # iface is a system interface and a sequence of node+output tuples to execute
-  - iface: eth0
+  # process is an input interface and a list of (node, output_interface)
+  # tuples to be executed on it.
+  - process: eth0
     nodes:
       - client unicast: eth1
       - client 2 unicast: eth1
       - client mdns: eth1
-  - iface: eth1
+  - process: eth1
     nodes:
       - chrome unicast: eth0
       - chrome mdns A: eth0

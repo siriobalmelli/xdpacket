@@ -13,7 +13,7 @@
 #include <nonlibc.h>
 #include <limits.h> /* PIPE_BUF */
 
-#define PARSE_BUF_MAX (size_t)(1024 * 128)
+#define PARSE_BUF_MAX (size_t)(1024 * 512)
 NLC_ASSERT(parse_buf_max_check, PARSE_BUF_MAX % PIPE_BUF == 0);
 
 

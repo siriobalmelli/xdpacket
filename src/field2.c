@@ -247,11 +247,16 @@ int field_emit(struct field *field, yaml_document_t *outdoc, int outlist)
 	int err_cnt = 0;
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
-		y_insert_pair(outdoc, reply, "field", field->name)
-		|| y_insert_pair_nf(outdoc, reply, "offt", "%d", field->set.offt)
-		|| y_insert_pair_nf(outdoc, reply, "len", "%u", field->set.len)
-		|| y_insert_pair_nf(outdoc, reply, "mask", "0x%x", field->set.mask)
+		y_pair_insert(outdoc, reply, "field", field->name)
+		|| y_pair_insert_nf(outdoc, reply, "offt", "%d", field->set.offt)
+		|| y_pair_insert_nf(outdoc, reply, "len", "%u", field->set.len)
 		, "");
+	/* elide a 0xff mask (aka: no mask) */
+	if (field->set.mask != 0xff) {
+		NB_die_if(
+			y_pair_insert_nf(outdoc, reply, "mask", "0x%x", field->set.mask)
+			, "");
+	}
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
 		), "");

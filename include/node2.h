@@ -10,7 +10,6 @@
 #include <field2.h>
 #include <xform2.h>
 #include <match2.h>
-#include <iface.h>
 #include <fval.h>
 
 

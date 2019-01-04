@@ -10,8 +10,6 @@
 
 static Pvoid_t	node_JS = NULL; /* (char *node_name) -> (struct node *node) */
 
-static int fval_parse_list (yaml_document_t *doc, yaml_node_t *seq, Pvoid_t *out_J);
-
 
 /*	node_free()
  */
@@ -29,6 +27,9 @@ void node_free(void *arg)
 	JL_LOOP(&ne->writes_JQ,
 		fval_free(val);
 	       );
+	int rc;
+	JLFA(rc, ne->matches_JQ);
+	JLFA(rc, ne->writes_JQ);
 
 	free(ne);
 }
@@ -92,9 +93,6 @@ int node_parse (enum parse_mode mode,
 	int err_cnt = 0;
 	struct node *node = NULL;
 
-	/* possible params for a new field.
-	 * All 'long' because we use strtol() to parse.
-	 */
 	const char *name = NULL;
 	Pvoid_t matches_JQ = NULL;
 	Pvoid_t writes_JQ = NULL;
@@ -107,7 +105,6 @@ int node_parse (enum parse_mode mode,
 		/* loop boilerplate */
 		yaml_node_t *key = yaml_document_get_node(doc, pair->key);
 		const char *keyname = (const char *)key->data.scalar.value;
-
 		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
 
 		if (val->type == YAML_SCALAR_NODE) {
@@ -120,21 +117,27 @@ int node_parse (enum parse_mode mode,
 
 		} else if (val->type == YAML_SEQUENCE_NODE) {
 			if (!strcmp("match", keyname) || !strcmp("m", keyname)) {
-				NB_err_if(
-					fval_parse_list(doc, val, &matches_JQ)
-					, "");
+				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
+					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
+					NB_err_if(
+						jl_enqueue(&matches_JQ, fval_new(keyname, valtxt))
+						, "");
+					);
 
 			} else if (!strcmp("write", keyname) || !strcmp("w", keyname)) {
-				NB_err_if(
-					fval_parse_list(doc, val, &writes_JQ)
-					, "");
+				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
+					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
+					NB_err_if(
+						jl_enqueue(&writes_JQ, fval_new(keyname, valtxt))
+						, "");
+					);
 
 			} else {
 				NB_err("'node' does not implement '%s'", keyname);
 			}
 
 		} else {
-			NB_die("'%s' in field not a scalar or sequence", keyname);
+			NB_die("'%s' in node not a scalar or sequence", keyname);
 		}
 	}
 
@@ -152,7 +155,7 @@ int node_parse (enum parse_mode mode,
 	case PARSE_DEL:
 		NB_die_if(!(
 			node = node_get(name)
-			), "could not get field '%s'", name);
+			), "could not get node '%s'", name);
 		NB_die_if(
 			node_emit(node, outdoc, outlist)
 			, "");
@@ -204,55 +207,13 @@ int node_emit(struct node *node, yaml_document_t *outdoc, int outlist)
 	       );
 
 	NB_die_if(
-		y_insert_pair(outdoc, reply, "node", node->name)
-		|| y_insert_pair_obj(outdoc, reply, "match", matches)
-		|| y_insert_pair_obj(outdoc, reply, "write", writes)
+		y_pair_insert(outdoc, reply, "node", node->name)
+		|| y_pair_insert_obj(outdoc, reply, "match", matches)
+		|| y_pair_insert_obj(outdoc, reply, "write", writes)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
 		), "");
 die:
-	return err_cnt;
-}
-
-
-/*	node_parse_fval_list()
- */
-static int fval_parse_list(yaml_document_t *doc, yaml_node_t *seq, Pvoid_t *out_J)
-{
-	int err_cnt = 0;
-
-	/* process children list objects */
-	for (yaml_node_item_t *child = seq->data.sequence.items.start;
-		child < seq->data.sequence.items.top;
-		child++)
-	{
-		yaml_node_t *mapping = yaml_document_get_node(doc, *child);
-		if (mapping->type != YAML_MAPPING_NODE) {
-			NB_err("node not a map");
-			continue;
-		}
-
-		for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
-			pair < mapping->data.mapping.pairs.top;
-			pair++)
-		{
-			/* loop boilerplate */
-			yaml_node_t *key = yaml_document_get_node(doc, pair->key);
-			const char *keyname = (const char *)key->data.scalar.value;
-
-			yaml_node_t *val = yaml_document_get_node(doc, pair->value);
-			if (val->type != YAML_SCALAR_NODE) {
-				NB_err("'%s' in field not a scalar", keyname);
-				continue;
-			}
-			const char *valtxt = (const char *)val->data.scalar.value;
-
-			struct fval *fv = fval_new(keyname, valtxt);
-			/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
-			NB_err_if(jl_enqueue(out_J, fv), "");
-		}
-	}
-
 	return err_cnt;
 }

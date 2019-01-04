@@ -1,8 +1,8 @@
 #include <yamlutils.h>
 
-/*	y_insert_pair_nf()
+/*	y_pair_insert_nf()
  */
-int y_insert_pair_nf(yaml_document_t *doc, int mapping,
+int y_pair_insert_nf(yaml_document_t *doc, int mapping,
 			const char *key, const char *val, ...)
 {
 	char buf[MAXLINELEN];
@@ -11,5 +11,5 @@ int y_insert_pair_nf(yaml_document_t *doc, int mapping,
 	vsnprintf(buf, MAXLINELEN, val, arglist);
 	va_end(arglist);
 
-	return y_insert_pair(doc, mapping, key, buf);
+	return y_pair_insert(doc, mapping, key, buf);
 }

@@ -6,9 +6,11 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+
 #include <ndebug.h>
 #include <judyutils.h>
 #include <yamlutils.h>
+
 
 #define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 #define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
@@ -187,19 +189,19 @@ int iface_parse(enum parse_mode	mode,
 		/* loop boilerplate */
 		yaml_node_t *key = yaml_document_get_node(doc, pair->key);
 		const char *keyname = (const char *)key->data.scalar.value;
-
 		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
-		NB_die_if(val->type != YAML_SCALAR_NODE,
-			"'%s' in iface not a scalar", keyname);
-		const char *valtxt = (const char *)val->data.scalar.value;
 
-		/* Match field names and populate 'local' */
-		if (!strcmp("iface", keyname)
-			|| !strcmp("i", keyname))
-		{
-			name = valtxt;
+		if (val->type == YAML_SCALAR_NODE) {
+			const char *valtxt = (const char *)val->data.scalar.value;
+
+			if (!strcmp("iface", keyname) || !strcmp("i", keyname))
+				name = valtxt;
+
+			else
+				NB_err("'iface' does not implement '%s'", keyname);
+
 		} else {
-			NB_err("'iface' does not implement '%s'", keyname);
+			NB_die("'%s' in iface not a scalar", keyname);
 		}
 	}
 
@@ -262,7 +264,7 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	int err_cnt = 0;
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
-		y_insert_pair(outdoc, reply, "iface", iface->name)
+		y_pair_insert(outdoc, reply, "iface", iface->name)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)

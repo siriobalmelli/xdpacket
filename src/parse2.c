@@ -7,6 +7,7 @@
 #include <iface.h>
 #include <field2.h>
 #include <node2.h>
+#include <process.h>
 
 
 /*	private parse functions
@@ -117,6 +118,9 @@ int parse_callback(int fd, uint32_t events, void *context)
 	 * Until then, wait for more data.
 	 * NOTE complication because some inputs terminate lines with LF
 	 * while others with CRLF.
+	 *
+	 * TODO: this seems to give a false positive when a single line of space
+	 * is followed by a comment line which DOES begin with spaces
 	 */
 	if (parse_cmptail("\n\n", ps->buf, ps->buf_pos)
 			&& parse_cmptail("\r\n\r\n", ps->buf, ps->buf_pos)
@@ -203,7 +207,7 @@ die:
 	/* serialize err_cnt and dump outdoc if at all possible */
 	if (outroot) {
 		NB_err_if(
-			y_insert_pair_nf(&outdoc, outroot, "errors", "%d", err_cnt)
+			y_pair_insert_nf(&outdoc, outroot, "errors", "%d", err_cnt)
 			, "error emitting 'errors'");
 		/* This will destroy 'outdoc', don't call yaml_document_delete() */
 		yaml_emitter_dump(&emitter, &outdoc);
@@ -300,13 +304,16 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 			else if (!strcmp("node", keyval) || !strcmp("n", keyval))
 				err_cnt += node_parse(mode, doc, mapping, outdoc, reply_list);
 
+			else if (!strcmp("process", keyval) || !strcmp("p", keyval))
+				err_cnt += process_parse(mode, doc, mapping, outdoc, reply_list);
+
 			else
 				NB_err("subsystem '%s' unknown", keyval);
 		}
 
 		/* emit sequence of "reply mappings" from subroutines */
 		NB_err_if(
-			y_insert_pair_obj(outdoc, outroot, keyname, reply_list)
+			y_pair_insert_obj(outdoc, outroot, keyname, reply_list)
 			, "");
 	}
 	return err_cnt;

@@ -13,11 +13,11 @@
 #include <ndebug.h>
 #include <stdarg.h> /* varargs to emulate printf() constructs */
 
-/*	y_insert_pair()
+/*	y_pair_insert()
  * Insert 'key' and 'val' as a pair into 'mapping'.
  * Return 0 on success.
  */
-NLC_INLINE int y_insert_pair(yaml_document_t *doc, int mapping,
+NLC_INLINE int y_pair_insert(yaml_document_t *doc, int mapping,
 			const char *key, const char *val)
 {
 	int err_cnt = 0;
@@ -39,17 +39,17 @@ die:
 	return err_cnt;
 }
 
-/*	y_insert_pair_nf()
- * Do printf formatting on variadic 'val' and then call y_insert_pair().
+/*	y_pair_insert_nf()
+ * Do printf formatting on variadic 'val' and then call y_pair_insert().
  */
-int y_insert_pair_nf(yaml_document_t *doc, int mapping,
+int y_pair_insert_nf(yaml_document_t *doc, int mapping,
 			const char *key, const char *val, ...);
 
-/*	y_insert_pair_obj()
+/*	y_pair_insert_obj()
  * Same as above, except that 'val' is the index of an object
  * already present in 'doc'.
  */
-NLC_INLINE int y_insert_pair_obj(yaml_document_t *doc, int mapping,
+NLC_INLINE int y_pair_insert_obj(yaml_document_t *doc, int mapping,
 			const char *key, int val_idx)
 {
 	int err_cnt = 0;
@@ -65,6 +65,48 @@ NLC_INLINE int y_insert_pair_obj(yaml_document_t *doc, int mapping,
 die:
 	return err_cnt;
 }
+
+
+/*	Y_SEQ_MAP_PAIRS_EXEC()
+ * Execute 'statements' on every pair of every mapping in the sequence
+ * pointed to by 'seq_ptr'.
+ *
+ * The following variables are available to 'statements':
+ * - (char *)keyname
+ * - (char *)valtxt
+ */
+#define Y_SEQ_MAP_PAIRS_EXEC(doc_ptr, seq_ptr, statements)				\
+	/* process children list objects */						\
+	for (yaml_node_item_t *child = seq_ptr->data.sequence.items.start;		\
+		child < seq_ptr->data.sequence.items.top;				\
+		child++)								\
+	{										\
+		yaml_node_t *mapping = yaml_document_get_node(doc_ptr, *child);		\
+		if (mapping->type != YAML_MAPPING_NODE) {				\
+			NB_err("node not a map");					\
+			continue;							\
+		}									\
+											\
+		for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;	\
+			pair < mapping->data.mapping.pairs.top;				\
+			pair++)								\
+		{									\
+			/* loop boilerplate */						\
+			yaml_node_t *key = yaml_document_get_node(doc_ptr, pair->key);	\
+			const char *keyname = (const char *)key->data.scalar.value;	\
+											\
+			yaml_node_t *val = yaml_document_get_node(doc_ptr, pair->value);\
+			if (val->type != YAML_SCALAR_NODE) {				\
+				NB_err("'%s' in field not a scalar", keyname);		\
+				continue;						\
+			}								\
+			const char *valtxt = (const char *)val->data.scalar.value;	\
+											\
+			/* user-supplied statements here */				\
+			statements;							\
+		}									\
+	}
+
 
 
 /*	y_map_count()

@@ -6,19 +6,15 @@ src_files = files([
     'fval.c',
     'matcher.c',
     'node2.c',
+	'nout.c',
     'packet.c',
     'parse.c',
     'parse2.c',
     'parse_util.c',
+    'process.c',
     'xdpacket_globals.c',
     'yamlutils.c'
 ])
-
-xdpk = executable('xdpk',
-			['xdpk.c'] + src_files,
-			dependencies : deps,
-			include_directories : inc,
-			)
 
 xdpacket = executable(meson.project_name(),
 			['xdpacket.c'] + src_files,
