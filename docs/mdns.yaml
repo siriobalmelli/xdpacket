@@ -25,9 +25,9 @@ xdpk:
     offt: -4
     len: 4
 
-  # node is a named set of matches and writes (bytes to be mangled in packet),
+  # rule is a named set of matches and writes (bytes to be mangled in packet),
   # using fields to describe them
-  - node: client unicast
+  - rule: client unicast
     match:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.20
@@ -35,7 +35,7 @@ xdpk:
     write:
       - ip src: 10.1.1.1
       - ip dst: 10.1.1.20
-  - node: client 2 unicast
+  - rule: client 2 unicast
     match:
       - ip proto: 0x1  ## ICMP
       - ip src: 192.168.1.21
@@ -43,20 +43,20 @@ xdpk:
     write:
       - ip src: 10.1.1.1
       - ip dst: 10.1.1.21
-  - node: chrome unicast
+  - rule: chrome unicast
     match:
       - ip src: 10.1.1.20
       - ip dst: 10.1.1.1
     write:
       - ip src: 192.168.1.1
       - ip dst: 192.168.1.20
-  - node: client mdns
+  - rule: client mdns
     match:
       - ip src: 192.168.1.20
       - ip dst: 224.0.0.251
     write:
       - ip src: 10.1.1.1
-  - node: chrome mdns A
+  - rule: chrome mdns A
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
@@ -65,22 +65,22 @@ xdpk:
       - ip src: 192.168.1.1
       - mdns rec addr: 192.168.1.1
   # MUST be matched AFTER preceding (more specific) 'A' rule
-  - node: chrome mdns
+  - rule: chrome mdns
     match:
       - ip src: 10.1.1.20
       - ip dst: 224.0.0.251
     write:
       - ip src: 192.168.1.1
 
-  # process is an input interface and a list of (node, output_interface)
+  # process is an input interface and a list of (rule, output)
   # tuples to be executed on it.
   - process: eth0
-    nodes:
+    rules:
       - client unicast: eth1
       - client 2 unicast: eth1
       - client mdns: eth1
   - process: eth1
-    nodes:
+    rules:
       - chrome unicast: eth0
       - chrome mdns A: eth0
       - chrome mdns: eth0

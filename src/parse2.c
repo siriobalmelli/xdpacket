@@ -6,7 +6,7 @@
 /* subsystems which implement parsers */
 #include <iface.h>
 #include <field2.h>
-#include <node2.h>
+#include <rule.h>
 #include <process.h>
 
 
@@ -301,8 +301,8 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 			else if (!strcmp("field", keyval) || !strcmp("f", keyval))
 				err_cnt += field_parse(mode, doc, mapping, outdoc, reply_list);
 
-			else if (!strcmp("node", keyval) || !strcmp("n", keyval))
-				err_cnt += node_parse(mode, doc, mapping, outdoc, reply_list);
+			else if (!strcmp("rule", keyval) || !strcmp("r", keyval))
+				err_cnt += rule_parse(mode, doc, mapping, outdoc, reply_list);
 
 			else if (!strcmp("process", keyval) || !strcmp("p", keyval))
 				err_cnt += process_parse(mode, doc, mapping, outdoc, reply_list);

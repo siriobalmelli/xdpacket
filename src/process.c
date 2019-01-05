@@ -21,11 +21,11 @@ void process_free(void *arg)
 
 	js_delete(&process_JS, pc->in_iface->name);
 
-	JL_LOOP(&pc->nout_JQ,
-		nout_free(val);
+	JL_LOOP(&pc->rout_JQ,
+		rout_free(val);
 	       );
 	int rc;
-	JLFA(rc, pc->nout_JQ);
+	JLFA(rc, pc->rout_JQ);
 
 	free(pc);
 }
@@ -43,7 +43,7 @@ static void __attribute__((destructor)) process_free_all()
 /*	process_new()
  * Create a new process.
  */
-struct process *process_new (const char *in_iface_name, Pvoid_t nout_JQ)
+struct process *process_new (const char *in_iface_name, Pvoid_t rout_JQ)
 {
 	struct process *ret = NULL;
 	NB_die_if(!in_iface_name, "process requires in_iface_name");
@@ -61,7 +61,7 @@ struct process *process_new (const char *in_iface_name, Pvoid_t nout_JQ)
 	NB_die_if(!(
 		ret->in_iface = iface_get(in_iface_name)
 		), "could not get interface '%s'", in_iface_name);
-	ret->nout_JQ = nout_JQ;
+	ret->rout_JQ = rout_JQ;
 
 	js_insert(&process_JS, ret->in_iface->name, ret, true);
 	/* TODO: register callbacks/processors */
@@ -94,7 +94,7 @@ int process_parse (enum parse_mode mode,
 	 * All 'long' because we use strtol() to parse.
 	 */
 	const char *name = NULL;
-	Pvoid_t nouts_JQ = NULL;
+	Pvoid_t routs_JQ = NULL;
 
 	/* parse mapping */
 	for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
@@ -119,7 +119,7 @@ int process_parse (enum parse_mode mode,
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
 					NB_err_if(
-						jl_enqueue(&nouts_JQ, nout_new(keyname, valtxt))
+						jl_enqueue(&routs_JQ, rout_new(keyname, valtxt))
 						, "");
 					);
 
@@ -137,7 +137,7 @@ int process_parse (enum parse_mode mode,
 	case PARSE_ADD:
 	{
 		NB_die_if(!(
-			process = process_new(name, nouts_JQ)
+			process = process_new(name, routs_JQ)
 			), "could not create process on interface '%s'", name);
 		NB_die_if(process_emit(process, outdoc, outlist), "");
 		break;
@@ -185,10 +185,10 @@ int process_emit(struct process *process, yaml_document_t *outdoc, int outlist)
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 
 	int nodes = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
-	JL_LOOP(&process->nout_JQ,
+	JL_LOOP(&process->rout_JQ,
 		NB_die_if(
-			nout_emit(val, outdoc, nodes)
-			, "fail to emit nout");
+			rout_emit(val, outdoc, nodes)
+			, "fail to emit rout");
 	       );
 
 	NB_die_if(

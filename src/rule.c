@@ -1,25 +1,25 @@
-/*	node2.c
+/*	rule.c
  * (c) 2018 Sirio Balmelli
  */
 
-#include <node2.h>
+#include <rule.h>
 #include <ndebug.h>
 #include <judyutils.h>
 #include <yamlutils.h>
 
 
-static Pvoid_t	node_JS = NULL; /* (char *node_name) -> (struct node *node) */
+static Pvoid_t	rule_JS = NULL; /* (char *rule_name) -> (struct rule *rule) */
 
 
-/*	node_free()
+/*	rule_free()
  */
-void node_free(void *arg)
+void rule_free(void *arg)
 {
 	if (!arg)
 		return;
-	struct node *ne = arg;
+	struct rule *ne = arg;
 
-	js_delete(&node_JS, ne->name);
+	js_delete(&rule_JS, ne->name);
 
 	JL_LOOP(&ne->matches_JQ,
 		fval_free(val);
@@ -34,28 +34,28 @@ void node_free(void *arg)
 	free(ne);
 }
 
-/*	node_free_all()
+/*	rule_free_all()
  */
-static void __attribute__((destructor)) node_free_all()
+static void __attribute__((destructor)) rule_free_all()
 {
-	JS_LOOP(&node_JS,
-		node_free(val);
+	JS_LOOP(&rule_JS,
+		rule_free(val);
 		);
 }
 
 
-/*	node_new()
- * Create a new node.
+/*	rule_new()
+ * Create a new rule.
  */
-struct node *node_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
+struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
 {
-	struct node *ret = NULL;
-	NB_die_if(!name, "no name given for node");
+	struct rule *ret = NULL;
+	NB_die_if(!name, "no name given for rule");
 
 	/* no easy way of knowing if dups are identical, kill them */
-	if ((ret = js_get(&node_JS, name))) {
-		NB_wrn("node '%s' already exists: deleting", name);
-		node_free(ret);
+	if ((ret = js_get(&rule_JS, name))) {
+		NB_wrn("rule '%s' already exists: deleting", name);
+		rule_free(ret);
 	}
 
 	NB_die_if(!(
@@ -63,35 +63,35 @@ struct node *node_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
 		), "fail alloc size %zu", sizeof(*ret));
 	NB_die_if((
 		snprintf(ret->name, sizeof(ret->name), "%s", name)
-		) >= sizeof(ret->name), "node name overflow '%s'", name);
+		) >= sizeof(ret->name), "rule name overflow '%s'", name);
 
 	ret->matches_JQ = matches_JQ;
 	ret->writes_JQ = writes_JQ;
 
-	js_insert(&node_JS, ret->name, ret, true);
+	js_insert(&rule_JS, ret->name, ret, true);
 	return ret;
 die:
-	node_free(ret);
+	rule_free(ret);
 	return NULL;
 }
 
 
-/*	node_get()
+/*	rule_get()
  */
-struct node *node_get(const char *name)
+struct rule *rule_get(const char *name)
 {
-	return js_get(&node_JS, name);
+	return js_get(&rule_JS, name);
 }
 
 
-/*	node_parse()
+/*	rule_parse()
  */
-int node_parse (enum parse_mode mode,
+int rule_parse (enum parse_mode mode,
 		yaml_document_t *doc, yaml_node_t *mapping,
 		yaml_document_t *outdoc, int outlist)
 {
 	int err_cnt = 0;
-	struct node *node = NULL;
+	struct rule *rule = NULL;
 
 	const char *name = NULL;
 	Pvoid_t matches_JQ = NULL;
@@ -110,10 +110,10 @@ int node_parse (enum parse_mode mode,
 		if (val->type == YAML_SCALAR_NODE) {
 			const char *valtxt = (const char *)val->data.scalar.value;
 
-			if (!strcmp("node", keyname) || !strcmp("n", keyname))
+			if (!strcmp("rule", keyname) || !strcmp("n", keyname))
 				name = valtxt;
 			else
-				NB_err("'node' does not implement '%s'", keyname);
+				NB_err("'rule' does not implement '%s'", keyname);
 
 		} else if (val->type == YAML_SEQUENCE_NODE) {
 			if (!strcmp("match", keyname) || !strcmp("m", keyname)) {
@@ -133,11 +133,11 @@ int node_parse (enum parse_mode mode,
 					);
 
 			} else {
-				NB_err("'node' does not implement '%s'", keyname);
+				NB_err("'rule' does not implement '%s'", keyname);
 			}
 
 		} else {
-			NB_die("'%s' in node not a scalar or sequence", keyname);
+			NB_die("'%s' in rule not a scalar or sequence", keyname);
 		}
 	}
 
@@ -146,33 +146,33 @@ int node_parse (enum parse_mode mode,
 	case PARSE_ADD:
 	{
 		NB_die_if(!(
-			node = node_new(name, matches_JQ, writes_JQ)
-			), "could not create new node '%s'", name);
-		NB_die_if(node_emit(node, outdoc, outlist), "");
+			rule = rule_new(name, matches_JQ, writes_JQ)
+			), "could not create new rule '%s'", name);
+		NB_die_if(rule_emit(rule, outdoc, outlist), "");
 		break;
 	}
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			node = node_get(name)
-			), "could not get node '%s'", name);
+			rule = rule_get(name)
+			), "could not get rule '%s'", name);
 		NB_die_if(
-			node_emit(node, outdoc, outlist)
+			rule_emit(rule, outdoc, outlist)
 			, "");
-		node_free(node);
+		rule_free(rule);
 		break;
 
 	case PARSE_PRN:
 		/* if nothing is given, print all */
 		if (!strcmp("", name)) {
-			JS_LOOP(&node_JS,
+			JS_LOOP(&rule_JS,
 				NB_die_if(
-					node_emit(val, outdoc, outlist)
+					rule_emit(val, outdoc, outlist)
 					, "");
 				);
 		/* otherwise, search for a literal match */
-		} else if ((node = node_get(name))) {
-			NB_die_if(node_emit(node, outdoc, outlist), "");
+		} else if ((rule = rule_get(name))) {
+			NB_die_if(rule_emit(rule, outdoc, outlist), "");
 		}
 		break;
 
@@ -185,29 +185,29 @@ die:
 }
 
 
-/*	node_emit()
- * Emit a node as a mapping under 'outlist' in 'outdoc'.
+/*	rule_emit()
+ * Emit a rule as a mapping under 'outlist' in 'outdoc'.
  */
-int node_emit(struct node *node, yaml_document_t *outdoc, int outlist)
+int rule_emit(struct rule *rule, yaml_document_t *outdoc, int outlist)
 {
 	int err_cnt = 0;
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 
 	int matches = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
-	JL_LOOP(&node->matches_JQ,
+	JL_LOOP(&rule->matches_JQ,
 		NB_die_if(
 			fval_emit(val, outdoc, matches)
 			, "fail to emit match");
 	       );
 	int writes = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
-	JL_LOOP(&node->writes_JQ,
+	JL_LOOP(&rule->writes_JQ,
 		NB_die_if(
 			fval_emit(val, outdoc, writes)
 			, "fail to emit write");
 	       );
 
 	NB_die_if(
-		y_pair_insert(outdoc, reply, "node", node->name)
+		y_pair_insert(outdoc, reply, "rule", rule->name)
 		|| y_pair_insert_obj(outdoc, reply, "match", matches)
 		|| y_pair_insert_obj(outdoc, reply, "write", writes)
 		, "");

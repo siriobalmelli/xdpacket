@@ -5,13 +5,13 @@ src_files = files([
     'field2.c',
     'fval.c',
     'matcher.c',
-    'node2.c',
-	'nout.c',
     'packet.c',
     'parse.c',
     'parse2.c',
     'parse_util.c',
     'process.c',
+	'rout.c',
+    'rule.c',
     'xdpacket_globals.c',
     'yamlutils.c'
 ])

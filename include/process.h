@@ -10,19 +10,19 @@
 #include <Judy.h>
 #include <yaml.h>
 #include <iface.h>
-#include <nout.h>
+#include <rout.h>
 
 
 struct process {
 	struct iface	*in_iface;
-	Pvoid_t		nout_JQ;	/* (uint64_t seq) -> (struct nout *nout) */
+	Pvoid_t		rout_JQ;	/* (uint64_t seq) -> (struct rout *rout) */
 };
 
 
 void	process_free		(void *arg);
 
 struct process	*process_new	(const char *in_iface_name,
-				Pvoid_t nout_JQ);
+				Pvoid_t rout_JQ);
 
 
 int		process_parse	(enum parse_mode mode,
