@@ -9,6 +9,12 @@ xdpk:
   - iface: eth1
 
   # field: a named set of bytes to be hashed or written
+  - field: mac dst
+    offt: 0
+    len: 6
+  - field: mac src
+    offt: 6
+    len: 6
   - field: ip proto
     offt: 25
     len: 1
@@ -33,7 +39,9 @@ xdpk:
       - ip src: 192.168.1.20
       - ip dst: 192.168.1.1
     write:
+      - mac src: 00:11:22:33:44:55
       - ip src: 10.1.1.1
+      - mac dst: aa:bb:cc:dd:ee:ff
       - ip dst: 10.1.1.20
   - rule: client 2 unicast
     match:
