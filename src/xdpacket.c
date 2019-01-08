@@ -50,7 +50,7 @@ die:
 }
 
 /*	netsock()
- * Get all localhost sockets and listen() everyone one;
+ * Get all localhost sockets and listen() on every one;
  * then add them to 'tk'
  */
 int netsock(struct epoll_track *tk)

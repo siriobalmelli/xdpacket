@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <field2.h>
-#include <match2.h>
 
 
 enum xform_type {

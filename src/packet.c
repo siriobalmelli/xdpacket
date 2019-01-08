@@ -19,8 +19,9 @@ void init_pkts(char *cpkts[], int npkts, struct pkt **pkts) {
 		(*pkts)[i].len = slen/2;
 		(*pkts)[i].data = malloc((*pkts)[i].len);
 		for (int j = 0; j < slen; j+=2) {
-			uint8_t c1 = hex_parse_nibble(&(cpkts[i][j]));
-			uint8_t c2 = hex_parse_nibble(&(cpkts[i][j+1]));
+			uint8_t c1, c2;
+			hex_parse_nibble(&(cpkts[i][j]), &c1);
+			hex_parse_nibble(&(cpkts[i][j+1]), &c2);
 			uint8_t val = (c1 << 4) | c2;
 			(*pkts)[i].data[j/2] = val;
 		}

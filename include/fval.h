@@ -13,10 +13,11 @@
  *    - we save a string lookup to get the field's 'set'
  *    - we are forced to clean up dependant field_value structs when fields are freed
  *      or else have dangling pointers
- * 3. This an "intermediate" representation; 'value' must then be parsed
+ * 3. 'value' is an "intermediate" representation; it must then be parsed
  *    into a big-endian (network-order) array of bytes which can be:
  *    - written literally to a packet when writing/mangling
  *    - hashed to verify a match.
+ *    'bytes' is this parsed array of bytes.
  *
  * (c) 2018 Sirio Balmelli
  */
@@ -27,8 +28,17 @@
 
 struct fval {
 	struct field	*field;
+
 	size_t		vlen;
-	char		val[];
+	char		*val;
+
+	uint8_t		*bytes; /* length of '*bytes' is 'field->set.len' */
+	char		*bytes_prn; /* hex rendering of '*bytes';
+				     * (field->set.len * 2 +1) long.
+				     */
+
+	/* avoid multiple alloc/free calls: '*val' and '*bytes' point into here */
+	uint8_t		memory[];
 };
 
 
@@ -40,5 +50,6 @@ struct fval	*fval_new	(const char *field_name,
 int		fval_emit	(struct fval *fval,
 				yaml_document_t *outdoc,
 				int outlist);
+
 
 #endif /* fval_h_ */
