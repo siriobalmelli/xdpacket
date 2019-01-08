@@ -211,7 +211,7 @@ struct fval *fval_new(const char *field_name, const char *value)
 	vlen++; /* \0 terminator */
 
 	size_t blen = field->set.len;
-	size_t prnlen = blen * 2 +1;
+	size_t prnlen = blen * 2 +3; /* leading "0x" and trailing '\0' */
 
 	NB_die_if(!(
 		ret = malloc(sizeof(*ret) + vlen + blen + prnlen)
@@ -228,7 +228,10 @@ struct fval *fval_new(const char *field_name, const char *value)
 
 	/* parse bytes, and print hex representation for user verification */
 	NB_die_if(fval_parse_value(ret), "");
-	b2hx_BE(ret->bytes, ret->bytes_prn, blen);
+
+	ret->bytes_prn[0] = '0';
+	ret->bytes_prn[1] = 'x';
+	b2hx_BE(ret->bytes, &ret->bytes_prn[2], blen);
 
 	return ret;
 die:
