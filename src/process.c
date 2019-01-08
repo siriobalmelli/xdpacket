@@ -115,7 +115,7 @@ int process_parse (enum parse_mode mode,
 				NB_err("'process' does not implement '%s'", keyname);
 
 		} else if (val->type == YAML_SEQUENCE_NODE) {
-			if (!strcmp("nodes", keyname) || !strcmp("n", keyname)) {
+			if (!strcmp("rules", keyname) || !strcmp("r", keyname)) {
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
 					NB_err_if(
