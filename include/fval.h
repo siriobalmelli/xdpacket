@@ -17,7 +17,7 @@
  *    into a big-endian (network-order) array of bytes which can be:
  *    - written literally to a packet when writing/mangling
  *    - hashed to verify a match.
- *    'bytes' is this parsed array of bytes.
+ *    'fval_bytes' is this parsed array of bytes.
  *
  * (c) 2018 Sirio Balmelli
  */
@@ -26,19 +26,33 @@
 #include <yaml.h>
 
 
+/*	fval_bytes()
+ * A parsed/compiled fval, consisting of the field-set location of bytes
+ * and a big-endian representation of the value, suitable for hashing
+ * or writing directly into the packet.
+ */
+struct fval_bytes {
+	struct field_set	where;
+	uint8_t			bytes[];
+};
+
+
+void			fval_bytes_free(void * arg);
+
+struct fval_bytes	*fval_bytes_new(const char *value,
+					size_t value_len,
+					struct field_set set);
+
+char			*fval_bytes_print(struct fval_bytes *fvb);
+
+
 struct fval {
-	struct field	*field;
+	struct field		*field;
 
-	size_t		vlen;
-	char		*val;
+	char			*val;
 
-	uint8_t		*bytes; /* length of '*bytes' is 'field->set.len' */
-	char		*bytes_prn; /* hex rendering of '*bytes';
-				     * (field->set.len * 2 +1) long.
-				     */
-
-	/* avoid multiple alloc/free calls: '*val' and '*bytes' point into here */
-	uint8_t		memory[];
+	struct fval_bytes	*bytes;
+	char			*bytes_prn;
 };
 
 

@@ -35,4 +35,5 @@ int		process_emit	(struct process *process,
 				yaml_document_t *outdoc,
 				int outlist);
 
+
 #endif /* process_h_ */

@@ -13,11 +13,14 @@
  * NOTES:
  * 1. Do NOT use regex capture groups: GNU ERE is impractical for a variable number
  *    of matches; it is enough for the regex to match.
- *    We will then separately tokenize and parse.
+ *    We will then separately tokenize and parse
+ *    (or use a standard system parser, e.g. for IP addresses).
  * 2. Fractional values are NOT considered regex matches. Examples:
  *    - "192.168.1.0" with field length 3 to match 192.168.1.0/24
  *    - "192.168.1.128" with field length 4 and mask 0x80 to match 192.178.1.128/25
- * 3. We match in order of size (an IP address is <= 4B; MAC <= 6B; etc)
+ * 3. We match in order of size (an IP address is <= 4B; MAC <= 6B; etc),
+ *    so that "later" (larger-size) parsers can count on earlier parsers
+ *    already having matched and not reaching them.
  */
 const int regex_flags = REG_ICASE | REG_EXTENDED | REG_NOSUB;
 static regex_t re_ipv4 = {0};
@@ -34,7 +37,7 @@ const char *txt_hex = "^(x|0x)[0-9a-f]+$";
 /*	fval_init()
  * Compile regexes only once at program start.
  */
-static void __attribute__((constructor)) fval_init()
+static void __attribute__((constructor)) fval_bytes_init()
 {
 	NB_err_if(
 		regcomp(&re_ipv4, txt_ipv4, regex_flags)
@@ -55,7 +58,7 @@ static void __attribute__((constructor)) fval_init()
 
 /*	fval_cleanup()
  */
-static void __attribute__((destructor)) fval_cleanup()
+static void __attribute__((destructor)) fval_bytes_cleanup()
 {
 	regfree(&re_ipv4);
 	regfree(&re_mac);
@@ -65,130 +68,173 @@ static void __attribute__((destructor)) fval_cleanup()
 }
 
 
-/*	fval_free()
+/*	fval_bytes_free()
  */
-void fval_free(void *arg)
+void fval_bytes_free(void * arg)
 {
 	free(arg);
 }
 
 
-/*	fval_parse_value()
- * Parse 'val' into 'bytes'.
- * This could be part of fval_new() as-is, only broken out for clarity.
+/*	fval_bytes_new()
  */
-static int fval_parse_value(struct fval *ret)
+struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct field_set set)
 {
-	int err_cnt = 0;
-	size_t blen = ret->field->set.len;
+	struct fval_bytes *ret = NULL;
+	size_t len = set.len; /* for legibility only */
+
+	NB_die_if(!(
+		ret = malloc(sizeof(*ret) + len)
+		), "fail malloc size %zu", sizeof(*ret) + len);
+	ret->where = set;
 
 	/* parse IPv4 */
-	if (blen <= 4 && !regexec(&re_ipv4, ret->val, 0, NULL, 0)) {
+	if (len <= 4 && !regexec(&re_ipv4, value, 0, NULL, 0)) {
 		struct in_addr	i4;
-		NB_die_if(inet_pton(AF_INET, ret->val, &i4) != 1,
-			"could not parse ipv4 '%s'", ret->val);
-		memcpy(ret->bytes, &i4, blen);
+		NB_die_if(inet_pton(AF_INET, value, &i4) != 1,
+			"could not parse ipv4 '%s'", value);
+		memcpy(ret->bytes, &i4, len);
 
 	/* parse MAC */
-	} else if (blen <= 6 && !regexec(&re_mac, ret->val, 0, NULL, 0)) {
+	} else if (len <= 6 && !regexec(&re_mac, value, 0, NULL, 0)) {
 		uint8_t by[6];
-		NB_die_if(sscanf(ret->val, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		NB_die_if(sscanf(value, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 				&by[0], &by[1], &by[2], &by[3], &by[4], &by[5]) != 6,
-			"could not parse MAC '%s'", ret->val);
-		memcpy(ret->bytes, by, blen);
+			"could not parse MAC '%s'", value);
+		memcpy(ret->bytes, by, len);
 
 	/* parse integer */
-	} else if (blen <= 8 && !regexec(&re_int, ret->val, 0, NULL, 0)) {
+	} else if (len <= 8 && !regexec(&re_int, value, 0, NULL, 0)) {
 		uint8_t by[8];
 		errno = 0;
-		long long tt = strtoll(ret->val, NULL, 0);
-		NB_die_if(errno, "could not parse integer '%s'", ret->val);
+		long long tt = strtoll(value, NULL, 0);
+		NB_die_if(errno, "could not parse integer '%s'", value);
 
 		/* overflow checking using builtins;
 		 * see 'test/overflow_test.c' for a proof that this is kosher
 		 */
 		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-		if (blen == 1 && tt >= 0) {
+		if (len == 1 && tt >= 0) {
 			uint8_t *out = by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint8_t value '%lld' out of bounds", tt);
 
-		} else if (blen == 1) {
+		} else if (len == 1) {
 			int8_t *out = (int8_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int8_t value '%lld' out of bounds", tt);
 
-		} else if (blen == 2 && tt >= 0) {
+		} else if (len == 2 && tt >= 0) {
 			uint16_t *out = (uint16_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint16_t value '%lld' out of bounds", tt);
 			*out = htobe16(*out);
 
-		} else if (blen == 2) {
+		} else if (len == 2) {
 			int16_t *out = (int16_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int16_t value '%lld' out of bounds", tt);
 			*out = htobe16(*out);
 
-		} else if (blen == 4 && tt >= 0) {
+		} else if (len == 4 && tt >= 0) {
 			uint32_t *out = (uint32_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint32_t value '%lld' out of bounds", tt);
 			*out = htobe32(*out);
 
-		} else if (blen == 4) {
+		} else if (len == 4) {
 			int32_t *out = (int32_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int32_t value '%lld' out of bounds", tt);
 			*out = htobe32(*out);
 
-		} else if (blen == 8 && tt >= 0) {
+		} else if (len == 8 && tt >= 0) {
 			int64_t *out = (int64_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int64_t value '%lld' out of bounds", tt);
 			*out = htobe64(*out);
 
-		} else if (blen == 8) {
+		} else if (len == 8) {
 			uint64_t *out = (uint64_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint64_t value '%lld' out of bounds", tt);
 			*out = htobe64(*out);
 
 		} else {
-			NB_die("could not parse integer '%s' with nonstandard blength '%zu'",
-				ret->val, blen);
+			NB_die("could not parse integer '%s' with nonstandard length '%zu'",
+				value, len);
 		}
 		#pragma GCC diagnostic pop
-		memcpy(ret->bytes, by, blen);
+		memcpy(ret->bytes, by, len);
 
 	/* parse IPv6 */
-	} else if (blen <= 16 && !regexec(&re_ipv6, ret->val, 0, NULL, 0)) {
+	} else if (len <= 16 && !regexec(&re_ipv6, value, 0, NULL, 0)) {
 		struct in6_addr	i6;
-		NB_die_if(inet_pton(AF_INET6, ret->val, &i6) != 1,
-			"could not parse ipv6 address '%s'", ret->val);
-		memcpy(ret->bytes, &i6, blen);
+		NB_die_if(inet_pton(AF_INET6, value, &i6) != 1,
+			"could not parse ipv6 address '%s'", value);
+		memcpy(ret->bytes, &i6, len);
 
 	/* parse arbitrary series of hex digits */
-	} else if (!regexec(&re_hex, ret->val, 0, NULL, 0)) {
+	} else if (!regexec(&re_hex, value, 0, NULL, 0)) {
 		/* Don't care exactly how many bytes/characters parsed,
 		 * as long as at least one nibble made it.
 		 * missing characters will be zero-padded by hx2b_BE()..
 		 */
-		NB_die_if(!hx2b_BE(ret->val, ret->bytes, blen),
-			"could not parse hex sequence '%s'", ret->val);
+		NB_die_if(!hx2b_BE(value, ret->bytes, len),
+			"could not parse hex sequence '%s'", value);
 
 	/* parse literal series of characters */
 	} else {
-		NB_die_if(ret->vlen > blen,
-			"character sequence '%s' shorter than field blength %zu",
-			ret->val, blen);
-		memcpy(ret->bytes, ret->val, blen);
+		NB_die_if(value_len > len,
+			"character sequence '%s' shorter than field length %zu",
+			value, len);
+		memcpy(ret->bytes, value, len);
 	}
 
+	return ret;
 die:
-	return err_cnt;
+	fval_bytes_free(ret);
+	return NULL;
 };
+
+
+/*	fval_bytes_print()
+ * Allocates and returns a string containing the hexadecimal representation
+ * of '*fvb'.
+ * Caller is responsible for eventually calling free() on returned pointer.
+ */
+char *fval_bytes_print(struct fval_bytes *fvb)
+{
+	char *ret = NULL;
+	size_t prnlen = (size_t)fvb->where.len * 2 +3; /* leading "0x" and trailing '\0' */
+
+	NB_die_if(!(
+		ret = malloc(prnlen)
+		), "fail alloc size %zu", prnlen);
+	ret[0] = '0';
+	ret[1] = 'x';
+	b2hx_BE(fvb->bytes, &ret[2], fvb->where.len);
+
+	return ret;
+die:
+	free(ret);
+	return NULL;
+}
+
+
+/*	fval_free()
+ */
+void fval_free(void *arg)
+{
+	if (!arg)
+		return;
+	struct fval *fv = arg;
+	free(fv->val);
+	free(fv->bytes_prn);
+	fval_bytes_free(fv->bytes);
+	free(fv);
+}
 
 
 /*	fval_new()
@@ -198,40 +244,34 @@ struct fval *fval_new(const char *field_name, const char *value)
 	struct fval *ret = NULL;
 	NB_die_if(!field_name || !value, "fval requires 'field_name' and 'value'");
 
-	struct field *field = NULL;
 	NB_die_if(!(
-		field = field_get(field_name)
+		ret = calloc(1, sizeof(*ret))
+		), "failed malloc size %zu", sizeof(*ret));
+
+	NB_die_if(!(
+		ret->field = field_get(field_name)
 		), "could not get field '%s'", field_name);
 
 	/* do not allow a length longer than the maximum length value of a field-set */
-	size_t max = ((size_t)1 << (sizeof(field->set.len) * 8)) -1;
+	size_t max = ((size_t)1 << (sizeof(ret->field->set.len) * 8)) -1;
 	size_t vlen = strnlen(value, max);
 	NB_die_if(!vlen, "zero-length 'value' invalid");
 	NB_die_if(vlen == max, "value truncated:\n%.*s", (int)max, value);
 	vlen++; /* \0 terminator */
 
-	size_t blen = field->set.len;
-	size_t prnlen = blen * 2 +3; /* leading "0x" and trailing '\0' */
+	/* alloc and copy user-supplied value string as-is */
+	NB_die_if(!(
+		ret->val = malloc(vlen)
+		), "fail alloc size %zu", vlen);
+	memcpy(ret->val, value, vlen-1);
+	ret->val[vlen-1] = '\0';
 
 	NB_die_if(!(
-		ret = malloc(sizeof(*ret) + vlen + blen + prnlen)
-		), "fail alloc size %zu", sizeof(*ret) + vlen + blen + prnlen);
-	ret->field = field;
-	ret->vlen = vlen;
-	ret->val = (char *)ret->memory;
-	ret->bytes = &ret->memory[vlen];
-	ret->bytes_prn = (char *)&ret->memory[vlen + blen];
-
-	/* copy user-supplied value string as-is */
-	memcpy(ret->val, value, ret->vlen-1);
-	ret->val[ret->vlen-1] = '\0';
-
-	/* parse bytes, and print hex representation for user verification */
-	NB_die_if(fval_parse_value(ret), "");
-
-	ret->bytes_prn[0] = '0';
-	ret->bytes_prn[1] = 'x';
-	b2hx_BE(ret->bytes, &ret->bytes_prn[2], blen);
+		ret->bytes = fval_bytes_new(ret->val, vlen, ret->field->set)
+		), "");
+	NB_die_if(!(
+		ret->bytes_prn = fval_bytes_print(ret->bytes)
+		), "");
 
 	return ret;
 die:
