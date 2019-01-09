@@ -50,7 +50,7 @@ struct field	*field_new	(const char *name,
 struct field	*field_get	(const char *field_name);
 
 int		field_hash	(struct field_set set,
-				void *pkt,
+				const void *pkt,
 				size_t plen,
 				uint64_t *outhash);
 

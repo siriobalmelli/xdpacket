@@ -107,7 +107,7 @@ struct field *field_get (const char *field_name)
  * field_hash(a_set, a_pkt, a_size, &le_hash);
  * ```
  */
-int field_hash(struct field_set set, void *pkt, size_t plen, uint64_t *outhash)
+int field_hash(struct field_set set, const void *pkt, size_t plen, uint64_t *outhash)
 {
 	/* Parameter sanity */
 	if (!pkt || !plen)

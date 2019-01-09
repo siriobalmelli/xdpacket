@@ -10,9 +10,29 @@
 #include <Judy.h>
 #include <yaml.h>
 #include <iface.h>
-#include <rout.h>
 
 
+/*	rout
+ * Representation of user-supplied (rule, output) tuple, given to us as strings.
+ */
+struct rout {
+	struct rule	*rule;
+	struct iface	*output;
+};
+
+
+void		rout_free	(void *arg);
+
+struct rout	*rout_new	(const char *rule_name,
+				const char *out_name);
+
+int		rout_emit	(struct rout *nout,
+				yaml_document_t *outdoc,
+				int outlist);
+
+
+/*	process
+ */
 struct process {
 	struct iface	*in_iface;
 	Pvoid_t		rout_JQ;	/* (uint64_t seq) -> (struct rout *rout) */

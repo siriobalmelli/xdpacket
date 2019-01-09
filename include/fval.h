@@ -45,6 +45,12 @@ struct fval_bytes	*fval_bytes_new(const char *value,
 
 char			*fval_bytes_print(struct fval_bytes *fvb);
 
+NLC_INLINE int		fval_bytes_hash(const struct fval_bytes *fvb,
+					uint64_t *out_hash)
+{
+	return field_hash(fvb->where, fvb->bytes, fvb->where.len, out_hash);
+}
+
 
 struct fval {
 	struct field		*field;

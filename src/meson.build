@@ -10,7 +10,6 @@ src_files = files([
     'parse2.c',
     'parse_util.c',
     'process.c',
-	'rout.c',
     'rule.c',
     'xdpacket_globals.c',
     'yamlutils.c'
