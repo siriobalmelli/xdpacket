@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <epoll_track.h>
-#include <hook.h>
 #include <parse2.h>
 #include <rule.h>
 
@@ -39,8 +38,8 @@ struct iface {
 	struct sockaddr	hwaddr;
 	struct sockaddr_in addr;
 
-	struct hook	*in;
-	struct hook	*out;
+	size_t		count_in;
+	size_t		count_out;
 };
 
 
@@ -52,7 +51,7 @@ struct iface	*iface_get	(const char *name);
 
 int		iface_callback	(int fd,
 				uint32_t events,
-				epoll_data_t context);
+				void *context);
 
 
 /* integrate into parse2.h

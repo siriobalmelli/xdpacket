@@ -6,7 +6,6 @@
 #include <nonlibc.h>
 #include <stdio.h>
 #include "field.h"
-#include "matcher.h"
 
 /* mtuple: test-only data structure
  * @matcher = set of field specification to check for hash match
@@ -20,6 +19,18 @@
   * Make this resistant to that by creating local structure
   * size and only copying in what will fit.
   */
+
+/* allow for compile-time adjustment (memory footprint) */
+#ifndef XDPK_MATCH_FIELD_MAX
+#define XDPK_MATCH_FIELD_MAX 4
+#endif
+#ifndef XDPK_MATCHER_SET_MAX
+#define XDPK_MATCHER_SET_MAX 4
+#endif
+
+struct xdpk_matcher {
+       struct xdpk_field fields[XDPK_MATCH_FIELD_MAX];
+}__attribute__((packed));
 
 struct mtuple {
 	struct xdpk_matcher	matcher;

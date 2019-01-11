@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <yaml.h>
 #include <field.h>
-#include <matcher.h>
 #include <parse_util.h>
 
 typedef enum cmd_type {
@@ -86,7 +85,7 @@ typedef struct xdpk_command {
 			char *name;
 			char *intf;
 			direction_type_t dir;
-			selector_t *sel;
+			//selector_t *sel;
 			char *action;
 		} match;
 	};

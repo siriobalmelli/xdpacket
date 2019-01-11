@@ -7,7 +7,6 @@
 #include <yaml.h>
 #include <field.h>
 #include <parse.h>
-#include <matcher.h>
 #include "offset_defs.h"
 #include <yamlutils.h>
 
@@ -292,7 +291,8 @@ int parse_match(yaml_document_t *document, yaml_node_t *node,
 			else
 				NB_die_if(true, "Invalid direction '%s'", val);
 		} else if (!strncmp("sel", key, strlen(key))) {
-			cmd->match.sel = NULL;
+			//cmd->match.sel = NULL;
+			;
 		} else if (!strncmp("act", key, strlen(key))) {
 			cmd->match.action = strdup(val);
 		} else {
@@ -415,7 +415,7 @@ void delete_commands(xdpk_command_t **cmds, int numcmds)
 				free(cmds[i]->match.name);
 			if (cmds[i]->match.intf != NULL)
 				free(cmds[i]->match.intf);
-			if (cmds[i]->match.sel != NULL)
+			//if (cmds[i]->match.sel != NULL)
 				// delete the selector;
 			if (cmds[i]->match.action != NULL)
 				free(cmds[i]->match.action);

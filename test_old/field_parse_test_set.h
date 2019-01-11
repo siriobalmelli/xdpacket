@@ -6,7 +6,6 @@
 #include <nonlibc.h>
 #include <stdio.h>
 #include "field.h"
-#include "matcher.h"
 
 /* ptuple: test-only data structure
  * @grammar = single field specification grammar

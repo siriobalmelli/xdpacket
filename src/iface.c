@@ -34,9 +34,6 @@ void iface_free(void *arg)
 	js_delete(&iface_JS, sk->name);
 	NB_wrn("close "XDPK_SOCK_PRN(sk));
 
-	hook_free(sk->in);
-	hook_free(sk->out);
-
 	if (sk->fd != -1)
 		close(sk->fd);
 
@@ -69,13 +66,6 @@ struct iface *iface_new(const char *ifname)
 		ret = calloc(sizeof(struct iface), 1)
 		), "alloc size %zu", sizeof(struct iface));
 	snprintf(ret->name, IFNAMSIZ, "%s", ifname);
-
-	/* hooks */
-	NB_die_if(!(
-		ret->in = hook_new()
-		) || !(
-		ret->out = hook_new()
-		), "");
 
 	/* socket */
 	ret->fd = -1;
@@ -147,7 +137,7 @@ struct iface *iface_get (const char *name)
 
 /*	iface_callback()
  */
-int iface_callback(int fd, uint32_t events, epoll_data_t context)
+int iface_callback(int fd, uint32_t events, void *context)
 {
 	/* receive packet and discard outgoing packets */
 	struct sockaddr_ll addr;
@@ -158,11 +148,15 @@ int iface_callback(int fd, uint32_t events, epoll_data_t context)
 		return 1;
 
 	/* handle packet */
-	struct iface *sk = (struct iface *)context.ptr;
-	struct hook *hk = sk->in;
+	struct iface *sk = (struct iface *)context;
 	if (addr.sll_pkttype == PACKET_OUTGOING)
-		hk = sk->out;
+		sk->count_out++;
+	else
+		sk->count_in++;
+	/* TODO: implement
+	struct hook *hk = sk->in;
 	hook_callback(hk, buf, res);
+	*/
 
 	return 0;
 }
@@ -265,6 +259,12 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "iface", iface->name)
+		, "");
+	NB_die_if(
+		y_pair_insert_nf(outdoc, reply, "packets in", "%zu", iface->count_in)
+		, "");
+	NB_die_if(
+		y_pair_insert_nf(outdoc, reply, "packets out", "%zu", iface->count_out)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
