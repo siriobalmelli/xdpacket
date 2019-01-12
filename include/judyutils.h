@@ -15,8 +15,28 @@
  */
 
 #include <xdpacket.h>
-#include <Judy.h>
 #include <nonlibc.h>
+#include <ndebug.h>
+
+/* Don't do error-handling in macros: rely on return value
+ * of the inline functions provided here.
+ */
+#define JUDYERROR_NOTEST 1
+#include <Judy.h>
+
+
+/*	j[type]_insert()
+ * Insert 'datum' at 'index' of '*array'.
+ * If 'clobber' is true, then then any existing datum will be overwritten.
+ * Return 0 on success.
+ * NOTE this relies on 'datum' never being NULL/0.
+ */
+NLC_INLINE size_t jl_count(Pvoid_t *array)
+{
+	Word_t count;
+	JLC(count, *array, 0, -1);
+	return count;
+}
 
 
 /* Common internal logic for insert calls.
@@ -130,9 +150,10 @@ NLC_INLINE void js_delete(Pvoid_t *array, const char *index)
  * Execute 'statements' inside a loop iterating through all elements of '*array_ptr'.
  *
  * The following variables are available to 'statements':
- * - 'parr' :: pointer to the array
- * - 'index' :: current element index
- * - 'val' :: datum associated with 'index'
+ * - 'parr'	:: pointer to the array
+ * - 'index'	:: current element index
+ * - 'val'	:: datum associated with 'index'
+ * - 'i'	:: loop counter
  *
  * NOTE: indirection with 'array_ptr' (== 'parr') allows 'statements'
  * to validly call _other_ array manipulation functions.
@@ -149,12 +170,14 @@ do {								\
 	uint64_t index = 0;					\
 	void **pval;						\
 	Pvoid_t __attribute__((unused)) *parr = array_ptr;	\
+	unsigned int __attribute__((unused)) i = 0;		\
 	JLF(pval, *array_ptr, index);				\
 	while (pval) {						\
 		void *val = *pval;				\
 		/* user statements executed here */		\
 		statements;					\
 		JLN(pval, *array_ptr, index);			\
+		i++;						\
 	}							\
 } while(0)
 
@@ -163,12 +186,14 @@ do {								\
 	uint8_t index[MAXLINELEN] = {0};			\
 	void **pval;						\
 	Pvoid_t __attribute__((unused)) *parr = array_ptr;	\
+	unsigned int __attribute__((unused)) i = 0;		\
 	JSLF(pval, *array_ptr, index);				\
 	while (pval) {						\
 		void *val = *pval;				\
 		/* user statements executed here */		\
 		statements;					\
 		JSLN(pval, *array_ptr, index);			\
+		i++;						\
 	}							\
 } while(0)
 

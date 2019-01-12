@@ -107,29 +107,10 @@ struct field *field_get (const char *field_name)
  * field_hash(a_set, a_pkt, a_size, &le_hash);
  * ```
  */
-int field_hash(struct field_set set, const void *pkt, size_t plen, uint64_t *outhash)
+int __attribute__((hot)) field_hash(struct field_set set, const void *pkt, size_t plen, uint64_t *outhash)
 {
-	/* Parameter sanity */
-	if (!pkt || !plen)
-		return 1;
-
-	/* Offset sanity.
-	 * 'offt' may be negative, in which case it denotes offset from
-	 * the end of the packet.
-	 */
-	const void *start = pkt + set.offt;
-	if (set.offt < 0)
-		start += plen;
-	if (start < pkt)
-		return 1;
-
-	/* Size sanity.
-	 * We rely on the invariant that no set may have length 0
-	 */
-	size_t flen = set.len;
-	//NB_wrn("flen  == 0x%lu, start == %p, plen == %lu", flen, start, plen);
-	if ((start + flen) > (pkt + plen))
-		return 1;
+	/* see field2.h */
+	FIELD_PACKET_INDEXING
 
 	/* must not error after we start changing 'outhash' */
 	*outhash = fnv_hash64(outhash, &set, sizeof(set));

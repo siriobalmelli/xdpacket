@@ -83,9 +83,13 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 	struct fval_bytes *ret = NULL;
 	size_t len = set.len; /* for legibility only */
 
+	/* Pad allocation to align on 'void *' size: these structs
+	 * can be concatenated in arrays.
+	 */
+	size_t alloc_size = nm_next_mult64(sizeof(*ret) + len, sizeof(void *));
 	NB_die_if(!(
-		ret = malloc(sizeof(*ret) + len)
-		), "fail malloc size %zu", sizeof(*ret) + len);
+		ret = malloc(alloc_size)
+		), "fail malloc size %zu", alloc_size);
 	ret->where = set;
 
 	/* parse IPv4 */
@@ -113,8 +117,6 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 		/* overflow checking using builtins;
 		 * see 'test/overflow_test.c' for a proof that this is kosher
 		 */
-		#pragma GCC diagnostic push
-		#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 		if (len == 1 && tt >= 0) {
 			uint8_t *out = by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
@@ -165,7 +167,6 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 			NB_die("could not parse integer '%s' with nonstandard length '%zu'",
 				value, len);
 		}
-		#pragma GCC diagnostic pop
 		memcpy(ret->bytes, by, len);
 
 	/* parse IPv6 */
@@ -221,6 +222,23 @@ die:
 	free(ret);
 	return NULL;
 }
+
+
+/*	fval_bytes_write()
+ * Write '*fvb' to '*pkt', observing the offset and mask in 'fvb->set'.
+ * Returns 0 on success, non-zero on failure (e.g. packet not long enough).
+ */
+int fval_bytes_write(struct fval_bytes *fvb, void *pkt, size_t plen)
+{
+	struct field_set set = fvb->where;
+
+	/* see field2.h */
+	FIELD_PACKET_INDEXING
+
+	memcpy(start, fvb->bytes, flen);
+	return 0;
+}
+
 
 
 /*	fval_free()

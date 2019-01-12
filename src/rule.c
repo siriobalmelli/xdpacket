@@ -6,9 +6,69 @@
 #include <ndebug.h>
 #include <judyutils.h>
 #include <yamlutils.h>
+#include <fnv.h>
 
 
 static Pvoid_t	rule_JS = NULL; /* (char *rule_name) -> (struct rule *rule) */
+
+
+/*	rule_set_free()
+ */
+void rule_set_free (void *arg)
+{
+	free(arg);
+}
+
+/*	rule_set_new()
+ * Compile a JQ (queue) of matches into a packed format for handling packets.
+ * @matches_JQ		: (uint64_t seq) -> (struct fval *mch)
+ */
+struct rule_set *rule_set_new(Pvoid_t matches_JQ)
+{
+	struct rule_set *ret = NULL;
+	size_t match_cnt = jl_count(&matches_JQ);
+	size_t alloc_size = sizeof(*ret) + (sizeof(struct field_set) * match_cnt);
+
+	NB_die_if(!(
+		ret = malloc(alloc_size)
+		), "fail malloc size %zu", alloc_size);
+	ret->match_cnt = match_cnt;
+	ret->hash = fnv_hash64(NULL, NULL, 0); /* seed with initializer */
+
+	/* Get only the field 'set' (necessary for matching against packets);
+	 * accumulate the hash of all fields.
+	 */
+	JL_LOOP(&matches_JQ,
+		struct fval *current = val;
+		ret->matches[i] = current->field->set;
+		NB_die_if(fval_bytes_hash(current->bytes, &ret->hash), "");
+		);
+
+	return ret;
+die:
+	rule_set_free(ret);
+	return NULL;
+}
+
+
+/*	rule_set_match()
+ * Attempt to match 'pkt' of 'plen' Bytes against all rules in 'set'.
+ * Return 'true' if matching, else 'false'.
+ */
+bool  __attribute__((hot)) rule_set_match(struct rule_set *set, void *pkt, size_t plen)
+{
+	uint64_t hash = fnv_hash64(NULL, NULL, 0);
+	for (unsigned int i=0; i < set->match_cnt; i++) {
+		/* a failing hash indicates packet too short, etc */
+		if (field_hash(set->matches[i], pkt, plen, &hash))
+			return false;
+	}
+
+	if (hash != set->hash)
+		return false;
+
+	return true;
+}
 
 
 /*	rule_free()
@@ -20,6 +80,8 @@ void rule_free(void *arg)
 	struct rule *ne = arg;
 
 	js_delete(&rule_JS, ne->name);
+
+	rule_set_free(ne->set);
 
 	JL_LOOP(&ne->matches_JQ,
 		fval_free(val);
@@ -67,6 +129,10 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
 
 	ret->matches_JQ = matches_JQ;
 	ret->writes_JQ = writes_JQ;
+
+	NB_die_if(!(
+		ret->set = rule_set_new(ret->matches_JQ)
+		), "");
 
 	js_insert(&rule_JS, ret->name, ret, true);
 	return ret;

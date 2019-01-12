@@ -6,8 +6,30 @@
  * (c) 2018 Sirio Balmelli
  */
 
-#include <field2.h>
+#include <xdpacket.h>
 #include <fval.h>
+
+
+/*	rule_set
+ * Packed representation of the 'matches' side of a rule.
+ * For the 'writes' side, see 'struct rout_set'
+ * (we must combine the writes with an interface to output to).
+ * @hash	: hash of all matches.
+ * @match_cnt	: number of 'struct field_set' in 'matches'.
+ */
+struct rule_set {
+	uint64_t		hash;
+
+	size_t			match_cnt;
+	struct field_set	matches[];
+};
+
+void		rule_set_free	(void *arg);
+
+struct rule_set	*rule_set_new	(Pvoid_t matches_JQ);
+
+bool		rule_set_match	(struct rule_set *set, void *pkt, size_t plen);
+
 
 
 /*	rule
@@ -18,6 +40,7 @@ struct rule {
 	char		name[MAXLINELEN];
 	Pvoid_t		matches_JQ; /* queue of (struct fval *mch) */
 	Pvoid_t		writes_JQ; /* queue of (struct fval *wrt) */
+	struct rule_set *set;
 };
 
 

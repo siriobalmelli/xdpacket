@@ -10,14 +10,41 @@
 #include <Judy.h>
 #include <yaml.h>
 #include <iface.h>
+#include <rule.h>
+
+
+/*	rout_set
+ * Packed representation of the 'write' side of a rule.
+ * @out_fd	: fd of socket where packets should be output after writing/mangling.
+ * @counter	: number of matched and output packets.
+ * @write_cnt	: number of (struct fval_bytes) in 'writes'.
+ * @writes	: an array of (struct fval_bytes *) pointing into 'memory', because:
+ *		  - each (struct fval_bytes) is variable-length (can't index an array directly)
+ *		  - we want them packed in memory to avoid pointer chasing in the fast path
+ */
+struct rout_set {
+	int			out_fd;
+	size_t			counter;
+	size_t			write_cnt;
+	struct fval_bytes	**writes;
+	uint8_t			memory[];
+};
+
+
+void		rout_set_free	(void *arg);
+
+struct rout_set	*rout_set_new	(int out_fd, Pvoid_t writes_JQ);
+
+int		rout_set_write	(struct rout_set *rst, void *pkt, size_t plen);
 
 
 /*	rout
  * Representation of user-supplied (rule, output) tuple, given to us as strings.
  */
 struct rout {
-	struct rule	*rule;
-	struct iface	*output;
+	struct rule		*rule;
+	struct iface		*output;
+	struct rout_set		*set;
 };
 
 

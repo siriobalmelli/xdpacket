@@ -11,11 +11,85 @@
 static Pvoid_t	process_JS = NULL; /* (char *in_iface_name) -> (struct process *process) */
 
 
+/*	rout_set_free()
+ */
+void rout_set_free (void *arg)
+{
+	free(arg);
+}
+
+/*	rout_set_new()
+ * @writes_JQ	: (uint64_t seq) -> (struct fval *wrt)
+ */
+struct rout_set *rout_set_new(int out_fd, Pvoid_t writes_JQ)
+{
+	struct rout_set *ret = NULL;
+
+	/* each struct fval_bytes is a different length:
+	 * two-pass approach to calculate total number of bytes needed
+	 * _before_ allocating.
+	 */
+	size_t write_cnt = 0;
+	size_t alloc_sz = sizeof(*ret);
+	JL_LOOP(&writes_JQ,
+		struct fval *curr = val;
+		write_cnt++;
+		alloc_sz += fval_bytes_len(curr->bytes);
+	       );
+	alloc_sz += write_cnt * sizeof(struct fval_bytes *);
+
+	NB_die_if(!(
+		ret = malloc(alloc_sz)
+		), "alloc of size %zu", alloc_sz);
+	ret->counter = 0;
+	ret->out_fd = out_fd;
+	ret->write_cnt = write_cnt;
+
+	/* NOTE that 'writes' is an array of pointers into 'memory' */
+	ret->writes[0] = (void *)ret->memory;
+	JL_LOOP(&writes_JQ,
+		struct fval *fv = val;
+		size_t len = fval_bytes_len(fv->bytes);
+		memcpy(ret->writes[i], fv->bytes, len);
+		/* avoid writing past last pointer in array */
+		if (i < ret->write_cnt -1)
+			ret->writes[i+1] = ret->writes[i] + len;
+	       );
+
+	return ret;
+die:
+	rout_set_free(ret);
+	return NULL;
+}
+
+
+/*	rout_set_write()
+ * Write all fields in '*rst' to '*pkt' and output to 'out_fd'.
+ * Returns 0 on success; on failure returns non-0 and '*pkt' will be in
+ * an inconsistent state.
+ */
+int rout_set_write(struct rout_set *rst, void *pkt, size_t plen)
+{
+	for (unsigned int i=0; i < rst->write_cnt; i++) {
+		if (fval_bytes_write(rst->writes[i], pkt, plen))
+			return 1;
+	}
+	/* TODO: write to FD */
+	rst->counter++;
+	return 0;
+}
+
+
+
 /*	rout_free()
  */
 void rout_free(void *arg)
 {
-	free(arg);
+	if (!arg)
+		return;
+	struct rout *rt = arg;
+	rout_set_free(rt->set);
+	free(rt);
 }
 
 /*	rout_new()
@@ -41,6 +115,10 @@ struct rout *rout_new(const char *rule_name, const char *out_name)
 
 	ret->rule = rule;
 	ret->output = output;
+
+	NB_die_if(!(
+		ret->set = rout_set_new(ret->output->fd, ret->rule->writes_JQ)
+		), "");
 
 	return ret;
 die:

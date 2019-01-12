@@ -24,9 +24,10 @@
 
 #include <field2.h>
 #include <yaml.h>
+#include <nmath.h>
 
 
-/*	fval_bytes()
+/*	fval_bytes
  * A parsed/compiled fval, consisting of the field-set location of bytes
  * and a big-endian representation of the value, suitable for hashing
  * or writing directly into the packet.
@@ -45,13 +46,38 @@ struct fval_bytes	*fval_bytes_new(const char *value,
 
 char			*fval_bytes_print(struct fval_bytes *fvb);
 
-NLC_INLINE int		fval_bytes_hash(const struct fval_bytes *fvb,
+/*	fval_bytes_hash()
+ * Return the hash of 'where' and 'bytes'.
+ * This is the hash that incoming packets will have to match.
+ */
+NLC_INLINE
+int			fval_bytes_hash(const struct fval_bytes *fvb,
 					uint64_t *out_hash)
 {
-	return field_hash(fvb->where, fvb->bytes, fvb->where.len, out_hash);
+	/* ignore offset when hashing */
+	struct field_set temp = fvb->where;
+	temp.offt = 0;
+	return field_hash(temp, fvb->bytes, fvb->where.len, out_hash);
 }
 
+/*	fval_bytes_len()
+ * Return the length of '*fvb'.
+ * NOTE: struct fval_bytes is always aligned to 'void *'
+ */
+NLC_INLINE
+size_t			fval_bytes_len(struct fval_bytes *fvb)
+{
+	return nm_next_mult64(sizeof(*fvb) + fvb->where.len, sizeof(void*));
+}
 
+int			fval_bytes_write(struct fval_bytes *fvb,
+					void *pkt,
+					size_t plen);
+
+
+
+/*	fval
+ */
 struct fval {
 	struct field		*field;
 

@@ -66,4 +66,35 @@ int		field_emit	(struct field *field,
 				yaml_document_t *outdoc,
 				int outlist);
 
+
+/* Common code for sanitizing and computing lengths when a 'set' needs to
+ * deal with (hash, write to) a packet.
+ * Avoid copies since this code is critical.
+ * Declares the following variables for use by later code:
+ * - 'start'
+ * - 'flen'
+ */
+#define FIELD_PACKET_INDEXING							\
+	/* Parameter sanity */							\
+	if NLC_UNLIKELY(!pkt || !plen)						\
+		return 1;							\
+										\
+	/* Offset sanity.							\
+	 * 'offt' may be negative, in which case it denotes offset from		\
+	 * the end of the packet.						\
+	 */									\
+	__typeof__(pkt) start = pkt + set.offt;					\
+	if (set.offt < 0)							\
+		start += plen;							\
+	if (start < pkt)							\
+		return 1;							\
+										\
+	/* Size sanity.								\
+	 * We rely on the invariant that no set may have length 0		\
+	 */									\
+	size_t flen = set.len;							\
+	if ((start + flen) > (pkt + plen))					\
+		return 1;							\
+
+
 #endif /* field2_h_ */
