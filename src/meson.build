@@ -4,6 +4,7 @@ src_files = files([
     'fval.c',
     'parse2.c',
     'process.c',
+	'rout.c',
     'rule.c',
     'xdpacket_globals.c',
     'yamlutils.c'

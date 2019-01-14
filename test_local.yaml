@@ -1,6 +1,13 @@
 ---
 xdpk:
-  # field: a named set of bytes to be hashed or written
+  - iface: enp0s3
+  - iface: enp0s8
+  - field: mac dst
+    offt: 0
+    len: 6
+  - field: mac src
+    offt: 6
+    len: 6
   - field: ip proto
     offt: 25
     len: 1
@@ -10,70 +17,14 @@ xdpk:
   - field: ip dst
     offt: 32
     len: 4
-  - field: mdns rec
-    offt: 377
-    len: 2
-  - field: mdns rec addr
-    offt: -4
-    len: 4
-  # node is a named set of matches and writes (bytes to be mangled in packet),
-  # using fields to describe them
-  - node: client unicast
+  - rule: turnaround
     match:
       - ip proto: 0x1  ## ICMP
-      - ip src: 192.168.1.20
-      - ip dst: 192.168.1.1
     write:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.20
-  - node: client 2 unicast
-    match:
-      - ip proto: 0x1  ## ICMP
-      - ip src: 192.168.1.21
-      - ip dst: 192.168.1.1
-    write:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.21
-  - node: chrome unicast
-    match:
-      - ip src: 10.1.1.20
-      - ip dst: 10.1.1.1
-    write:
-      - ip src: 192.168.1.1
-      - ip dst: 192.168.1.20
-  - node: client mdns
-    match:
-      - ip src: 192.168.1.20
-      - ip dst: 224.0.0.251
-    write:
-      - ip src: 10.1.1.1
-  - node: chrome mdns A
-    match:
-      - ip src: 10.1.1.20
-      - ip dst: 224.0.0.251
-      - mdns rec: 0x0001  # DNS A record
-    write:
-      - ip src: 192.168.1.1
-      - mdns rec addr: 192.168.1.1
-  # MUST be matched AFTER preceding (more specific) 'A' rule
-  - node: chrome mdns
-    match:
-      - ip src: 10.1.1.20
-      - ip dst: 224.0.0.251
-    write:
-      - ip src: 192.168.1.1
-  # iface is a system interface on which to open a socket
-  - iface: enp0s3
-  - iface: enp0s8
-  # process is an input interface and a list of (node, output_interface)
-  # tuples to be executed on it.
-  - process: enp0s3
-    nodes:
-      - client unicast: enp0s8
-      - client 2 unicast: enp0s8
-      - client mdns: enp0s8
+      - mac src: 08:00:27:e2:e6:80
+      - mac dst: 52:54:00:12:35:02
+      - ip src: 10.0.2.15
+      - ip dst: 1.1.1.1
   - process: enp0s8
-    nodes:
-      - chrome unicast: enp0s3
-      - chrome mdns A: enp0s3
-      - chrome mdns: enp0s3
+    rules:
+      - turnaround: enp0s3

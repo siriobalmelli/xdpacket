@@ -25,7 +25,7 @@ static void __attribute__((destructor)) field_free_all()
 {
 	JS_LOOP(&field_JS,
 		field_free(val);
-		);
+	);
 }
 
 
@@ -205,7 +205,7 @@ int field_parse(enum parse_mode	mode,
 				NB_die_if(
 					field_emit(val, outdoc, outlist)
 					, "");
-				);
+			);
 		/* otherwise, search for a literal match */
 		} else if ((field = js_get(&field_JS, name))) {
 			NB_die_if(field_emit(field, outdoc, outlist), "");

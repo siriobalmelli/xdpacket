@@ -307,9 +307,7 @@ int fval_emit(struct fval *fval, yaml_document_t *outdoc, int outlist)
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
 		y_pair_insert(outdoc, reply, fval->field->name, fval->val)
-		, "");
-	NB_die_if(
-		y_pair_insert(outdoc, reply, "bytes", fval->bytes_prn)
+		|| y_pair_insert(outdoc, reply, "bytes", fval->bytes_prn)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)

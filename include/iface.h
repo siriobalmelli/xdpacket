@@ -17,6 +17,18 @@
 #include <rule.h>
 
 
+/*	iface_handler_t
+ * Function pointer for a packet handler to be registered.
+ * @context	: opaque value given at registration
+ * @pkt		: pointer to packet being handled
+ * @len		: length of 'pkt' in Bytes
+ *
+ * NOTES:
+ * - caller may modify '*pkt' but must NOT call free() on 'pkt'
+ */
+typedef void (*iface_handler_t)(void *context, void *pkt, size_t len);
+
+
 /*	iface
  * all parameters for an 'if' or 'iface' element in the grammar
  *
@@ -38,6 +50,9 @@ struct iface {
 	struct sockaddr	hwaddr;
 	struct sockaddr_in addr;
 
+	iface_handler_t	handler;
+	void		*context;
+
 	size_t		count_in;
 	size_t		count_out;
 };
@@ -52,6 +67,18 @@ struct iface	*iface_get	(const char *name);
 int		iface_callback	(int fd,
 				uint32_t events,
 				void *context);
+
+int	iface_handler_register	(struct iface *iface,
+				iface_handler_t handler,
+				void *context);
+
+int	iface_handler_clear	(struct iface *iface,
+				iface_handler_t handler,
+				void *context);
+
+int	iface_output		(struct iface *iface,
+				void *pkt,
+				size_t plen);
 
 
 /* integrate into parse2.h

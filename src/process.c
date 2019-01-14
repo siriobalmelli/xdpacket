@@ -11,140 +11,6 @@
 static Pvoid_t	process_JS = NULL; /* (char *in_iface_name) -> (struct process *process) */
 
 
-/*	rout_set_free()
- */
-void rout_set_free (void *arg)
-{
-	free(arg);
-}
-
-/*	rout_set_new()
- * @writes_JQ	: (uint64_t seq) -> (struct fval *wrt)
- */
-struct rout_set *rout_set_new(int out_fd, Pvoid_t writes_JQ)
-{
-	struct rout_set *ret = NULL;
-
-	/* each struct fval_bytes is a different length:
-	 * two-pass approach to calculate total number of bytes needed
-	 * _before_ allocating.
-	 */
-	size_t write_cnt = 0;
-	size_t alloc_sz = sizeof(*ret);
-	JL_LOOP(&writes_JQ,
-		struct fval *curr = val;
-		write_cnt++;
-		alloc_sz += fval_bytes_len(curr->bytes);
-	       );
-	alloc_sz += write_cnt * sizeof(struct fval_bytes *);
-
-	NB_die_if(!(
-		ret = malloc(alloc_sz)
-		), "alloc of size %zu", alloc_sz);
-	ret->counter = 0;
-	ret->out_fd = out_fd;
-	ret->write_cnt = write_cnt;
-
-	/* NOTE that 'writes' is an array of pointers into 'memory' */
-	ret->writes[0] = (void *)ret->memory;
-	JL_LOOP(&writes_JQ,
-		struct fval *fv = val;
-		size_t len = fval_bytes_len(fv->bytes);
-		memcpy(ret->writes[i], fv->bytes, len);
-		/* avoid writing past last pointer in array */
-		if (i < ret->write_cnt -1)
-			ret->writes[i+1] = ret->writes[i] + len;
-	       );
-
-	return ret;
-die:
-	rout_set_free(ret);
-	return NULL;
-}
-
-
-/*	rout_set_write()
- * Write all fields in '*rst' to '*pkt' and output to 'out_fd'.
- * Returns 0 on success; on failure returns non-0 and '*pkt' will be in
- * an inconsistent state.
- */
-int rout_set_write(struct rout_set *rst, void *pkt, size_t plen)
-{
-	for (unsigned int i=0; i < rst->write_cnt; i++) {
-		if (fval_bytes_write(rst->writes[i], pkt, plen))
-			return 1;
-	}
-	/* TODO: write to FD */
-	rst->counter++;
-	return 0;
-}
-
-
-
-/*	rout_free()
- */
-void rout_free(void *arg)
-{
-	if (!arg)
-		return;
-	struct rout *rt = arg;
-	rout_set_free(rt->set);
-	free(rt);
-}
-
-/*	rout_new()
- */
-struct rout *rout_new(const char *rule_name, const char *out_name)
-{
-	struct rout *ret = NULL;
-	NB_die_if(!rule_name || !out_name, "rout requires 'rule_name' and 'out_name'");
-
-	struct rule *rule = NULL;
-	NB_die_if(!(
-		rule = rule_get(rule_name)
-		), "could not get rule '%s'", rule_name);
-
-	struct iface *output = NULL;
-	NB_die_if(!(
-		output = iface_get(out_name)
-		), "could not get iface '%s'", out_name);
-
-	NB_die_if(!(
-		ret = malloc(sizeof(*ret))
-		), "fail alloc size %zu", sizeof(*ret));
-
-	ret->rule = rule;
-	ret->output = output;
-
-	NB_die_if(!(
-		ret->set = rout_set_new(ret->output->fd, ret->rule->writes_JQ)
-		), "");
-
-	return ret;
-die:
-	rout_free(ret);
-	return NULL;
-}
-
-
-/*	rout_emit()
- * Emit an interface as a mapping under 'outlist' in 'outdoc'.
- */
-int rout_emit(struct rout *rout, yaml_document_t *outdoc, int outlist)
-{
-	int err_cnt = 0;
-	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
-	NB_die_if(
-		y_pair_insert(outdoc, reply, rout->rule->name, rout->output->name)
-		, "");
-	NB_die_if(!(
-		yaml_document_append_sequence_item(outdoc, outlist, reply)
-		), "");
-die:
-	return err_cnt;
-}
-
-
 /*	process_free()
  */
 void process_free(void *arg)
@@ -153,13 +19,16 @@ void process_free(void *arg)
 		return;
 	struct process *pc = arg;
 
+	NB_err_if(iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ)
+		, "iface handler clobber");
 	js_delete(&process_JS, pc->in_iface->name);
 
 	JL_LOOP(&pc->rout_JQ,
 		rout_free(val);
-	       );
+	);
 	int rc;
 	JLFA(rc, pc->rout_JQ);
+	JLFA(rc, pc->rout_set_JQ);
 
 	free(pc);
 }
@@ -170,7 +39,7 @@ static void __attribute__((destructor)) process_free_all()
 {
 	JS_LOOP(&process_JS,
 		process_free(val);
-		);
+	);
 }
 
 
@@ -197,8 +66,15 @@ struct process *process_new (const char *in_iface_name, Pvoid_t rout_JQ)
 		), "could not get interface '%s'", in_iface_name);
 	ret->rout_JQ = rout_JQ;
 
+	JL_LOOP(&ret->rout_JQ,
+		struct rout *rt = val;
+		jl_enqueue(&ret->rout_set_JQ, rt->set);
+	);
+	NB_die_if(
+		iface_handler_register(ret->in_iface, process_exec, ret->rout_set_JQ)
+		, "");
+
 	js_insert(&process_JS, ret->in_iface->name, ret, true);
-	/* TODO: register callbacks/processors */
 
 	return ret;
 die:
@@ -212,6 +88,21 @@ die:
 struct process *process_get(const char *in_iface_name)
 {
 	return js_get(&process_JS, in_iface_name);
+}
+
+
+/*	process_exec()
+ */
+void process_exec (void *context, void *pkt, size_t len)
+{
+	Pvoid_t rout_set_JQ = context;
+	JL_LOOP(&rout_set_JQ,
+		struct rout_set *rst = val;
+		if (rout_set_match(rst, pkt, len) && rout_set_write(rst, pkt, len)) {
+			iface_output(rst->if_out, pkt, len);
+			break;
+		}
+	);
 }
 
 
@@ -294,7 +185,7 @@ int process_parse (enum parse_mode mode,
 				NB_die_if(
 					process_emit(val, outdoc, outlist)
 					, "");
-				);
+			);
 		/* otherwise, search for a literal match */
 		} else if ((process = process_get(name))) {
 			NB_die_if(process_emit(process, outdoc, outlist), "");
@@ -323,7 +214,7 @@ int process_emit(struct process *process, yaml_document_t *outdoc, int outlist)
 		NB_die_if(
 			rout_emit(val, outdoc, nodes)
 			, "fail to emit rout");
-	       );
+	);
 
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "process", process->in_iface->name)

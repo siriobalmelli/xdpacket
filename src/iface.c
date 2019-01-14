@@ -31,6 +31,9 @@ void iface_free(void *arg)
 	if (!arg)
 		return;
 	struct iface *sk = arg;
+	NB_err_if(sk->handler || sk->context,
+		"iface free while handler still installed; possible dangling ref");
+
 	js_delete(&iface_JS, sk->name);
 	NB_wrn("close "XDPK_SOCK_PRN(sk));
 
@@ -47,7 +50,7 @@ static void __attribute__((destructor)) iface_free_all()
 	JS_LOOP(&iface_JS,
 		NB_wrn("iface not freed, freeing by destructor");
 		iface_free(val);
-		);
+	);
 }
 
 /*	iface_new()
@@ -149,18 +152,57 @@ int iface_callback(int fd, uint32_t events, void *context)
 
 	/* handle packet */
 	struct iface *sk = (struct iface *)context;
-	if (addr.sll_pkttype == PACKET_OUTGOING)
+	if (addr.sll_pkttype == PACKET_OUTGOING) {
 		sk->count_out++;
-	else
+	} else {
 		sk->count_in++;
-	/* TODO: implement
-	struct hook *hk = sk->in;
-	hook_callback(hk, buf, res);
-	*/
+		if (sk->handler)
+			sk->handler(sk->context, buf, res);
+	}
 
 	return 0;
 }
 
+
+/*	iface_handler_register()
+ */
+int iface_handler_register (struct iface *iface, iface_handler_t handler, void *context)
+{
+	int err_cnt = 0;
+	NB_die_if(iface->handler && (iface->handler != handler || iface->context != context)
+		, "iface '%s' has existing non-identical handler", iface->name);
+	iface->handler = handler;
+	iface->context = context;
+die:
+	return err_cnt;
+}
+
+
+/*	iface_handler_clear()
+ */
+int iface_handler_clear (struct iface *iface, iface_handler_t handler, void *context)
+{
+	int err_cnt = 0;
+	NB_die_if(!iface->handler || (iface->handler != handler || iface->context != context)
+		, "iface '%s' has no existing handler, or handler not identical", iface->name);
+	iface->handler = iface->context = NULL;
+die:
+	return err_cnt;
+}
+
+
+/*	iface_output()
+ */
+int iface_output (struct iface *iface, void *pkt, size_t plen)
+{
+	int err_cnt = 0;
+	/* TODO: calc checksum */
+	NB_die_if((
+		send(iface->fd, pkt, plen, 0)
+		) != plen, "failed send size %zu iface '%s'", plen, iface->name);
+die:
+	return err_cnt;
+}
 
 
 /*	iface_parse()
@@ -235,7 +277,7 @@ int iface_parse(enum parse_mode	mode,
 				NB_die_if(
 					iface_emit(val, outdoc, outlist)
 					, "");
-				);
+			);
 		/* otherwise, search for a literal match */
 		} else if ((iface = iface_get(name))) {
 			NB_die_if(iface_emit(iface, outdoc, outlist), "");
@@ -259,16 +301,13 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "iface", iface->name)
-		, "");
-	NB_die_if(
-		y_pair_insert_nf(outdoc, reply, "packets in", "%zu", iface->count_in)
-		, "");
-	NB_die_if(
-		y_pair_insert_nf(outdoc, reply, "packets out", "%zu", iface->count_out)
+		|| y_pair_insert_nf(outdoc, reply, "packets in", "%zu", iface->count_in)
+		|| y_pair_insert_nf(outdoc, reply, "packets out", "%zu", iface->count_out)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
 		), "");
+
 die:
 	return err_cnt;
 }
