@@ -111,6 +111,8 @@ void rout_free(void *arg)
 	if (!arg)
 		return;
 	struct rout *rt = arg;
+	iface_release(rt->output);
+	rule_release(rt->rule);
 	rout_set_free(rt->set);
 	free(rt);
 }

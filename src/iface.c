@@ -31,8 +31,7 @@ void iface_free(void *arg)
 	if (!arg)
 		return;
 	struct iface *sk = arg;
-	NB_err_if(sk->handler || sk->context,
-		"iface free while handler still installed; possible dangling ref");
+	NB_err_if(sk->refcnt, "iface '%s' free with non-zero refcount.", sk->name);
 
 	js_delete(&iface_JS, sk->name);
 	NB_wrn("close "XDPK_SOCK_PRN(sk));
@@ -45,7 +44,7 @@ void iface_free(void *arg)
 
 /*	iface_free_all()
  */
-static void __attribute__((destructor)) iface_free_all()
+static void __attribute__((destructor(1))) iface_free_all()
 {
 	JS_LOOP(&iface_JS,
 		NB_wrn("iface not freed, freeing by destructor");
@@ -130,11 +129,21 @@ die:
 }
 
 
+/*	iface_release()
+ */
+void iface_release(struct iface *iface)
+{
+	iface->refcnt--;
+}
+
 /*	iface_get()
  */
 struct iface *iface_get (const char *name)
 {
-	return js_get(&iface_JS, name);
+	struct iface *ret = js_get(&iface_JS, name);
+	if (ret)
+		ret->refcnt++;
+	return ret;
 }
 
 
@@ -259,6 +268,7 @@ int iface_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			iface = iface_get(name)
 			), "could not get iface '%s'", name);
+		NB_die_if(iface->refcnt, "iface '%s' still in use", name);
 		NB_die_if(
 			iface_emit(iface, outdoc, outlist)
 			, "");

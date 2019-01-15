@@ -55,13 +55,14 @@ struct iface {
 
 	size_t		count_in;
 	size_t		count_out;
+	size_t		refcnt;
 };
 
 
 void		iface_free	(void *arg);
-
 struct iface	*iface_new	(const char *ifname);
 
+void		iface_release	(struct iface *iface);
 struct iface	*iface_get	(const char *name);
 
 int		iface_callback	(int fd,

@@ -14,8 +14,10 @@ void field_free(void *arg)
 	if (!arg)
 		return;
 	struct field *fl = arg;
-	js_delete(&field_JS, fl->name);
 	NB_wrn("erase field %s", fl->name);
+	NB_err_if(fl->refcnt, "field '%s' free with non-zero refcount", fl->name);
+
+	js_delete(&field_JS, fl->name);
 	free(fl);
 }
 
@@ -27,7 +29,6 @@ static void __attribute__((destructor)) field_free_all()
 		field_free(val);
 	);
 }
-
 
 /*	field_new()
  */
@@ -54,6 +55,7 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	NB_die_if(!(
 		ret = malloc(sizeof(struct field))
 		), "fail alloc sz %zu", sizeof(struct field));
+	ret->refcnt = 0;
 	
 	size_t cp = snprintf(ret->name, sizeof(ret->name), "%s", name);
 	NB_die_if(cp >= sizeof(ret->name),
@@ -82,11 +84,21 @@ die:
 }
 
 
+/*	field_release()
+ */
+void field_release (struct field *field)
+{
+	field->refcnt--;
+}
+
 /*	field_get()
  */
 struct field *field_get (const char *field_name)
 {
-	return js_get(&field_JS, field_name);
+	struct field *ret = js_get(&field_JS, field_name);
+	if (ret)
+		ret->refcnt++;
+	return ret;
 }
 
 

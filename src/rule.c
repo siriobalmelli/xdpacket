@@ -18,32 +18,33 @@ void rule_free(void *arg)
 {
 	if (!arg)
 		return;
-	struct rule *ne = arg;
+	struct rule *rule = arg;
+	NB_wrn("erase rule %s", rule->name);
+	NB_err_if(rule->refcnt, "rule '%s' free with non-zero refcount.", rule->name);
 
-	js_delete(&rule_JS, ne->name);
+	js_delete(&rule_JS, rule->name);
 
-	JL_LOOP(&ne->matches_JQ,
+	JL_LOOP(&rule->matches_JQ,
 		fval_free(val);
 	);
-	JL_LOOP(&ne->writes_JQ,
+	JL_LOOP(&rule->writes_JQ,
 		fval_free(val);
 	);
 	int rc;
-	JLFA(rc, ne->matches_JQ);
-	JLFA(rc, ne->writes_JQ);
+	JLFA(rc, rule->matches_JQ);
+	JLFA(rc, rule->writes_JQ);
 
-	free(ne);
+	free(rule);
 }
 
 /*	rule_free_all()
  */
-static void __attribute__((destructor)) rule_free_all()
+static void __attribute__((destructor(1))) rule_free_all()
 {
 	JS_LOOP(&rule_JS,
 		rule_free(val);
 	);
 }
-
 
 /*	rule_new()
  * Create a new rule.
@@ -77,11 +78,21 @@ die:
 }
 
 
+/*	rule_release()
+ */
+void rule_release(struct rule *rule)
+{
+	rule->refcnt--;
+}
+
 /*	rule_get()
  */
 struct rule *rule_get(const char *name)
 {
-	return js_get(&rule_JS, name);
+	struct rule *ret = js_get(&rule_JS, name);
+	if (ret)
+		ret->refcnt++;
+	return ret;
 }
 
 

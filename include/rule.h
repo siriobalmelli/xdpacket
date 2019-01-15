@@ -18,15 +18,17 @@ struct rule {
 	char		name[MAXLINELEN];
 	Pvoid_t		matches_JQ; /* queue of (struct fval *mch) */
 	Pvoid_t		writes_JQ; /* queue of (struct fval *wrt) */
+
+	size_t		refcnt;
 };
 
 
 void		rule_free	(void *arg);
-
 struct rule	*rule_new	(const char *name,
 				Pvoid_t matches_JQ,
 				Pvoid_t writes_JQ);
 
+void		rule_release	(struct rule *rule);
 struct rule	*rule_get	(const char *name);
 
 

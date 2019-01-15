@@ -38,6 +38,7 @@ struct field_set {
 struct field {
 	char			name[MAXLINELEN];
 	struct field_set	set;
+	size_t			refcnt;
 };
 
 
@@ -47,6 +48,7 @@ struct field	*field_new	(const char *name,
 				long len,
 				long mask);
 
+void		field_release	(struct field *field);
 struct field	*field_get	(const char *field_name);
 
 int		field_hash	(struct field_set set,

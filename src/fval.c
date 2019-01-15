@@ -248,12 +248,14 @@ void fval_free(void *arg)
 	if (!arg)
 		return;
 	struct fval *fv = arg;
+	NB_wrn("erase fval %s: %s", fv->field->name, fv->val);
+
+	field_release(fv->field);
 	free(fv->val);
 	free(fv->bytes_prn);
 	fval_bytes_free(fv->bytes);
 	free(fv);
 }
-
 
 /*	fval_new()
  */

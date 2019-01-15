@@ -21,6 +21,8 @@ void process_free(void *arg)
 
 	NB_err_if(iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ)
 		, "iface handler clobber");
+	iface_release(pc->in_iface);
+
 	js_delete(&process_JS, pc->in_iface->name);
 
 	JL_LOOP(&pc->rout_JQ,
@@ -35,7 +37,7 @@ void process_free(void *arg)
 
 /*	process_free_all()
  */
-static void __attribute__((destructor)) process_free_all()
+static void __attribute__((destructor(2))) process_free_all()
 {
 	JS_LOOP(&process_JS,
 		process_free(val);
