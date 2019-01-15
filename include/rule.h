@@ -13,6 +13,7 @@
 /*	rule
  * The basic atom of xdpacket; describes user intent in terms of
  * input (seq) -> match -> write (aka: mangle bytes) -> output
+ * TODO: exceeding one cache line
  */
 struct rule {
 	char		name[MAXLINELEN];

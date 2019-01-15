@@ -122,7 +122,7 @@ int rule_parse (enum parse_mode mode,
 		if (val->type == YAML_SCALAR_NODE) {
 			const char *valtxt = (const char *)val->data.scalar.value;
 
-			if (!strcmp("rule", keyname) || !strcmp("n", keyname))
+			if (!strcmp("rule", keyname) || !strcmp("r", keyname))
 				name = valtxt;
 			else
 				NB_err("'rule' does not implement '%s'", keyname);

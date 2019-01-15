@@ -293,6 +293,11 @@ struct fval *fval_new(const char *field_name, const char *value)
 		ret->bytes_prn = fval_bytes_print(ret->bytes)
 		), "");
 
+	ret->bytes_hash = fnv_hash64(NULL, NULL, 0); /* seed with initializer */
+	NB_die_if(
+		fval_bytes_hash(ret->bytes, &ret->bytes_hash)
+		, "");
+
 	return ret;
 die:
 	fval_free(ret);
@@ -310,6 +315,7 @@ int fval_emit(struct fval *fval, yaml_document_t *outdoc, int outlist)
 	NB_die_if(
 		y_pair_insert(outdoc, reply, fval->field->name, fval->val)
 		|| y_pair_insert(outdoc, reply, "bytes", fval->bytes_prn)
+		|| y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, fval->bytes_hash)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)

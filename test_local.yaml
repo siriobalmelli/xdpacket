@@ -9,13 +9,13 @@ xdpk:
     offt: 6
     len: 6
   - field: ip proto
-    offt: 25
+    offt: 23
     len: 1
   - field: ip src
     offt: 26
     len: 4
   - field: ip dst
-    offt: 32
+    offt: 30
     len: 4
   - rule: turnaround
     match:
