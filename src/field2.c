@@ -123,14 +123,7 @@ int __attribute__((hot)) field_hash(struct field_set set, const void *pkt, size_
 {
 	/* see field2.h */
 	FIELD_PACKET_INDEXING
-
-	/* must not error after we start changing 'outhash' */
-	*outhash = fnv_hash64(outhash, &set, sizeof(set));
-	*outhash = fnv_hash64(outhash, start, flen-1);
-	/* last byte must be run through the mask */
-	uint8_t trailing = ((uint8_t*)start)[flen-1] & set.mask;
-	*outhash = fnv_hash64(outhash, &trailing, sizeof(trailing));
-
+	FIELD_PACKET_HASHING
 	return 0;
 }
 

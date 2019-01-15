@@ -51,7 +51,7 @@ char			*fval_bytes_print(struct fval_bytes *fvb);
  * Return the hash of 'where' and 'bytes'.
  * This is the hash that incoming packets will have to match.
  * NOTES:
- * - the semantics are different from field_hash():
+ * - The semantics are different from field_hash():
  *   we need to ignore the offset but need to hash the 'set' _with_ the offset.
  * - We elide all the length checking etc: fval instantiation should
  *   have sanity-checked this.
@@ -62,20 +62,13 @@ NLC_INLINE
 int			fval_bytes_hash(const struct fval_bytes *fvb,
 					uint64_t *outhash)
 {
-#if 0
-
-	struct field_set temp = fvb->where;
-	temp.offt = 0;
-	return field_hash(temp, fvb->bytes, fvb->where.len, out_hash);
-#else
 	struct field_set set = fvb->where;
-	*outhash = fnv_hash64(outhash, &set, sizeof(set));
-	*outhash = fnv_hash64(outhash, fvb->bytes, set.len-1);
-	/* last byte must be run through the mask */
-	uint8_t trailing = fvb->bytes[set.len-1] & set.mask;
-	*outhash = fnv_hash64(outhash, &trailing, sizeof(trailing));
+	size_t flen = set.len;
+	void *start = (void *)fvb->bytes;
+
+	/* see field2.h */
+	FIELD_PACKET_HASHING
 	return 0;
-#endif
 }
 
 /*	fval_bytes_len()
