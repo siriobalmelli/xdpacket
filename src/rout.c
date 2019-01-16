@@ -97,7 +97,6 @@ bool rout_set_write(struct rout_set *rst, void *pkt, size_t plen)
 		if (fval_bytes_write(fvb, pkt, plen))
 			return 1;
 	);
-	/* TODO: write to FD */
 	rst->count_out++;
 	return 0;
 }
@@ -111,8 +110,16 @@ void rout_free(void *arg)
 	if (!arg)
 		return;
 	struct rout *rt = arg;
-	iface_release(rt->output);
+
+	/* Counterintuitively, use this to only print info when:
+	 * - we are compiled with debug flags
+	 * - 'rule' and 'output' are non-NULL
+	 */
+	NB_wrn_if(rt->rule && rt->output,
+		"erase rout %s: %s", rt->rule->name, rt->output->name);
+
 	rule_release(rt->rule);
+	iface_release(rt->output);
 	rout_set_free(rt->set);
 	free(rt);
 }

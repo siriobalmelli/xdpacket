@@ -19,11 +19,11 @@ void process_free(void *arg)
 		return;
 	struct process *pc = arg;
 
-	NB_err_if(iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ)
-		, "iface handler clobber");
-	iface_release(pc->in_iface);
-
-	js_delete(&process_JS, pc->in_iface->name);
+	if (pc->in_iface) {
+		iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ);
+		iface_release(pc->in_iface);
+		js_delete(&process_JS, pc->in_iface->name);
+	}
 
 	JL_LOOP(&pc->rout_JQ,
 		rout_free(val);

@@ -16,7 +16,7 @@
  * TODO: exceeding one cache line
  */
 struct rule {
-	char		name[MAXLINELEN];
+	char		*name;
 	Pvoid_t		matches_JQ; /* queue of (struct fval *mch) */
 	Pvoid_t		writes_JQ; /* queue of (struct fval *wrt) */
 

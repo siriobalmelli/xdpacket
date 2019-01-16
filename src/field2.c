@@ -18,6 +18,7 @@ void field_free(void *arg)
 	NB_err_if(fl->refcnt, "field '%s' free with non-zero refcount", fl->name);
 
 	js_delete(&field_JS, fl->name);
+	free(fl->name);
 	free(fl);
 }
 
@@ -58,10 +59,12 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 		), "fail alloc sz %zu", sizeof(struct field));
 	ret->refcnt = 0;
 	
-	size_t cp = snprintf(ret->name, sizeof(ret->name), "%s", name);
-	NB_die_if(cp >= sizeof(ret->name),
-		"field name '%s' too long. %zuB allowed max",
-		name, sizeof(ret->name));
+	size_t name_len = strnlen(name, MAXLINELEN);
+	NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
+	NB_die_if(!(
+		ret->name = malloc(name_len +1)
+		), "fail alloc size %zu", name_len +1);
+	snprintf(ret->name, name_len+1, "%s", name);
 
 	/* see 'test/overflow_test.c' for a proof that this is kosher */
 	#pragma GCC diagnostic push
@@ -89,6 +92,8 @@ die:
  */
 void field_release (struct field *field)
 {
+	if (!field)
+		return;
 	field->refcnt--;
 }
 

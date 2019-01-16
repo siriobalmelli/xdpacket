@@ -28,7 +28,7 @@ struct field_set {
 	int32_t			offt;
 	uint16_t		len;
 	uint8_t			mask;
-	uint8_t			setff; /* must be ff (disambiguate from a pointer!) */
+	uint8_t			flags;
 }__attribute__((packed));
 
 
@@ -36,7 +36,7 @@ struct field_set {
  * User-supplied parameters describing a field.
  */
 struct field {
-	char			name[MAXLINELEN];
+	char			*name;
 	struct field_set	set;
 	size_t			refcnt;
 };

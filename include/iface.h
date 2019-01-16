@@ -40,27 +40,30 @@ typedef void (*iface_handler_t)(void *context, void *pkt, size_t len);
  * @JS_mch_in	: input matchers in alphabetical order
  */
 struct iface {
-	char		name[MAXLINELEN];
-	char		ip_prn[INET_ADDRSTRLEN];
-
+	/* first cache line: runtime (packet-handling-time) parameters */
 	int		fd;
-	/* taken directly from struct ifreq: */
+	int		refcnt;
+
 	int		ifindex;
 	int		mtu;
-	struct sockaddr	hwaddr;
-	struct sockaddr_in addr;
 
 	iface_handler_t	handler;
 	void		*context;
 
 	size_t		count_in;
 	size_t		count_out;
-	size_t		refcnt;
+
+	struct sockaddr		*hwaddr;
+	struct sockaddr_in	*addr;
+
+	/* second cache line: metadata nonessentials */
+	char		*name;
+	char		*ip_prn;
 };
 
 
 void		iface_free	(void *arg);
-struct iface	*iface_new	(const char *ifname);
+struct iface	*iface_new	(const char *name);
 
 void		iface_release	(struct iface *iface);
 struct iface	*iface_get	(const char *name);

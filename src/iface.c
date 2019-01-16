@@ -16,8 +16,8 @@
 #define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
 #define XDPK_SOCK_PRN(sk_p) "%d: %s %s "XDPK_MAC_PROTO" mtu %d", \
 		sk_p->ifindex, sk_p->name, sk_p->ip_prn, \
-		sk_p->hwaddr.sa_data[0], sk_p->hwaddr.sa_data[1], sk_p->hwaddr.sa_data[2], \
-		sk_p->hwaddr.sa_data[3], sk_p->hwaddr.sa_data[4], sk_p->hwaddr.sa_data[5], \
+		sk_p->hwaddr->sa_data[0], sk_p->hwaddr->sa_data[1], sk_p->hwaddr->sa_data[2], \
+		sk_p->hwaddr->sa_data[3], sk_p->hwaddr->sa_data[4], sk_p->hwaddr->sa_data[5], \
 		sk_p->mtu
 
 
@@ -30,16 +30,20 @@ void iface_free(void *arg)
 {
 	if (!arg)
 		return;
-	struct iface *sk = arg;
-	NB_err_if(sk->refcnt, "iface '%s' free with non-zero refcount.", sk->name);
+	struct iface *iface = arg;
+	NB_err_if(iface->refcnt, "iface '%s' free with non-zero refcount.", iface->name);
 
-	js_delete(&iface_JS, sk->name);
-	NB_wrn("close "XDPK_SOCK_PRN(sk));
+	js_delete(&iface_JS, iface->name);
+	NB_wrn("close "XDPK_SOCK_PRN(iface));
 
-	if (sk->fd != -1)
-		close(sk->fd);
+	if (iface->fd != -1)
+		close(iface->fd);
 
-	free(sk);
+	free(iface->addr);
+	free(iface->hwaddr);
+	free(iface->ip_prn);
+	free(iface->name);
+	free(iface);
 }
 
 /*	iface_free_all()
@@ -55,19 +59,35 @@ static void __attribute__((destructor(1))) iface_free_all()
 /*	iface_new()
  * Open a socket on 'ifname' or return an already open socket.
  */
-struct iface *iface_new(const char *ifname)
+struct iface *iface_new(const char *name)
 {
 	struct iface *ret = NULL;
-	NB_die_if(!ifname, "no name given for iface");
+	NB_die_if(!name, "no name given for iface");
 
 	/* if already exists, return existing */
-	if ((ret = js_get(&iface_JS, ifname)))
+	if ((ret = js_get(&iface_JS, name)))
 		return ret;
 
 	NB_die_if(!(
 		ret = calloc(sizeof(struct iface), 1)
-		), "alloc size %zu", sizeof(struct iface));
-	snprintf(ret->name, IFNAMSIZ, "%s", ifname);
+		), "fail alloc size %zu", sizeof(struct iface));
+
+	size_t name_len = strnlen(name, MAXLINELEN);
+	NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
+	NB_die_if(!(
+		ret->name = malloc(name_len +1)
+		), "fail alloc size %zu", name_len +1);
+	snprintf(ret->name, name_len+1, "%s", name);
+
+	NB_die_if(!(
+		ret->ip_prn = calloc(1, INET_ADDRSTRLEN)
+		), "fail alloc size %d", INET_ADDRSTRLEN);
+	NB_die_if(!(
+		ret->addr = calloc(1, sizeof(*ret->addr))
+		), "fail alloc size %zu", sizeof(*ret->addr));
+	NB_die_if(!(
+		ret->hwaddr = calloc(1, sizeof(*ret->hwaddr))
+		), "fail alloc size %zu", sizeof(*ret->hwaddr));
 
 	/* socket */
 	ret->fd = -1;
@@ -75,7 +95,7 @@ struct iface *iface_new(const char *ifname)
 		ret->fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
 		) < 0, "unable to open socket on %s", ret->name);
 	struct ifreq ifr = {{{0}}};
-	snprintf (ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ifname);
+	snprintf (ifr.ifr_name, sizeof(ifr.ifr_name), "%s", name);
 
 	/* grok interface
 	 * ordered by increasing field size: avoid zeroing the union between calls
@@ -91,15 +111,15 @@ struct iface *iface_new(const char *ifname)
 	NB_die_if(
 		ioctl(ret->fd, SIOCGIFADDR, &ifr)
 		, "");
-	memcpy(&ret->addr, &ifr.ifr_addr, sizeof(ret->addr));
+	memcpy(ret->addr, &ifr.ifr_addr, sizeof(*ret->addr));
 	NB_die_if(!(
-		inet_ntop(ret->addr.sin_family, &ret->addr.sin_addr,
-			ret->ip_prn, sizeof(ret->ip_prn))
+		inet_ntop(ret->addr->sin_family, &ret->addr->sin_addr,
+			ret->ip_prn, INET_ADDRSTRLEN)
 		), "");
 	NB_die_if(
 		ioctl(ret->fd, SIOCGIFHWADDR, &ifr)
 		, "");
-	memcpy(&ret->hwaddr, &ifr.ifr_hwaddr, sizeof(ret->hwaddr));
+	memcpy(ret->hwaddr, &ifr.ifr_hwaddr, sizeof(*ret->hwaddr));
 
 	/* bind to interface */
 	struct sockaddr_ll saddr = {
@@ -107,8 +127,9 @@ struct iface *iface_new(const char *ifname)
 		.sll_protocol = htons(ETH_P_ALL),
 		.sll_ifindex = ret->ifindex,
 		.sll_halen = 6,
-		.sll_addr = { ret->hwaddr.sa_data[0], ret->hwaddr.sa_data[1], ret->hwaddr.sa_data[2],
-			ret->hwaddr.sa_data[3], ret->hwaddr.sa_data[4], ret->hwaddr.sa_data[5]},
+		.sll_addr = {
+			ret->hwaddr->sa_data[0], ret->hwaddr->sa_data[1], ret->hwaddr->sa_data[2],
+			ret->hwaddr->sa_data[3], ret->hwaddr->sa_data[4], ret->hwaddr->sa_data[5]},
 		/* ignored by bind call */
 		.sll_hatype = 0,
 		.sll_pkttype = 0
@@ -133,6 +154,8 @@ die:
  */
 void iface_release(struct iface *iface)
 {
+	if (!iface)
+		return;
 	iface->refcnt--;
 }
 
@@ -192,8 +215,10 @@ die:
 int iface_handler_clear (struct iface *iface, iface_handler_t handler, void *context)
 {
 	int err_cnt = 0;
-	NB_die_if(!iface->handler || (iface->handler != handler || iface->context != context)
-		, "iface '%s' has no existing handler, or handler not identical", iface->name);
+	NB_die_if(!iface
+		|| !iface->handler
+		|| (iface->handler != handler || iface->context != context)
+		, "");
 	iface->handler = iface->context = NULL;
 die:
 	return err_cnt;
@@ -313,6 +338,7 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "iface", iface->name)
+		|| y_pair_insert_nf(outdoc, reply, "address", "%s", iface->ip_prn)
 		|| y_pair_insert_nf(outdoc, reply, "packets in", "%zu", iface->count_in)
 		|| y_pair_insert_nf(outdoc, reply, "packets out", "%zu", iface->count_out)
 		, "");

@@ -1,6 +1,5 @@
 # test_reflection.yaml
-# test a setup where incoming packets are simply reflected back out
-# another interface.
+# incoming packets are simply reflected back out the same interface.
 ---
 xdpk:
   - iface: enp0s3

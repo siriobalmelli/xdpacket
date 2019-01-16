@@ -23,6 +23,7 @@ void rule_free(void *arg)
 	NB_err_if(rule->refcnt, "rule '%s' free with non-zero refcount.", rule->name);
 
 	js_delete(&rule_JS, rule->name);
+	free(rule->name);
 
 	JL_LOOP(&rule->matches_JQ,
 		fval_free(val);
@@ -63,9 +64,13 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
 	NB_die_if(!(
 		ret = calloc(1, sizeof(*ret))
 		), "fail alloc size %zu", sizeof(*ret));
-	NB_die_if((
-		snprintf(ret->name, sizeof(ret->name), "%s", name)
-		) >= sizeof(ret->name), "rule name overflow '%s'", name);
+
+	size_t name_len = strnlen(name, MAXLINELEN);
+	NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
+	NB_die_if(!(
+		ret->name = malloc(name_len +1)
+		), "fail alloc size %zu", name_len +1);
+	snprintf(ret->name, name_len+1, "%s", name);
 
 	ret->matches_JQ = matches_JQ;
 	ret->writes_JQ = writes_JQ;
@@ -82,6 +87,8 @@ die:
  */
 void rule_release(struct rule *rule)
 {
+	if (!rule)
+		return;
 	rule->refcnt--;
 }
 

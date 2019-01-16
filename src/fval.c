@@ -77,6 +77,7 @@ void fval_bytes_free(void * arg)
 
 
 /*	fval_bytes_new()
+ * TODO: handle a field referring to another field (as opposed to a static value
  */
 struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct field_set set)
 {
@@ -255,7 +256,13 @@ void fval_free(void *arg)
 	if (!arg)
 		return;
 	struct fval *fv = arg;
-	NB_wrn("erase fval %s: %s", fv->field->name, fv->val);
+
+	/* Counterintuitively, use this to only print info when:
+	 * - we are compiled with debug flags
+	 * - 'field' and 'val' are non-NULL
+	 */
+	NB_wrn_if(fv->field && fv->val,
+		"erase fval %s: %s", fv->field->name, fv->val);
 
 	field_release(fv->field);
 	free(fv->val);
