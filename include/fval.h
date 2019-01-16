@@ -19,13 +19,11 @@
  *    - hashed to verify a match.
  *    'fval_bytes' is this parsed array of bytes.
  *
- * TODO: undo padding to nearest byte-multiple of 8, remove length functions
  * (c) 2018 Sirio Balmelli
  */
 
 #include <field2.h>
 #include <yaml.h>
-#include <nmath.h>
 
 
 /*	fval_bytes
@@ -69,16 +67,6 @@ int			fval_bytes_hash(const struct fval_bytes *fvb,
 	/* see field2.h */
 	FIELD_PACKET_HASHING
 	return 0;
-}
-
-/*	fval_bytes_len()
- * Return the length of '*fvb'.
- * NOTE: struct fval_bytes is always aligned to 'void *'
- */
-NLC_INLINE
-size_t			fval_bytes_len(struct fval_bytes *fvb)
-{
-	return nm_next_mult64(sizeof(*fvb) + fvb->where.len, sizeof(void*));
 }
 
 int			fval_bytes_write(struct fval_bytes *fvb,

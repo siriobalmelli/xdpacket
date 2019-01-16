@@ -110,6 +110,7 @@ die:
 
 
 /*	main()
+ * TODO: reopen an fd to stdin if given a file fd? (aka: don't abandon CLI)
  */
 int main()
 {

@@ -83,17 +83,19 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 	struct fval_bytes *ret = NULL;
 	size_t len = set.len; /* for legibility only */
 
-	/* Pad allocation to align on 'void *' size: these structs
-	 * can be concatenated in arrays.
-	 */
-	size_t alloc_size = nm_next_mult64(sizeof(*ret) + len, sizeof(void *));
+	/* 'len' may be zero for zero-length fields */
+	size_t alloc_size = sizeof(*ret) + len;
 	NB_die_if(!(
 		ret = malloc(alloc_size)
 		), "fail malloc size %zu", alloc_size);
 	ret->where = set;
 
+	/* 0-length fields are valid: just ignore any user-supplied values */
+	if (!len) {
+		;
+
 	/* parse IPv4 */
-	if (len <= 4 && !regexec(&re_ipv4, value, 0, NULL, 0)) {
+	} else if (len <= 4 && !regexec(&re_ipv4, value, 0, NULL, 0)) {
 		struct in_addr	i4;
 		NB_die_if(inet_pton(AF_INET, value, &i4) != 1,
 			"could not parse ipv4 '%s'", value);
@@ -213,9 +215,14 @@ char *fval_bytes_print(struct fval_bytes *fvb)
 	NB_die_if(!(
 		ret = malloc(prnlen)
 		), "fail alloc size %zu", prnlen);
-	ret[0] = '0';
-	ret[1] = 'x';
-	b2hx_BE(fvb->bytes, &ret[2], fvb->where.len);
+
+	if (fvb->where.len) {
+		ret[0] = '0';
+		ret[1] = 'x';
+		b2hx_BE(fvb->bytes, &ret[2], fvb->where.len);
+	} else {
+		ret[0] = '\0';
+	}
 
 	return ret;
 die:
@@ -275,7 +282,6 @@ struct fval *fval_new(const char *field_name, const char *value)
 	/* do not allow a length longer than the maximum length value of a field-set */
 	size_t max = ((size_t)1 << (sizeof(ret->field->set.len) * 8)) -1;
 	size_t vlen = strnlen(value, max);
-	NB_die_if(!vlen, "zero-length 'value' invalid");
 	NB_die_if(vlen == max, "value truncated:\n%.*s", (int)max, value);
 	vlen++; /* \0 terminator */
 

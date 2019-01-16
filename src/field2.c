@@ -31,11 +31,12 @@ static void __attribute__((destructor)) field_free_all()
 }
 
 /*	field_new()
+ * Create a new field.
  */
 struct field *field_new	(const char *name, long offt, long len, long mask)
 {
 	struct field *ret = NULL;
-	NB_die_if(!name || !len, "no name or length given for field");
+	NB_die_if(!name, "no name given for field");
 
 	/* A '0' mask is irrational.
 	 * If a mask is not provided, assume 0xff.

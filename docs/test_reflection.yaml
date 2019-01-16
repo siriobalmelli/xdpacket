@@ -1,0 +1,16 @@
+# test_reflection.yaml
+# test a setup where incoming packets are simply reflected back out
+# another interface.
+---
+xdpk:
+  - iface: enp0s3
+  - field: any
+    offt: 0
+    len: 0
+  - rule: reflect
+    match:
+      - any:
+  - process: enp0s3
+    rules:
+      - reflect: enp0s3
+...

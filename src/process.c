@@ -48,7 +48,7 @@ static void __attribute__((destructor(2))) process_free_all()
 /*	process_new()
  * Create a new process.
  */
-struct process *process_new (const char *in_iface_name, Pvoid_t rout_JQ)
+struct process *process_new(const char *in_iface_name, Pvoid_t rout_JQ)
 {
 	struct process *ret = NULL;
 	NB_die_if(!in_iface_name, "process requires in_iface_name");
@@ -95,12 +95,12 @@ struct process *process_get(const char *in_iface_name)
 
 /*	process_exec()
  */
-void process_exec (void *context, void *pkt, size_t len)
+void process_exec(void *context, void *pkt, size_t len)
 {
 	Pvoid_t rout_set_JQ = context;
 	JL_LOOP(&rout_set_JQ,
 		struct rout_set *rst = val;
-		if (rout_set_match(rst, pkt, len) && rout_set_write(rst, pkt, len)) {
+		if (rout_set_match(rst, pkt, len) && !rout_set_write(rst, pkt, len)) {
 			iface_output(rst->if_out, pkt, len);
 			break;
 		}
@@ -110,7 +110,7 @@ void process_exec (void *context, void *pkt, size_t len)
 
 /*	process_parse()
  */
-int process_parse (enum parse_mode mode,
+int process_parse(enum parse_mode mode,
 		yaml_document_t *doc, yaml_node_t *mapping,
 		yaml_document_t *outdoc, int outlist)
 {

@@ -96,17 +96,28 @@ int		field_emit	(struct field *field,
 	 */									\
 	size_t flen = set.len;							\
 	if ((start + flen) > (pkt + plen))					\
-		return 1;							\
+		return 1;
 
 /* Common code for calculating a packet hash given an fval_set.
+ * Expects to see the following variables:
+ * - (struct field_set) set
+ * - (size_t) flen
+ * - (void *) start
+ * NOTES:
+ * - a 0-length packet simply hashes the 'set' itself
+ * - a 0-offt and 0-len 'set' will match _all_ packets.
+ * - a 0-length packet should with offt X should match all packets where
+ *   (len >= X)
  */
 #define FIELD_PACKET_HASHING							\
 	/* must not error after we start changing 'outhash' */			\
 	*outhash = fnv_hash64(outhash, &set, sizeof(set));			\
-	*outhash = fnv_hash64(outhash, start, flen-1);				\
-	/* last byte must be run through the mask */				\
-	uint8_t trailing = ((uint8_t*)start)[flen-1] & set.mask;		\
-	*outhash = fnv_hash64(outhash, &trailing, sizeof(trailing));		\
+	if (flen) {								\
+		*outhash = fnv_hash64(outhash, start, flen-1);			\
+		/* last byte must be run through the mask */			\
+		uint8_t trailing = ((uint8_t*)start)[flen-1] & set.mask;	\
+		*outhash = fnv_hash64(outhash, &trailing, sizeof(trailing));	\
+	}
 
 
 #endif /* field2_h_ */

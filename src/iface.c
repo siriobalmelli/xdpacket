@@ -202,10 +202,12 @@ die:
 
 /*	iface_output()
  */
-int iface_output (struct iface *iface, void *pkt, size_t plen)
+int iface_output(struct iface *iface, void *pkt, size_t plen)
 {
 	int err_cnt = 0;
-	/* TODO: calc checksum */
+	/* TODO: calc checksum ? */
+
+	/* we expect hardware to compute FCS (CRC32) for Ethernet */
 	NB_die_if((
 		send(iface->fd, pkt, plen, 0)
 		) != plen, "failed send size %zu iface '%s'", plen, iface->name);

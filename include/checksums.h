@@ -23,9 +23,4 @@ NLC_INLINE void ip_checksum(void *pkt)
 
 }
 
-NLC_INLINE void eth_checksum(void *pkt)
-{
-
-}
-
 #endif /* checksums_h_ */
