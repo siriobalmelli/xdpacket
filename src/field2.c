@@ -24,7 +24,7 @@ void field_free(void *arg)
 
 /*	field_free_all()
  */
-static void __attribute__((destructor)) field_free_all()
+void __attribute__((destructor)) field_free_all()
 {
 	JS_LOOP(&field_JS,
 		field_free(val);
@@ -90,7 +90,7 @@ die:
 
 /*	field_release()
  */
-void field_release (struct field *field)
+void field_release(struct field *field)
 {
 	if (!field)
 		return;
@@ -98,8 +98,9 @@ void field_release (struct field *field)
 }
 
 /*	field_get()
+ * Increments refcount, don't call from inside this file.
  */
-struct field *field_get (const char *field_name)
+struct field *field_get(const char *field_name)
 {
 	struct field *ret = js_get(&field_JS, field_name);
 	if (ret)
@@ -201,8 +202,9 @@ int field_parse(enum parse_mode	mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			field = field_get(name)
+			field = js_get(&field_JS, name)
 			), "could not get field '%s'", name);
+		NB_die_if(field->refcnt, "field '%s' still in use", name);
 		NB_die_if(
 			field_emit(field, outdoc, outlist)
 			, "");

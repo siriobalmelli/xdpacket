@@ -42,7 +42,6 @@ typedef void (*iface_handler_t)(void *context, void *pkt, size_t len);
 struct iface {
 	/* first cache line: runtime (packet-handling-time) parameters */
 	int		fd;
-	int		refcnt;
 
 	int		ifindex;
 	int		mtu;
@@ -59,10 +58,12 @@ struct iface {
 	/* second cache line: metadata nonessentials */
 	char		*name;
 	char		*ip_prn;
+	size_t		refcnt;
 };
 
 
 void		iface_free	(void *arg);
+void		iface_free_all	();
 struct iface	*iface_new	(const char *name);
 
 void		iface_release	(struct iface *iface);

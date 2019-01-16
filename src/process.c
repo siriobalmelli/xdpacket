@@ -19,6 +19,12 @@ void process_free(void *arg)
 		return;
 	struct process *pc = arg;
 
+	/* Counterintuitively, use this to only print info when:
+	 * - we are compiled with debug flags
+	 * - 'in_iface' is non-NULL
+	 */
+	NB_wrn_if(pc->in_iface != NULL, "erase process %s", pc->in_iface->name);
+
 	if (pc->in_iface) {
 		iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ);
 		iface_release(pc->in_iface);
@@ -37,7 +43,7 @@ void process_free(void *arg)
 
 /*	process_free_all()
  */
-static void __attribute__((destructor(2))) process_free_all()
+void __attribute__((destructor(2))) process_free_all()
 {
 	JS_LOOP(&process_JS,
 		process_free(val);
@@ -82,14 +88,6 @@ struct process *process_new(const char *in_iface_name, Pvoid_t rout_JQ)
 die:
 	process_free(ret);
 	return NULL;
-}
-
-
-/*	process_get()
- */
-struct process *process_get(const char *in_iface_name)
-{
-	return js_get(&process_JS, in_iface_name);
 }
 
 
@@ -172,7 +170,7 @@ int process_parse(enum parse_mode mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			process = process_get(name)
+			process = js_get(&process_JS, name)
 			), "could not get interfaces '%s'", name);
 		NB_die_if(
 			process_emit(process, outdoc, outlist)
@@ -189,7 +187,7 @@ int process_parse(enum parse_mode mode,
 					, "");
 			);
 		/* otherwise, search for a literal match */
-		} else if ((process = process_get(name))) {
+		} else if ((process = js_get(&process_JS, name))) {
 			NB_die_if(process_emit(process, outdoc, outlist), "");
 		}
 		break;

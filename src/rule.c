@@ -40,7 +40,7 @@ void rule_free(void *arg)
 
 /*	rule_free_all()
  */
-static void __attribute__((destructor(1))) rule_free_all()
+void __attribute__((destructor(1))) rule_free_all()
 {
 	JS_LOOP(&rule_JS,
 		rule_free(val);
@@ -93,6 +93,7 @@ void rule_release(struct rule *rule)
 }
 
 /*	rule_get()
+ * Increments refcount, don't call from inside this file.
  */
 struct rule *rule_get(const char *name)
 {
@@ -173,8 +174,9 @@ int rule_parse (enum parse_mode mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			rule = rule_get(name)
+			rule = js_get(&rule_JS, name)
 			), "could not get rule '%s'", name);
+		NB_die_if(rule->refcnt, "rule '%s' still in use", name);
 		NB_die_if(
 			rule_emit(rule, outdoc, outlist)
 			, "");
@@ -190,7 +192,7 @@ int rule_parse (enum parse_mode mode,
 					, "");
 			);
 		/* otherwise, search for a literal match */
-		} else if ((rule = rule_get(name))) {
+		} else if ((rule = js_get(&rule_JS, name))) {
 			NB_die_if(rule_emit(rule, outdoc, outlist), "");
 		}
 		break;

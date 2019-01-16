@@ -5,6 +5,7 @@
 #include <iface.h>
 #include <parse2.h>
 #include <ndebug.h>
+#include <process.h>
 
 /* TCP socket
  */
@@ -142,6 +143,13 @@ int main()
 	}
 
 die:
+	process_free_all();
+	rule_free_all();
+	field_free_all();
+
+	/* no: eptk_free() will call iface_free() on all registered fd's
+	 * iface_free_all();
+	 */
 	eptk_free(tk);
 	return err_cnt;
 }

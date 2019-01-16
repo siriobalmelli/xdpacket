@@ -131,26 +131,19 @@ struct rout *rout_new(const char *rule_name, const char *out_name)
 	struct rout *ret = NULL;
 	NB_die_if(!rule_name || !out_name, "rout requires 'rule_name' and 'out_name'");
 
-	struct rule *rule = NULL;
 	NB_die_if(!(
-		rule = rule_get(rule_name)
-		), "could not get rule '%s'", rule_name);
-
-	struct iface *output = NULL;
-	NB_die_if(!(
-		output = iface_get(out_name)
-		), "could not get iface '%s'", out_name);
-
-	NB_die_if(!(
-		ret = malloc(sizeof(*ret))
+		ret = calloc(1, sizeof(*ret))
 		), "fail alloc size %zu", sizeof(*ret));
 
-	ret->rule = rule;
-	ret->output = output;
-
+	NB_die_if(!(
+		ret->rule = rule_get(rule_name)
+		), "could not get rule '%s'", rule_name);
+	NB_die_if(!(
+		ret->output = iface_get(out_name)
+		), "could not get iface '%s'", out_name);
 	NB_die_if(!(
 		ret->set = rout_set_new(ret->rule, ret->output)
-		), "");
+		), "could not create set for rout");
 
 	return ret;
 die:

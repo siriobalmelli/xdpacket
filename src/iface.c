@@ -48,7 +48,7 @@ void iface_free(void *arg)
 
 /*	iface_free_all()
  */
-static void __attribute__((destructor(1))) iface_free_all()
+void __attribute__((destructor(1))) iface_free_all()
 {
 	JS_LOOP(&iface_JS,
 		NB_wrn("iface not freed, freeing by destructor");
@@ -160,8 +160,9 @@ void iface_release(struct iface *iface)
 }
 
 /*	iface_get()
+ * Increments refcount, don't call from inside this file.
  */
-struct iface *iface_get (const char *name)
+struct iface *iface_get(const char *name)
 {
 	struct iface *ret = js_get(&iface_JS, name);
 	if (ret)
@@ -293,7 +294,7 @@ int iface_parse(enum parse_mode	mode,
 
 	case PARSE_DEL:
 		NB_die_if(!(
-			iface = iface_get(name)
+			iface = js_get(&iface_JS, name)
 			), "could not get iface '%s'", name);
 		NB_die_if(iface->refcnt, "iface '%s' still in use", name);
 		NB_die_if(
@@ -316,7 +317,7 @@ int iface_parse(enum parse_mode	mode,
 					, "");
 			);
 		/* otherwise, search for a literal match */
-		} else if ((iface = iface_get(name))) {
+		} else if ((iface = js_get(&iface_JS, name))) {
 			NB_die_if(iface_emit(iface, outdoc, outlist), "");
 		}
 		break;

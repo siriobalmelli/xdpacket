@@ -25,6 +25,7 @@ struct rule {
 
 
 void		rule_free	(void *arg);
+void		rule_free_all	();
 struct rule	*rule_new	(const char *name,
 				Pvoid_t matches_JQ,
 				Pvoid_t writes_JQ);

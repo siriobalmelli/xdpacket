@@ -24,7 +24,7 @@ struct process {
 
 
 void		process_free	(void *arg);
-
+void		process_free_all();
 struct process	*process_new	(const char *in_iface_name,
 				Pvoid_t rout_JQ);
 

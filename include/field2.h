@@ -43,6 +43,7 @@ struct field {
 
 
 void		field_free	(void *arg);
+void		field_free_all	();
 struct field	*field_new	(const char *name,
 				long offt,
 				long len,
