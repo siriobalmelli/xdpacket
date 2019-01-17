@@ -328,7 +328,7 @@ int fval_emit(struct fval *fval, yaml_document_t *outdoc, int outlist)
 	NB_die_if(
 		y_pair_insert(outdoc, reply, fval->field->name, fval->val)
 		|| y_pair_insert(outdoc, reply, "bytes", fval->bytes_prn)
-		|| y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, fval->bytes_hash)
+		// || y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, fval->bytes_hash)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
