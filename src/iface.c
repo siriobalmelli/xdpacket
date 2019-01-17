@@ -11,6 +11,8 @@
 #include <judyutils.h>
 #include <yamlutils.h>
 
+#include <checksums.h>
+
 
 #define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 #define XDPK_MAC_BYTES(ptr) ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
@@ -231,7 +233,8 @@ die:
 int iface_output(struct iface *iface, void *pkt, size_t plen)
 {
 	int err_cnt = 0;
-	/* TODO: calc checksum ? */
+
+	l4_checksum(l3_checksum(pkt));
 
 	/* we expect hardware to compute FCS (CRC32) for Ethernet */
 	NB_die_if((
