@@ -37,6 +37,9 @@ from them it should be relatively easy to intuit (until proper docs are prepared
     - tab completion
     - is there a library for this
 
+1. Port over test cases, extenguish `src_old`, `include_old` and `test_old`
+    (previous attempt under naive architecture assumptions).
+
 1. Documentation and man pages
 
 1. packaging
