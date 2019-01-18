@@ -97,7 +97,7 @@ struct iface *iface_new(const char *name)
 		ret->fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
 		) < 0, "unable to open socket on %s", ret->name);
 	struct ifreq ifr = {{{0}}};
-	snprintf (ifr.ifr_name, sizeof(ifr.ifr_name), "%s", name);
+	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", name);
 
 	/* grok interface
 	 * ordered by increasing field size: avoid zeroing the union between calls
@@ -122,6 +122,18 @@ struct iface *iface_new(const char *name)
 		ioctl(ret->fd, SIOCGIFHWADDR, &ifr)
 		, "");
 	memcpy(ret->hwaddr, &ifr.ifr_hwaddr, sizeof(*ret->hwaddr));
+
+	/* set promiscuous flag */
+	memset(&ifr, 0x0, sizeof(ifr));
+	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", name);
+	ifr.ifr_ifindex = ret->ifindex;
+	NB_die_if(
+		ioctl(ret->fd, SIOCGIFFLAGS, &ifr)
+		, "");
+	ifr.ifr_flags |= IFF_PROMISC;
+	NB_die_if(
+		ioctl(ret->fd, SIOCSIFFLAGS, &ifr)
+		, "");
 
 	/* bind to interface */
 	struct sockaddr_ll saddr = {
