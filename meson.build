@@ -19,7 +19,7 @@ assert(meson.version() >= '0.46.0', '')
 #
 # debug : all the pedantic things!
 if get_option('buildtype') == 'debug'
-	add_project_arguments([ '-DDEBUG' ],
+	add_project_arguments([ '-DDEBUG', '-O0' ],
 				language : 'c')
 
 # debugoptimized : daily worker build; basically 'release' but with symbols

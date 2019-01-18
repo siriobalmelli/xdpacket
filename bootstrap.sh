@@ -8,7 +8,7 @@ FAILS=
 rm -rfv ./build-*
 
 compilers="clang gcc"
-build_types="debugoptimized release plain"
+build_types="debug debugoptimized release plain"
 
 for cc in $compilers; do
 	for type in $build_types; do

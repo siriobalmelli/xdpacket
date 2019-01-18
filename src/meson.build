@@ -1,4 +1,5 @@
 src_files = files([
+    'checksums.c',
     'iface.c',
     'field2.c',
     'fval.c',
