@@ -190,20 +190,20 @@ NLC_INLINE int checksum(void *frame, size_t len)
 		l4.tcp->check = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
 
 	} else if (*l3_proto == IPPROTO_UDP) {
-#if 1
 		l4.udp->check = 0;
-#else
-		l4.udp->check = 0;
+#if 0
 		l4.udp->check = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
 		/* '0x0000' checksum value not allowed by the standard */
 		if (!l4.udp->check)
 			l4.udp->check = 0xffff;
 #endif
 
+	/* ICMPv4 checksum does not include pseudo-header */
 	} else if (*l3_proto == IPPROTO_ICMP) {
 		l4.icmp->checksum = 0;
-		l4.icmp->checksum = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
+		l4.icmp->checksum = ones_final(ones_sum(l4.ptr, l4_len, 0));
 
+	/* ICMPv6, on the other hand, does */
 	} else if (*l3_proto == IPPROTO_ICMPV6) {
 		l4.icmp6->icmp6_cksum = 0;
 		l4.icmp6->icmp6_cksum = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
