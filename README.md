@@ -18,10 +18,11 @@ TODO
 
 TODO: currently the following files show the grammar in action;
 from them it should be relatively easy to intuit (until proper docs are prepared):
-    - [checksums.yaml](docs/checksums.yaml)
-    - [mdns.yaml](docs/mdns.yaml)
-    - [mirror.yaml](docs/mirror.yaml)
-    - [reflection.yaml](docs/reflection.yaml)
+
+- [checksums.yaml](docs/checksums.yaml)
+- [mdns.yaml](docs/mdns.yaml)
+- [mirror.yaml](docs/mirror.yaml)
+- [reflection.yaml](docs/reflection.yaml)
 .
 
 ## TODO
