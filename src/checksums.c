@@ -5,46 +5,6 @@
 #include <checksums.h>
 
 
-/*	ones_sum()
- * Add 'byte_count' bytes to 'sum'.
- * 'sum' must be 0 if this is the first block being summed, otherwise it should
- * be the previous output of a call to ones_sum().
- */
-NLC_INLINE uint32_t ones_sum(void *blocks, size_t byte_count, uint32_t sum)
-{
-	size_t block_cnt = byte_count >> 1;
-	for (unsigned int i=0; i < block_cnt; i++)
-		sum += ((uint16_t *)blocks)[i];
-
-	/* if byte_count is odd, add a padding byte at the end */
-	if (block_cnt & 0x1) {
-		uint8_t trailing[2] = {
-			((uint8_t *)blocks)[byte_count -1],
-			0x0
-		};
-		sum += *((uint16_t *)trailing);
-	}
-	return sum;
-}
-
-/*	ones_final()
- * Produce the ones-complement of the ones-complement sum.
- */
-NLC_INLINE uint16_t ones_final(uint32_t sum)
-{
-	/* Speed up ones-complement sum by adding all into 32-bit and then
-	 * "carrying" overflow twice.
-	 */
-        sum = (sum >> 16) + (sum & 0xFFFF);
-        sum += (sum >> 16);
-
-	/* NOTE: I don't conceptually understand why this doesn't seem to
-	 * require byteswapping at the end.
-	 */
-        return ~sum; /* ones-complement (NOT) of the sum */
-}
-
-
 /*	l4_checksum()
  * Returns pointer to l4 header, for convenience.
  */

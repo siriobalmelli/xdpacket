@@ -232,16 +232,20 @@ die:
  */
 int iface_output(struct iface *iface, void *pkt, size_t plen)
 {
-	int err_cnt = 0;
-
-	l4_checksum(l3_checksum(pkt));
+	if (checksum(pkt, plen)) {
+		NB_wrn("checksum fail of packet size %zu", plen);
+		iface->count_checkfail++;
+		return 1;
+	}
 
 	/* we expect hardware to compute FCS (CRC32) for Ethernet */
-	NB_die_if((
-		send(iface->fd, pkt, plen, 0)
-		) != plen, "failed send size %zu iface '%s'", plen, iface->name);
-die:
-	return err_cnt;
+	if (send(iface->fd, pkt, plen, 0) != plen) {
+		NB_wrn("sockdrop (truncation) of packet size %zu", plen);
+		iface->count_sockdrop++;
+		return 1;
+	}
+
+	return 0;
 }
 
 
@@ -343,8 +347,10 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "iface", iface->name)
 		|| y_pair_insert_nf(outdoc, reply, "address", "%s", iface->ip_prn)
-		|| y_pair_insert_nf(outdoc, reply, "packets in", "%zu", iface->count_in)
-		|| y_pair_insert_nf(outdoc, reply, "packets out", "%zu", iface->count_out)
+		|| y_pair_insert_nf(outdoc, reply, "pkt in", "%zu", iface->count_in)
+		|| y_pair_insert_nf(outdoc, reply, "pkt out", "%zu", iface->count_out)
+		|| y_pair_insert_nf(outdoc, reply, "pkt drop/truncate", "%zu", iface->count_sockdrop)
+		|| y_pair_insert_nf(outdoc, reply, "pkt fail checksum", "%zu", iface->count_checkfail)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)

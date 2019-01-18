@@ -42,6 +42,7 @@ typedef void (*iface_handler_t)(void *context, void *pkt, size_t len);
 struct iface {
 	/* first cache line: runtime (packet-handling-time) parameters */
 	int		fd;
+	int		pad;
 
 	int		ifindex;
 	int		mtu;
@@ -51,6 +52,8 @@ struct iface {
 
 	size_t		count_in;
 	size_t		count_out;
+	size_t		count_checkfail;
+	size_t		count_sockdrop;
 
 	struct sockaddr		*hwaddr;
 	struct sockaddr_in	*addr;
