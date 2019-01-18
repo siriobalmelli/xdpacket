@@ -1,4 +1,4 @@
-# test_reflection.yaml
+# reflection.yaml
 # incoming packets are simply reflected back out the same interface.
 ---
 xdpk:

@@ -1,4 +1,4 @@
-# test_mirror.yaml
+# mirror.yaml
 # incoming packets have their MAC and IP src/dest addresses swapped,
 # then reflected out the same interface
 ---

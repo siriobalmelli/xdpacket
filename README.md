@@ -12,17 +12,37 @@ the eXtremely Direct Packet handler (in userland)
 
 ## Raison D'etre
 
+TODO
+
 ## Grammar
 
-WIP, currently [mdns.yaml](docs/mdns.yaml) shows the grammar being worked on.
+TODO: currently the following files show the grammar in action;
+from them it should be relatively easy to intuit (until proper docs are prepared):
+    - [checksums.yaml](docs/checksums.yaml)
+    - [mdns.yaml](docs/mdns.yaml)
+    - [mirror.yaml](docs/mirror.yaml)
+    - [reflection.yaml](docs/reflection.yaml)
+.
 
 ## TODO
+
+1. write-side fvals pointing to other fields (not clobbered by cross/writing)
+
+1. checksums validated in all cases
+
+1. REPL reworked for CLI style usability
+    - backspace
+    - arrow keys
+    - tab completion
+    - is there a library for this
+
+1. Documentation and man pages
+
+1. packaging
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
   - <https://patchwork.ozlabs.org/cover/867937/>
   - <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
-
-1. "client cookie" or "token" field to allow for rule searches or comments
 
 ## Consider
 

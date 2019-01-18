@@ -1,0 +1,21 @@
+# checksums.yaml
+# test checksumming by mirroring/reflecting all incoming packets,
+# overwriting the IP source
+---
+xdpk:
+  - iface: enp0s3
+  - field: any
+    offt: 0
+    len: 0
+  - field: ip src
+    offt: 26
+    len: 4
+  - rule: reflect
+    match:
+      - any:
+    write:
+      - ip src: 2.2.2.2
+  - process: enp0s3
+    rules:
+      - reflect: enp0s3
+...
