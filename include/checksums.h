@@ -5,7 +5,7 @@
  * Network checksumming for packets being output.
  *
  * TODO:
- * - fix icmp
+ * - fix UDP
  * - test all protocols
  * - make into a standalone library ?
  *
