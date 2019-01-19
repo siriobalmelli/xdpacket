@@ -7,7 +7,7 @@
  * (c) 2018 Sirio Balmelli
  */
 
-#include <Judy.h>
+#include <judyutils.h>
 #include <yaml.h>
 #include <iface.h>
 #include <rule.h>

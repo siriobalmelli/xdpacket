@@ -2,10 +2,18 @@
 #define judyutils_h_
 
 /*	judyutils.h
- *
  * Informal set of utils for simplifying calls to Judy.
- * NOTE that we simplify the "Word_t" construct to just "void *"
- * which increases legibility everywhere by avoiding casts.
+ *
+ * NOTES:
+ * - Do NOT include <Judy.h> directly; include this file only.
+ * - We simplify the "Word_t" construct to just "void *"
+ *   which increases legibility everywhere by avoiding casts.
+ * - All calls take a _pointer_ to Pvoid_t (which is, itself, a pointer to a Judy array).
+ *   This is so that any modifications to the array are visible to the caller.
+ *   Functions which do _not_ modify the array still take a pointer to it for
+ *   consistency's sake, but are marked 'const'.
+ * - Functions are implemented as inlines where possible, but some macros
+ *   could not be avoided. Macros have NAMES_IN_CAPS.
  *
  * (c) 2018 Sirio Balmelli
  *
@@ -31,7 +39,7 @@
  * Return 0 on success.
  * NOTE this relies on 'datum' never being NULL/0.
  */
-NLC_INLINE size_t jl_count(Pvoid_t *array)
+NLC_INLINE size_t jl_count(const Pvoid_t *array)
 {
 	Word_t count;
 	JLC(count, *array, 0, -1);
@@ -113,7 +121,7 @@ NLC_INLINE void *jl_pop(Pvoid_t *array)
  * Get 'index' in '*array'.
  * Return 'datum' or NULL if not found (NULL is not a valid array datum).
  */
-NLC_INLINE void *jl_get(Pvoid_t *array, uint64_t index)
+NLC_INLINE void *jl_get(const Pvoid_t *array, uint64_t index)
 {
 	void **pval;
 	JLG(pval, *array, index);
@@ -121,7 +129,7 @@ NLC_INLINE void *jl_get(Pvoid_t *array, uint64_t index)
 		return *pval;
 	return NULL;
 }
-NLC_INLINE void *js_get(Pvoid_t *array, const char *index)
+NLC_INLINE void *js_get(const Pvoid_t *array, const char *index)
 {
 	void **pval;
 	JSLG(pval, *array, (const uint8_t *)index);

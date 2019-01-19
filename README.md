@@ -27,11 +27,13 @@ from them it should be relatively easy to intuit (until proper docs are prepared
 
 ## TODO
 
+1. regex-matcher fields with backreference 'write'
+
 1. Mechanism to store/write state
 
 1. write-side fvals pointing to other fields (not clobbered by cross/writing)
 
-1. regex-matcher fields with backreference 'write'
+1. masquerade/snat flag on interfaces
 
 1. checksums validated in all cases
 

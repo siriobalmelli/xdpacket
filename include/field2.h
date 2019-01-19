@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <nonlibc.h>
-#include <Judy.h>
+#include <judyutils.h>
 #include <yaml.h>
 #include <parse2.h>
 #include <fnv.h>
