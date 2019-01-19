@@ -240,7 +240,7 @@ int fval_bytes_write(struct fval_bytes *fvb, void *pkt, size_t plen)
 {
 	struct field_set set = fvb->where;
 
-	/* see field2.h */
+	/* see field.h */
 	FIELD_PACKET_INDEXING
 
 	memcpy(start, fvb->bytes, flen);

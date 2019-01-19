@@ -1,4 +1,4 @@
-#include <field2.h>
+#include <field.h>
 #include <ndebug.h>
 #include <yamlutils.h>
 
@@ -127,7 +127,7 @@ struct field *field_get(const char *field_name)
  */
 int __attribute__((hot)) field_hash(struct field_set set, const void *pkt, size_t plen, uint64_t *outhash)
 {
-	/* see field2.h */
+	/* see field.h */
 	FIELD_PACKET_INDEXING
 	FIELD_PACKET_HASHING
 	return 0;

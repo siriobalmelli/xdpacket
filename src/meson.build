@@ -1,6 +1,6 @@
 src_files = files([
     'iface.c',
-    'field2.c',
+    'field.c',
     'fval.c',
     'parse2.c',
     'process.c',

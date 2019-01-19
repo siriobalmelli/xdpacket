@@ -1,7 +1,7 @@
-#ifndef field2_h_
-#define field2_h_
+#ifndef field_h_
+#define field_h_
 
-/*	field2.h
+/*	field.h
  * A "field" is a descriptor, which can be used to specify:
  * - what to match in a packet (when filtering incoming packets).
  * - where to write to in a packet (when mangling packet contents).
@@ -128,4 +128,4 @@ int		field_emit	(struct field *field,
 	}
 
 
-#endif /* field2_h_ */
+#endif /* field_h_ */

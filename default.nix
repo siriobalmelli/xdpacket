@@ -14,7 +14,7 @@ with nixpkgs;
 
 nixpkgs.stdenv.mkDerivation rec {
   name = "xdpacket";
-  version = "0.0.6";
+  version = "0.1.0";
   outputs = [ "out" ];
 
   meta = with nixpkgs.stdenv.lib; {

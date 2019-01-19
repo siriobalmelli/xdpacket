@@ -23,7 +23,24 @@ from them it should be relatively easy to intuit (until proper docs are prepared
 - [mdns.yaml](docs/mdns.yaml)
 - [mirror.yaml](docs/mirror.yaml)
 - [reflection.yaml](docs/reflection.yaml)
-.
+
+## Codebase Notes
+
+1. The build system is [Meson](https://mesonbuild.com/index.html).
+If you don't know Meson yet don't be discouraged, it's the easiest of the lot.
+    - Start by scanning through the toplevel file [meson.build]().
+    - Read [bootstrap.sh]() to see how Meson is used
+
+1. Functionality is broken down into "subsystems". A subsystem has:
+    - a header in [include]() e.g. [include/field.h]()
+    - a src file in [src]() e.g. [src/field.c]()
+    - a test file in [test]() e.g. [test/field_test.c]()
+    - all exported/visible (i.e. present in the header file) symbols
+      beginning with the subsystem name e.g. `field_new()`
+
+1. This codebase is targeted at Linux on all architectures:
+    - use linux-specific extensions as desired
+    - avoid architecture-specific code without a generic fallback
 
 ## TODO
 
@@ -49,6 +66,8 @@ from them it should be relatively easy to intuit (until proper docs are prepared
 1. Documentation and man pages
 
 1. packaging
+
+1. Sanitizers for debug/testing builds
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
   - <https://patchwork.ozlabs.org/cover/867937/>

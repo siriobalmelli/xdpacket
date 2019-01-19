@@ -22,7 +22,7 @@
  * (c) 2018 Sirio Balmelli
  */
 
-#include <field2.h>
+#include <field.h>
 #include <yaml.h>
 
 
@@ -64,7 +64,7 @@ int			fval_bytes_hash(const struct fval_bytes *fvb,
 	size_t flen = set.len;
 	void *start = (void *)fvb->bytes;
 
-	/* see field2.h */
+	/* see field.h */
 	FIELD_PACKET_HASHING
 	return 0;
 }
