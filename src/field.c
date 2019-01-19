@@ -74,6 +74,7 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 		"len '%ld' out of bounds", len);
 	NB_die_if(__builtin_add_overflow(mask, 0, &ret->set.mask),
 		"mask '%ld' out of bounds", mask);
+	ret->set.flags = 0;
 	#pragma GCC diagnostic pop
 
 	NB_die_if(
@@ -136,6 +137,8 @@ int __attribute__((hot)) field_hash(struct field_set set, const void *pkt, size_
 
 /*	field_parse()
  * Parse 'root' according to 'mode' (add | rem | prn).
+ * NOTE: 'outdoc' and 'outlist' are ONLY handled by field_emit(),
+ * which makes them optional if caller doesn't want parser to emit.
  * Returns 0 on success.
  */
 int field_parse(enum parse_mode	mode,
@@ -237,6 +240,10 @@ die:
  */
 int field_emit(struct field *field, yaml_document_t *outdoc, int outlist)
 {
+	/* allow internal/test parsing without an output doc */
+	if (!outdoc)
+		return 0;
+
 	int err_cnt = 0;
 	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
 	NB_die_if(

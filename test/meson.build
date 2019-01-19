@@ -7,7 +7,7 @@ foreach t : tests
 	name = t.split('.')[0]
 	name_spaced = ' '.join(name.split('_'))
 
-	a_test = executable(name + '_shared',
+	a_test = executable(name,
 			[t] + src_files,
 			dependencies : deps,
 			include_directories : inc)

@@ -147,7 +147,7 @@ die:
  * in this function OR in any child parser it calls(!).
  * Use e.g. NB_err(), NB_wrn() etc - they will write to stderr which is fair game.
  *
- * PROTIP for all those who aren't intimately familiar with the YAML spec:
+ * PROTIP for those who aren't intimately familiar with the YAML spec:
  * 0. a "scalar" is a string
  * 1. a "sequence" is a list
  * 2. a "mapping" is an object
