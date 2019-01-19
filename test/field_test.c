@@ -84,18 +84,23 @@ int test_field_parse(struct field_test *tst)
 	NB_die_if(!root || root->type != YAML_MAPPING_NODE,
 		"malformed test yaml '%s'", tst->yaml);
 
+	/* parse YAML "add" - TWICE to verify duplicates are handled cleanly */
+	NB_die_if(
+		field_parse(PARSE_ADD, &doc, root, NULL, 0)
+		, "failed to add field from yaml '%s'", tst->yaml);
 	NB_die_if(
 		field_parse(PARSE_ADD, &doc, root, NULL, 0)
 		, "failed to add field from yaml '%s'", tst->yaml);
 
+	/* test get/refcount mechanics */
 	NB_die_if(!(
 		fld = field_get(tst->name)
 		), "fail to get field '%s' after parse", tst->name);
-
-	/* verify that parsed field conforms to expectations */
 	NB_die_if(!fld || fld->refcnt != 1,
 		"get/refcount mechanics broken");
 	field_release(fld);
+
+	/* verify that parsed field conforms to expectations */
 	NB_die_if(strcmp(fld->name, tst->name),
 		"naming broken '%s' != '%s'", fld->name, tst->name);
 	NB_die_if(fld->set.offt != tst->set.offt,
@@ -106,6 +111,15 @@ int test_field_parse(struct field_test *tst)
 		"mask mismatch: 0x%hhx != 0x%hhx", fld->set.mask, tst->set.mask);
 	NB_die_if(fld->set.flags != tst->set.flags,
 		"flags mismatch: 0x%hhx != 0x%hhx", fld->set.flags, tst->set.flags);
+
+	/* parse YAML "delete" - TWICE to verify duplicates are handled cleanly */
+	NB_die_if(
+		field_parse(PARSE_DEL, &doc, root, NULL, 0)
+		, "failed to delete field from yaml '%s'", tst->yaml);
+	/* verify field has been deleted */
+	NB_die_if((
+		fld = field_get(tst->name)
+		) != 0, "field '%s' still available but should have been deleted", tst->name);
 
 die:
 	yaml_parser_delete(&parser);
