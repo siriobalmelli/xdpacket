@@ -2,10 +2,10 @@
 #define field2_h_
 
 /*	field2.h
- * A "field" is a range of bytes, with an optional mask, which can be used to:
- * - specify which parts of a packet to hash, when matching incoming packets.
- * - specify which bytes to write to (and possibly also read from),
- *	when mangling packet contents.
+ * A "field" is a descriptor, which can be used to specify:
+ * - what to match in a packet (when filtering incoming packets).
+ * - where to write to in a packet (when mangling packet contents).
+ *
  * (c) 2018 Sirio Balmelli
  */
 
@@ -17,12 +17,19 @@
 #include <yaml.h>
 #include <parse2.h>
 #include <fnv.h>
+#include <regex.h>
 
 
 /*	field_set
  * The set of parameters defining the extent of a field.
- * This is expressly a uint64_t size and meant to be passed by _value_.
- * See match2.h which uses this.
+ * NOTE: this is expressly a uint64_t/uintptr_t size and meant to be passed
+ * by _value_ (copied, not referenced) see e.g. fval.h which uses this.
+ * @offt	: offset into the packet where field matching should begin.
+ * @len		: how many bytes to match.
+ * @mask	: mask to apply to last byte of match (0xff == entire last byte).
+ * @flags	: opaque byte that can be used by others when handling copies
+ *		  of field_set structures.
+ *		  Must always be zero inside a 'struct field'.
  */
 struct field_set {
 	int32_t			offt;

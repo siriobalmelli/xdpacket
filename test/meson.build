@@ -1,4 +1,5 @@
 tests = [
+  'field2_test.c',
   'overflow_test.c'
 ]
 
