@@ -53,7 +53,7 @@ char			*fval_bytes_print(struct fval_bytes *fvb);
  *   we need to ignore the offset but need to hash the 'set' _with_ the offset.
  * - We elide all the length checking etc: fval instantiation should
  *   have sanity-checked this.
- * - Don't forget to initialize the hash before the first run,
+ * - Don't forget to initialize the hash before the first call to this function,
  *   by e.g. `ret->bytes_hash = fnv_hash64(NULL, NULL, 0)`
  */
 NLC_INLINE

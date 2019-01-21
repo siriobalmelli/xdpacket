@@ -65,11 +65,11 @@ struct field_test tests[] = {
  */
 int test_field_parse(struct field_test *tst)
 {
-	int err_cnt = 0;
-	yaml_parser_t parser = {0};
 	yaml_document_t doc = {{0}};
+	yaml_parser_t parser = {0};
 	yaml_node_t *root = NULL;
 	struct field *fld = NULL;
+	int err_cnt = 0;
 
 	/* treat a 'field' mapping as a standalone YAML document */
 	NB_die_if(!

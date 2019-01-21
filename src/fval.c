@@ -188,12 +188,15 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 		NB_die_if(!hx2b_BE(value, ret->bytes, len),
 			"could not parse hex sequence '%s'", value);
 
-	/* parse literal series of characters, accounting for \0 null terminator */
+	/* Parse literal series of characters, accounting for \0 null terminator.
+	 * Fill all trailing bytes with zeroes.
+	 */
 	} else {
 		NB_die_if((value_len-1) > len,
 			"character sequence '%s' len %zu longer than field length %zu",
 			value, value_len-1, len);
-		memcpy(ret->bytes, value, len);
+		memcpy(ret->bytes, value, value_len);
+		memset(&ret->bytes[value_len], 0x0, len - value_len);
 	}
 
 	return ret;
