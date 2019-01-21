@@ -192,12 +192,12 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 	 * Fill all trailing bytes with zeroes.
 	 */
 	} else {
-		if ((value_len-1) > len) {
+		if (value_len > len) {
 			NB_wrn("truncate character sequence value to %zu bytes", len);
 			value_len = len;
 		}
 		snprintf((char *)ret->bytes, value_len, "%s", value);
-		memset(&ret->bytes[value_len], 0x0, len - value_len);
+		memset(&ret->bytes[value_len-1], 0x0, len - value_len);
 	}
 
 	return ret;
