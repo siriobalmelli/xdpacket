@@ -77,7 +77,7 @@ void fval_bytes_free(void * arg)
 
 
 /*	fval_bytes_new()
- * TODO: handle a field referring to another field (as opposed to a static value
+ * NOTE: 'value_len' is the length of the user value string without '\0' terminator.
  */
 struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct field_set set)
 {
@@ -188,16 +188,22 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 		NB_die_if(!hx2b_BE(value, ret->bytes, len),
 			"could not parse hex sequence '%s'", value);
 
-	/* Parse literal series of characters, accounting for \0 null terminator.
-	 * Fill all trailing bytes with zeroes.
+	/* Parse literal series of characters.
+	 * NOTEs:
+	 * - 'bytes' shjould NOT be a valid C string and should NOT have a '\0' terminator;
+	 *   this is what goes on the wire and values on the wire should ONLY
+	 *   be regarded (and printed) as a series of bytes.
+	 * - LibYAML requires "double quotes" around strings where special characters
+	 *   such as "\r" should be escaped into their proper ASCII value e.g. 0x0d.
 	 */
 	} else {
 		if (value_len > len) {
 			NB_wrn("truncate character sequence value to %zu bytes", len);
 			value_len = len;
 		}
-		snprintf((char *)ret->bytes, value_len, "%s", value);
-		memset(&ret->bytes[value_len-1], 0x0, len - value_len);
+		NB_die_if(value_len != len,
+			"character sequence not of expected length %zu", len);
+		memcpy(ret->bytes, value, value_len); /* does not copy \0 terminator */
 	}
 
 	return ret;
@@ -294,14 +300,12 @@ struct fval *fval_new(const char *field_name, const char *value)
 	size_t max = ((size_t)1 << (sizeof(ret->field->set.len) * 8)) -1;
 	size_t vlen = strnlen(value, max);
 	NB_die_if(vlen == max, "value truncated:\n%.*s", (int)max, value);
-	vlen++; /* \0 terminator */
 
 	/* alloc and copy user-supplied value string as-is */
 	NB_die_if(!(
-		ret->val = malloc(vlen)
-		), "fail alloc size %zu", vlen);
-	memcpy(ret->val, value, vlen-1);
-	ret->val[vlen-1] = '\0';
+		ret->val = malloc(vlen +1) /* add \0 terminator */
+		), "fail alloc size %zu", vlen +1);
+	snprintf(ret->val, vlen +1, "%s", value);
 
 	NB_die_if(!(
 		ret->bytes = fval_bytes_new(ret->val, vlen, ret->field->set)
