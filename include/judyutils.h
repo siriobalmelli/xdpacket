@@ -96,7 +96,7 @@ NLC_INLINE int js_insert(Pvoid_t *array, const char *index, void *datum, bool cl
  */
 NLC_INLINE int jl_enqueue(Pvoid_t *array, void *datum)
 {
-	uint64_t index;
+	uint64_t index=0;
 	int rc;
 	JLFE(rc, *array, index);
 	if (!rc)
