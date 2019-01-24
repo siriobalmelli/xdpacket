@@ -13,7 +13,7 @@ void rout_set_free (void *arg)
 	if (!arg)
 		return;
 	struct rout_set *rts = arg;
-	int rc;
+	int __attribute__((unused)) rc;
 	JLFA(rc, rts->writes_JQ);
 	free(rts);
 }

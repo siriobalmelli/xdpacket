@@ -31,7 +31,7 @@ void rule_free(void *arg)
 	JL_LOOP(&rule->writes_JQ,
 		fval_free(val);
 	);
-	int rc;
+	int __attribute__((unused)) rc;
 	JLFA(rc, rule->matches_JQ);
 	JLFA(rc, rule->writes_JQ);
 
@@ -40,7 +40,7 @@ void rule_free(void *arg)
 
 /*	rule_free_all()
  */
-void __attribute__((destructor(1))) rule_free_all()
+void __attribute__((destructor(101))) rule_free_all()
 {
 	JS_LOOP(&rule_JS,
 		rule_free(val);

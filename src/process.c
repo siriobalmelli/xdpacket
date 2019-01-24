@@ -33,7 +33,7 @@ void process_free(void *arg)
 	JL_LOOP(&pc->rout_JQ,
 		rout_free(val);
 	);
-	int rc;
+	int __attribute__((unused)) rc;
 	JLFA(rc, pc->rout_JQ);
 	JLFA(rc, pc->rout_set_JQ);
 
@@ -42,7 +42,7 @@ void process_free(void *arg)
 
 /*	process_free_all()
  */
-void __attribute__((destructor(2))) process_free_all()
+void __attribute__((destructor(102))) process_free_all()
 {
 	JS_LOOP(&process_JS,
 		process_free(val);

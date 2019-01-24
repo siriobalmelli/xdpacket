@@ -144,12 +144,12 @@ NLC_INLINE void *js_get(const Pvoid_t *array, const char *index)
  */
 NLC_INLINE void j_delete(Pvoid_t *array, uint64_t index)
 {
-	int rc;
+	int __attribute__((unused)) rc;
 	JLD(rc, *array, index);
 }
 NLC_INLINE void js_delete(Pvoid_t *array, const char *index)
 {
-	int rc;
+	int __attribute__((unused)) rc;
 	JSLD(rc, *array, (const uint8_t *)index);
 }
 

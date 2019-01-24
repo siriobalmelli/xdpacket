@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <regex.h>
 #include <arpa/inet.h> /* inet_pton() */
-#include <endian.h>
 #include <binhex.h>
 
 
