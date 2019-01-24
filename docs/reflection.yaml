@@ -1,14 +1,20 @@
 # reflection.yaml
 # incoming packets are simply reflected back out the same interface.
+# TTL is modified to 1 so these packets are easy to filter in a pcap.
 ---
 xdpk:
   - iface: enp0s3
   - field: any
     offt: 0
     len: 0
+  - field: ttl
+    offt: 22
+    len: 1
   - rule: reflect
     match:
       - any:
+    write:
+      - ttl: 1
   - process: enp0s3
     rules:
       - reflect: enp0s3

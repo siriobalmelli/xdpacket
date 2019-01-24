@@ -59,7 +59,7 @@ NLC_INLINE uint32_t ones_sum(void *blocks, size_t byte_count, uint32_t sum)
 		sum += ((uint16_t *)blocks)[i];
 
 	/* trailing byte */
-	if (block_cnt & 0x1)
+	if (byte_count & 0x1)
 		sum += ((uint8_t *)blocks)[byte_count -1];
 
 	return sum;
@@ -75,8 +75,7 @@ NLC_INLINE uint16_t ones_final(uint32_t sum)
 	 * "carrying" overflow twice.
 	 */
         sum = (sum >> 16) + (sum & 0xFFFF);
-        sum += (sum >> 16);
-
+        sum = (sum >> 16) + (sum & 0xFFFF);
         return ~sum; /* ones-complement (NOT) of the sum */
 }
 
@@ -190,14 +189,12 @@ NLC_INLINE int checksum(void *frame, size_t len)
 
 	} else if (*l3_proto == IPPROTO_UDP) {
 		l4.udp->check = 0;
-		NB_dump(l4.ptr, l4_len, "l4 len %d", l4_len);
 		l4.udp->check = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
 		/* '0x0000' checksum value not allowed by the standard,
 		 * since it means "not implemented"
 		 */
 		if (!l4.udp->check)
 			l4.udp->check = 0xffff;
-		NB_wrn("checksum 0x%hx len %d", be16toh(l4.udp->check), l4_len);
 
 	/* ICMPv4 checksum does not include pseudo-header */
 	} else if (*l3_proto == IPPROTO_ICMP) {
