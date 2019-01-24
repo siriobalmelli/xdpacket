@@ -153,9 +153,7 @@ NLC_INLINE int checksum(void *frame, size_t len)
 			.data_len = h16tobe(l4_len)
 		};
 		l4_sum = ones_sum(&pseudo, sizeof(pseudo), 0);
-		NB_dump(&pseudo, sizeof(pseudo),
-			"pseudo-header sum 0x%04hx",
-			be16toh(ones_final(l4_sum)));
+		//NB_dump(&pseudo, sizeof(pseudo), "pseudo-header sum 0x%04hx", be16toh(ones_final(l4_sum)));
 
 
 	/* l3 == ipv6
@@ -194,7 +192,7 @@ NLC_INLINE int checksum(void *frame, size_t len)
 	if (*l3_proto == IPPROTO_TCP) {
 		l4.tcp->check = 0;
 		l4.tcp->check = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
-		NB_dump(l4.ptr, l4_len, "TCP len %d checksum 0x%04hx", l4_len, be16toh(l4.udp->check));
+		//NB_dump(l4.ptr, l4_len, "TCP len %d checksum 0x%04hx", l4_len, be16toh(l4.udp->check));
 
 	} else if (*l3_proto == IPPROTO_UDP) {
 		l4.udp->check = 0;
@@ -204,7 +202,7 @@ NLC_INLINE int checksum(void *frame, size_t len)
 		 */
 		if (!l4.udp->check)
 			l4.udp->check = 0xffff;
-		NB_dump(l4.ptr, l4_len, "UDP len %d checksum 0x%04hx", l4_len, be16toh(l4.udp->check));
+		//NB_dump(l4.ptr, l4_len, "UDP len %d checksum 0x%04hx", l4_len, be16toh(l4.udp->check));
 
 	/* ICMPv4 checksum does not include pseudo-header */
 	} else if (*l3_proto == IPPROTO_ICMP) {
