@@ -58,9 +58,14 @@ NLC_INLINE uint32_t ones_sum(void *blocks, size_t byte_count, uint32_t sum)
 	for (unsigned int i=0; i < block_cnt; i++)
 		sum += ((uint16_t *)blocks)[i];
 
-	/* trailing byte */
-	if (byte_count & 0x1)
-		sum += ((uint8_t *)blocks)[byte_count -1];
+	/* Trailing byte.
+	 * A simple addition would _also_ work, but only on little-endian machines
+	 * (subtle).
+	 */
+	if (byte_count & 0x1) {
+		uint8_t padded[2] = { ((uint8_t *)blocks)[byte_count -1], 0x0 };
+		sum += *((uint16_t *)padded);
+	}
 
 	return sum;
 }
@@ -189,12 +194,14 @@ NLC_INLINE int checksum(void *frame, size_t len)
 
 	} else if (*l3_proto == IPPROTO_UDP) {
 		l4.udp->check = 0;
+#if 1
 		l4.udp->check = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
 		/* '0x0000' checksum value not allowed by the standard,
 		 * since it means "not implemented"
 		 */
 		if (!l4.udp->check)
 			l4.udp->check = 0xffff;
+#endif
 
 	/* ICMPv4 checksum does not include pseudo-header */
 	} else if (*l3_proto == IPPROTO_ICMP) {

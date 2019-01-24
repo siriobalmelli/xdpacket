@@ -18,8 +18,9 @@
 struct rule {
 	char		*name;
 	Pvoid_t		matches_JQ; /* queue of (struct fval *mch) */
+	Pvoid_t		stores_JQ; /* queue of (struct fval *sto) */
+	Pvoid_t		copies_JQ; /* queue of (struct fval *cpy) */
 	Pvoid_t		writes_JQ; /* queue of (struct fval *wrt) */
-
 	size_t		refcnt;
 };
 

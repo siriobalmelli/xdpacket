@@ -43,6 +43,55 @@ xdpk:
       - ip src: 10.1.1.1
       - mac dst: aa:bb:cc:dd:ee:ff
       - ip dst: 10.1.1.20
+
+
+  - rule: client A tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 192.168.1.20
+      - ip dst: 192.168.1.1
+    store:
+      - tcp sport: sporta
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.20
+      - tcp sport: 20001
+  - rule: client B tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 192.168.1.40
+      - ip dst: 192.168.1.1
+    store:
+      - tcp sport: sportb
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.20
+      - tcp sport: 20002
+
+  - rule: chrome A tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 10.1.1.20
+      - ip dst: 10.1.1.1
+      - tcp dport: 20001
+    copy:
+      - tcp dport: sporta
+    write:
+      - ip src: 192.168.1.1
+      - ip dst: 192.168.1.20
+  - rule: chrome B tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 10.1.1.20
+      - ip dst: 10.1.1.1
+      - tcp dport: 20002
+    copy:
+      - tcp dport: sportb
+    write:
+      - ip src: 192.168.1.1
+      - ip dst: 192.168.1.40
+
+
   - rule: client 2 unicast
     match:
       - ip proto: 0x1  ## ICMP

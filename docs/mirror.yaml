@@ -22,11 +22,16 @@ xdpk:
   - rule: reflect
     match:
       - any:
-    write:
-      - mac dst: mac src
-      - mac src: mac dst
-      - ip src: ip dst
-      - ip dst: ip src
+    store:
+      - mac src: msrc
+      - mac dst: mdst
+      - ip src: isrc
+      - ip dst: idst
+    copy:
+      - mac dst: msrc
+      - mac src: mdst
+      - ip src: idst
+      - ip dst: isrc
   - process: enp0s3
     rules:
       - reflect: enp0s3
