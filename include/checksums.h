@@ -195,12 +195,14 @@ NLC_INLINE int checksum(void *frame, size_t len)
 	} else if (*l3_proto == IPPROTO_UDP) {
 		l4.udp->check = 0;
 #if 1
+		NB_wrn("UDP len %d pseudo 0x%04hx", l4_len, be16toh(ones_final(l4_sum)));
 		l4.udp->check = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
 		/* '0x0000' checksum value not allowed by the standard,
 		 * since it means "not implemented"
 		 */
 		if (!l4.udp->check)
 			l4.udp->check = 0xffff;
+		NB_wrn("UDP len %d checksum 0x%04hx", l4_len, be16toh(l4.udp->check));
 #endif
 
 	/* ICMPv4 checksum does not include pseudo-header */
