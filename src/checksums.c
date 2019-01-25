@@ -32,8 +32,14 @@ struct pseudo_ip6 {
 }__attribute__((packed));
 NLC_ASSERT(pseudo_ip6_size, sizeof(struct pseudo_ip6) == 40);
 
+/* In fact, these headers are so fake that we can avoid allocating
+ * these structs entirely, and simply checksum the various values
+ * in-place.
+ */
+#define NO_PSEUDO_HEADER_ON_STACK
 
-static uint32_t ones_sum(void *blocks, size_t byte_count, uint32_t sum);
+
+static uint32_t ones_sum(const void *blocks, size_t byte_count, uint32_t sum);
 static uint16_t ones_final(uint32_t sum);
 
 
@@ -42,7 +48,7 @@ static uint16_t ones_final(uint32_t sum);
  * 'sum' must be 0 if this is the first block being summed, otherwise it should
  * be the previous output of a call to ones_sum().
  */
-static uint32_t ones_sum(void *blocks, size_t byte_count, uint32_t sum)
+static uint32_t ones_sum(const void *blocks, size_t byte_count, uint32_t sum)
 {
 	size_t block_cnt = byte_count >> 1;
 	for (unsigned int i=0; i < block_cnt; i++)
@@ -88,6 +94,15 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 	uint16_t head_len; /* length of ip(4|6) header */
 	uint8_t *l3_proto; /* location of protocol/next_header */
 
+#ifndef NO_PSEUDO_HEADER_ON_STACK
+	/* build pseudo-header on the stack */
+	union pseudo {
+		struct pseudo_ip4	v4;
+		struct pseudo_ip6	v6;
+	};
+	union pseudo pseudo = { { 0 } };
+#endif
+
 	union l4 {
 		void		*ptr;
 		struct tcphdr	*tcp;
@@ -95,7 +110,7 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		struct icmphdr	*icmp;
 		struct icmp6hdr	*icmp6;
 	};
-	union l4 l4 = { NULL };
+	union l4 l4 = { 0 };
 	uint16_t l4_len; /* length of tcp/udp header plus payload */
 	uint32_t l4_sum; /* accumulator for 1s complement sum of:
 			  * - pseudo-header
@@ -135,15 +150,22 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		l3->check = ones_final(ones_sum(l3, head_len, 0));
 
 		/* sum pseudo-header */
-		struct pseudo_ip4 pseudo = {
-			.saddr = l3->saddr,
-			.daddr = l3->daddr,
-			.reserved = 0,
-			.protocol = l3->protocol,
-			.data_len = h16tobe(l4_len)
-		};
-		l4_sum = ones_sum(&pseudo, sizeof(pseudo), 0);
-		//NB_dump(&pseudo, sizeof(pseudo), "pseudo-header sum 0x%04hx", be16toh(ones_final(l4_sum)));
+#ifndef NO_PSEUDO_HEADER_ON_STACK
+		pseudo.v4.saddr = l3->saddr;
+		pseudo.v4.daddr = l3->daddr;
+		pseudo.v4.protocol = l3->protocol;
+		pseudo.v4.data_len = h16tobe(l4_len);
+		l4_sum = ones_sum(&pseudo.v4, sizeof(pseudo.v4), 0);
+		NB_dump(&pseudo.v4, sizeof(pseudo.v4),
+			"pseudo-header sum 0x%04hx", be16toh(ones_final(l4_sum)));
+#else
+		l4_sum = ones_sum(&l3->saddr, sizeof(l3->saddr), 0);
+		l4_sum = ones_sum(&l3->daddr, sizeof(l3->daddr), l4_sum);
+		uint16_t stack = l3->protocol << 8;
+		l4_sum = ones_sum(&stack, sizeof(stack), l4_sum);
+		stack = h16tobe(l4_len);
+		l4_sum = ones_sum(&stack, sizeof(stack), l4_sum);
+#endif
 
 
 	/* l3 == ipv6
@@ -161,14 +183,21 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 
 		l3_proto = &l3->nexthdr;
 
-		struct pseudo_ip6 pseudo = {
-			.saddr = l3->saddr,
-			.daddr = l3->daddr,
-			.data_len = l3->payload_len,
-			.nexthdr = l3->nexthdr,
-			.zero = { 0x0 }
-		};
+#ifndef NO_PSEUDO_HEADER_ON_STACK
+		pseudo.v6.saddr = l3->saddr;
+		pseudo.v6.daddr = l3->daddr;
+		pseudo.v6.data_len = l3->payload_len;
+		pseudo.v6.nexthdr = l3->nexthdr;
 		l4_sum = ones_sum(&pseudo, sizeof(pseudo), 0);
+		NB_dump(&pseudo.v6, sizeof(pseudo.v6),
+			"pseudo-header sum 0x%04hx", be16toh(ones_final(l4_sum)));
+#else
+		l4_sum = ones_sum(&l3->saddr, sizeof(l3->saddr), 0);
+		l4_sum = ones_sum(&l3->daddr, sizeof(l3->daddr), l4_sum);
+		l4_sum = ones_sum(&l3->payload_len, sizeof(l3->payload_len), l4_sum);
+		uint16_t stack = l3->nexthdr << 8;
+		l4_sum = ones_sum(&stack, sizeof(stack), l4_sum);
+#endif
 
 
 	/* malformed IP protocol */

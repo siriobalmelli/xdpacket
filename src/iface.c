@@ -250,7 +250,9 @@ int iface_output(struct iface *iface, void *pkt, size_t plen)
 		return 1;
 	}
 
-	/* we expect hardware to compute FCS (CRC32) for Ethernet */
+	/* We expect hardware to compute FCS (CRC32) for Ethernet.
+	 * TODO: test errno values and close iface if socket died (aka: ifdown)
+	 */
 	if (send(iface->fd, pkt, plen, 0) != plen) {
 		NB_wrn("sockdrop (truncation) of packet size %zu", plen);
 		iface->count_sockdrop++;
