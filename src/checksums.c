@@ -101,6 +101,9 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		struct pseudo_ip6	v6;
 	};
 	union pseudo pseudo = { { 0 } };
+#else
+	/* use for padded values in checksum computes */
+	uint16_t stack = 0;
 #endif
 
 	union l4 {
@@ -161,7 +164,7 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 #else
 		l4_sum = ones_sum(&l3->saddr, sizeof(l3->saddr), 0);
 		l4_sum = ones_sum(&l3->daddr, sizeof(l3->daddr), l4_sum);
-		uint16_t stack = l3->protocol << 8;
+		stack = l3->protocol << 8;
 		l4_sum = ones_sum(&stack, sizeof(stack), l4_sum);
 		stack = h16tobe(l4_len);
 		l4_sum = ones_sum(&stack, sizeof(stack), l4_sum);
@@ -195,7 +198,7 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		l4_sum = ones_sum(&l3->saddr, sizeof(l3->saddr), 0);
 		l4_sum = ones_sum(&l3->daddr, sizeof(l3->daddr), l4_sum);
 		l4_sum = ones_sum(&l3->payload_len, sizeof(l3->payload_len), l4_sum);
-		uint16_t stack = l3->nexthdr << 8;
+		stack = l3->nexthdr << 8;
 		l4_sum = ones_sum(&stack, sizeof(stack), l4_sum);
 #endif
 
