@@ -18,7 +18,7 @@
  *
  * @count_out	: number of packets successfully output after writing.
  * @out_fd	: fd of socket where packets should be output after writing/mangling.
- * @writes_JQ	: queue (sequence) of (struct fval_bytes) to be applied to packet.
+ * @writes_JQ	: queue (sequence) of (struct fval_set) to be applied to packet.
  * @count_match	: number of packets matched.
  * @hash	: fnv1a hash for a matching packet.
  * @match_cnt	: number of (struct field_set) in 'matches'.
@@ -32,7 +32,7 @@ struct rout_set {
 	size_t			count_out;
 	struct iface		*if_out;
 
-	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_bytes *write) */
+	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_set *write) */
 
 	size_t			count_match;
 	uint64_t		hash;

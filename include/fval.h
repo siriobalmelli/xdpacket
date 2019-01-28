@@ -17,7 +17,7 @@
  *    into a big-endian (network-order) array of bytes which can be:
  *    - written literally to a packet when writing/mangling
  *    - hashed to verify a match.
- *    'fval_bytes' is this parsed array of bytes.
+ *    'fval_set' is this parsed array of bytes.
  *
  * (c) 2018 Sirio Balmelli
  */
@@ -26,26 +26,26 @@
 #include <yaml.h>
 
 
-/*	fval_bytes
+/*	fval_set
  * A parsed/compiled fval, consisting of the field-set location of bytes
  * and a big-endian representation of the value, suitable for hashing
  * or writing directly into the packet.
  */
-struct fval_bytes {
+struct fval_set {
 	struct field_set	where;
 	uint8_t			bytes[];
 };
 
 
-void			fval_bytes_free(void * arg);
+void		fval_set_free	(void * arg);
 
-struct fval_bytes	*fval_bytes_new(const char *value,
-					size_t value_len,
-					struct field_set set);
+struct fval_set	*fval_set_new	(const char *value,
+				size_t value_len,
+				struct field_set set);
 
-char			*fval_bytes_print(struct fval_bytes *fvb);
+char		*fval_set_print	(struct fval_set *fvb);
 
-/*	fval_bytes_hash()
+/*	fval_set_hash()
  * Return the hash of 'where' and 'bytes'.
  * This is the hash that incoming packets will have to match.
  * NOTES:
@@ -57,8 +57,8 @@ char			*fval_bytes_print(struct fval_bytes *fvb);
  *   by e.g. `ret->bytes_hash = fnv_hash64(NULL, NULL, 0)`
  */
 NLC_INLINE
-int			fval_bytes_hash(const struct fval_bytes *fvb,
-					uint64_t *outhash)
+int		fval_set_hash	(const struct fval_set *fvb,
+				uint64_t *outhash)
 {
 	struct field_set set = fvb->where;
 	size_t flen = set.len;
@@ -69,9 +69,9 @@ int			fval_bytes_hash(const struct fval_bytes *fvb,
 	return 0;
 }
 
-int			fval_bytes_write(struct fval_bytes *fvb,
-					void *pkt,
-					size_t plen);
+int		fval_set_write	(struct fval_set *fvb,
+				void *pkt,
+				size_t plen);
 
 
 
@@ -81,9 +81,9 @@ struct fval {
 	struct field		*field;
 	char			*val;
 
-	struct fval_bytes	*bytes;
+	struct fval_set		*set;
 	char			*bytes_prn;
-	uint64_t		bytes_hash;
+	uint64_t		set_hash;
 };
 
 

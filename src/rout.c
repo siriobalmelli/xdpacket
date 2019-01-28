@@ -37,7 +37,7 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	ret->writes_JQ = NULL;
 	JL_LOOP(&rule->writes_JQ,
 		struct fval *write = val;
-		jl_enqueue(&ret->writes_JQ, write->bytes);
+		jl_enqueue(&ret->writes_JQ, write->set);
 	);
 
 	ret->count_match = 0;
@@ -51,7 +51,7 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 		struct fval *current = val;
 		ret->matches[i] = current->field->set;
 		NB_die_if(
-			fval_bytes_hash(current->bytes, &ret->hash)
+			fval_set_hash(current->set, &ret->hash)
 			, "");
 	);
 
@@ -92,8 +92,8 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
 bool rout_set_write(struct rout_set *rst, void *pkt, size_t plen)
 {
 	JL_LOOP(&rst->writes_JQ,
-		struct fval_bytes *fvb = val;
-		if (fval_bytes_write(fvb, pkt, plen))
+		struct fval_set *fvb = val;
+		if (fval_set_write(fvb, pkt, plen))
 			return 1;
 	);
 	return 0;

@@ -36,7 +36,7 @@ const char *txt_hex = "^(x|0x)[0-9a-f]+$";
 /*	fval_init()
  * Compile regexes only once at program start.
  */
-static void __attribute__((constructor)) fval_bytes_init()
+static void __attribute__((constructor)) fval_set_init()
 {
 	NB_err_if(
 		regcomp(&re_ipv4, txt_ipv4, regex_flags)
@@ -57,7 +57,7 @@ static void __attribute__((constructor)) fval_bytes_init()
 
 /*	fval_cleanup()
  */
-static void __attribute__((destructor)) fval_bytes_cleanup()
+static void __attribute__((destructor)) fval_set_cleanup()
 {
 	regfree(&re_ipv4);
 	regfree(&re_mac);
@@ -67,20 +67,20 @@ static void __attribute__((destructor)) fval_bytes_cleanup()
 }
 
 
-/*	fval_bytes_free()
+/*	fval_set_free()
  */
-void fval_bytes_free(void * arg)
+void fval_set_free(void * arg)
 {
 	free(arg);
 }
 
 
-/*	fval_bytes_new()
+/*	fval_set_new()
  * NOTE: 'value_len' is the length of the user value string without '\0' terminator.
  */
-struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct field_set set)
+struct fval_set *fval_set_new(const char *value, size_t value_len, struct field_set set)
 {
-	struct fval_bytes *ret = NULL;
+	struct fval_set *ret = NULL;
 	size_t len = set.len; /* for legibility only */
 
 	/* 'len' may be zero for zero-length fields */
@@ -207,17 +207,17 @@ struct fval_bytes *fval_bytes_new(const char *value, size_t value_len, struct fi
 
 	return ret;
 die:
-	fval_bytes_free(ret);
+	fval_set_free(ret);
 	return NULL;
 };
 
 
-/*	fval_bytes_print()
+/*	fval_set_print()
  * Allocates and returns a string containing the hexadecimal representation
  * of '*fvb'.
  * Caller is responsible for eventually calling free() on returned pointer.
  */
-char *fval_bytes_print(struct fval_bytes *fvb)
+char *fval_set_print(struct fval_set *fvb)
 {
 	char *ret = NULL;
 	size_t prnlen = (size_t)fvb->where.len * 2 +3; /* leading "0x" and trailing '\0' */
@@ -241,11 +241,11 @@ die:
 }
 
 
-/*	fval_bytes_write()
+/*	fval_set_write()
  * Write '*fvb' to '*pkt', observing the offset and mask in 'fvb->set'.
  * Returns 0 on success, non-zero on failure (e.g. packet not long enough).
  */
-int fval_bytes_write(struct fval_bytes *fvb, void *pkt, size_t plen)
+int fval_set_write(struct fval_set *fvb, void *pkt, size_t plen)
 {
 	struct field_set set = fvb->where;
 
@@ -276,7 +276,7 @@ void fval_free(void *arg)
 	field_release(fv->field);
 	free(fv->val);
 	free(fv->bytes_prn);
-	fval_bytes_free(fv->bytes);
+	fval_set_free(fv->set);
 	free(fv);
 }
 
@@ -307,15 +307,15 @@ struct fval *fval_new(const char *field_name, const char *value)
 	snprintf(ret->val, vlen +1, "%s", value);
 
 	NB_die_if(!(
-		ret->bytes = fval_bytes_new(ret->val, vlen, ret->field->set)
+		ret->set = fval_set_new(ret->val, vlen, ret->field->set)
 		), "");
 	NB_die_if(!(
-		ret->bytes_prn = fval_bytes_print(ret->bytes)
+		ret->bytes_prn = fval_set_print(ret->set)
 		), "");
 
-	ret->bytes_hash = fnv_hash64(NULL, NULL, 0); /* seed with initializer */
+	ret->set_hash = fnv_hash64(NULL, NULL, 0); /* seed with initializer */
 	NB_die_if(
-		fval_bytes_hash(ret->bytes, &ret->bytes_hash)
+		fval_set_hash(ret->set, &ret->set_hash)
 		, "");
 
 	return ret;
@@ -337,7 +337,7 @@ int fval_emit(struct fval *fval, yaml_document_t *outdoc, int outlist)
 #ifndef NDEBUG
 		|| y_pair_insert(outdoc, reply, "bytes", fval->bytes_prn)
 #endif
-		// || y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, fval->bytes_hash)
+		// || y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, fval->set_hash)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
