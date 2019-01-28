@@ -96,7 +96,6 @@ bool rout_set_write(struct rout_set *rst, void *pkt, size_t plen)
 		if (fval_bytes_write(fvb, pkt, plen))
 			return 1;
 	);
-	rst->count_out++;
 	return 0;
 }
 

@@ -26,12 +26,6 @@
 #include <yaml.h>
 
 
-/*	field_set flags used by fval.
- */
-#define FVAL_DEFAULT 0x0
-#define FVAL_STORE 0x1
-
-
 /*	fval_bytes
  * A parsed/compiled fval, consisting of the field-set location of bytes
  * and a big-endian representation of the value, suitable for hashing

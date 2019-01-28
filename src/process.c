@@ -98,7 +98,8 @@ void process_exec(void *context, void *pkt, size_t len)
 	JL_LOOP(&rout_set_JQ,
 		struct rout_set *rst = val;
 		if (rout_set_match(rst, pkt, len) && !rout_set_write(rst, pkt, len)) {
-			iface_output(rst->if_out, pkt, len);
+			if (!(iface_output(rst->if_out, pkt, len)))
+				rst->count_out++;
 			break;
 		}
 	);
