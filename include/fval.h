@@ -79,7 +79,6 @@ int			fval_bytes_write(struct fval_bytes *fvb,
  */
 struct fval {
 	struct field		*field;
-
 	char			*val;
 
 	struct fval_bytes	*bytes;

@@ -42,6 +42,22 @@ If you don't know Meson yet don't be discouraged, it's the easiest of the lot.
     - use linux-specific extensions as desired
     - avoid architecture-specific code without a generic fallback
 
+1. Use of the word *set*:
+In this codebase the word *set* is used to describe structures which have
+been "rendered" or "parsed" or "packed" for use in matching/handling packets.
+Generally speaking, every structure in the program represents an element
+in the YAML schema used for the CLI/API.
+This makes parsing and logic very straightforward, but if used by itself would
+cause a lot of pointer chasing and cache poisoning by pulling in unneeded strings
+and references when handling packets.
+To solve this, certain structs have a corresponding `[struct name]_set` struct
+which is allocated and freed along with their "parent" (non-set) struct.
+When the "parse chain" or "hot path" is then built, these `_set` structs are
+copied or referenced (as appropriate).
+Packets being handled must *only ever* touch *set* structures.
+To be clear, the choice of the word *set* is purely arbitrary - other possible
+choices such as "bytes", etc would have also worked.
+
 ## TODO
 
 1. regex-matcher fields with backreference 'write'

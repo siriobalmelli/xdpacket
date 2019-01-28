@@ -2,6 +2,7 @@ src_files = files([
 	'checksums.c',
     'iface.c',
     'field.c',
+    'fref.c',
     'fval.c',
     'parse2.c',
     'process.c',
