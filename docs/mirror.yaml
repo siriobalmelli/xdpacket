@@ -1,21 +1,25 @@
 # mirror.yaml
-# incoming packets have their MAC and IP src/dest addresses swapped,
-# then reflected out the same interface
+# Incoming packets have their MAC and IP src/dest addresses swapped,
+# then reflected out the same interface.
+# Write a TTL of 1 for outgoing packets so they won't be routed.
 ---
 xdpk:
   - iface: enp0s3
   - field: any
     offt: 0
     len: 0
-  - field: mac dst
-    offt: 0
-    len: 6
+  - field: ttl
+    offt: 22
+    len: 1
   - field: mac src
     offt: 6
     len: 6
   - field: ip src
     offt: 26
     len: 4
+  - field: mac dst
+    offt: 0
+    len: 6
   - field: ip dst
     offt: 30
     len: 4
@@ -24,14 +28,16 @@ xdpk:
       - any:
     store:
       - mac src: msrc
-      - mac dst: mdst
       - ip src: isrc
+      - mac dst: mdst
       - ip dst: idst
     copy:
-      - mac dst: msrc
       - mac src: mdst
       - ip src: idst
+      - mac dst: msrc
       - ip dst: isrc
+    write:
+      - ttl: 1
   - process: enp0s3
     rules:
       - reflect: enp0s3

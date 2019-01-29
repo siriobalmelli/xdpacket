@@ -1,0 +1,17 @@
+# strings.yaml
+# show rewriting an HTTP OK response,
+# and the quoting necessary to properly parse control characters e.g. '\r'
+---
+xdpk:
+  - field: http200
+    offt: 42
+    len: 15
+  - field: http200 new
+    offt: 42
+    len: 23
+  - rule: chrome A ssdp
+    match:
+      - http200: HTTP/1.1 200 OK
+    write:
+      - http200 new: "HTTP/1.1 200 OK\r\nEXT:\r\n"
+...
