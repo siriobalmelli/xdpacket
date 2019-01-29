@@ -25,15 +25,16 @@ void rule_free(void *arg)
 	js_delete(&rule_JS, rule->name);
 	free(rule->name);
 
-	JL_LOOP(&rule->matches_JQ,
-		fval_free(val);
-	);
-	JL_LOOP(&rule->writes_JQ,
-		fval_free(val);
-	);
+	/* free in reverse order, for reference reasons */
+	JL_LOOP(&rule->writes_JQ,	fval_free(val);		);
+	JL_LOOP(&rule->copies_JQ,	fref_free(val);		);
+	JL_LOOP(&rule->stores_JQ,	fref_free(val);		);
+	JL_LOOP(&rule->matches_JQ,	fval_free(val);		);
 	int __attribute__((unused)) rc;
-	JLFA(rc, rule->matches_JQ);
 	JLFA(rc, rule->writes_JQ);
+	JLFA(rc, rule->copies_JQ);
+	JLFA(rc, rule->stores_JQ);
+	JLFA(rc, rule->matches_JQ);
 
 	free(rule);
 }
@@ -50,7 +51,8 @@ void __attribute__((destructor(101))) rule_free_all()
 /*	rule_new()
  * Create a new rule.
  */
-struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
+struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
+			Pvoid_t copies_JQ, Pvoid_t writes_JQ)
 {
 	struct rule *ret = NULL;
 	NB_die_if(!name, "no name given for rule");
@@ -73,6 +75,8 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t writes_JQ)
 	snprintf(ret->name, name_len+1, "%s", name);
 
 	ret->matches_JQ = matches_JQ;
+	ret->stores_JQ = stores_JQ;
+	ret->copies_JQ = copies_JQ;
 	ret->writes_JQ = writes_JQ;
 
 	js_insert(&rule_JS, ret->name, ret, true);
@@ -115,6 +119,8 @@ int rule_parse (enum parse_mode mode,
 
 	const char *name = NULL;
 	Pvoid_t matches_JQ = NULL;
+	Pvoid_t stores_JQ = NULL;
+	Pvoid_t copies_JQ = NULL;
 	Pvoid_t writes_JQ = NULL;
 
 	/* parse mapping */
@@ -143,15 +149,24 @@ int rule_parse (enum parse_mode mode,
 						jl_enqueue(&matches_JQ, fval_new(keyname, valtxt))
 						, "");
 					);
-
+			} else if (!strcmp("store", keyname) || !strcmp("s", keyname)) {
+				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
+					NB_err_if(
+						jl_enqueue(&stores_JQ, fref_new(keyname, valtxt, FREF_STATE))
+						, "");
+					);
+			} else if (!strcmp("copy", keyname) || !strcmp("c", keyname)) {
+				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
+					NB_err_if(
+						jl_enqueue(&copies_JQ, fref_new(keyname, valtxt, FREF_REF))
+						, "");
+					);
 			} else if (!strcmp("write", keyname) || !strcmp("w", keyname)) {
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
-					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
 					NB_err_if(
 						jl_enqueue(&writes_JQ, fval_new(keyname, valtxt))
 						, "");
 					);
-
 			} else {
 				NB_err("'rule' does not implement '%s'", keyname);
 			}
@@ -166,7 +181,7 @@ int rule_parse (enum parse_mode mode,
 	case PARSE_ADD:
 	{
 		NB_die_if(!(
-			rule = rule_new(name, matches_JQ, writes_JQ)
+			rule = rule_new(name, matches_JQ, stores_JQ, copies_JQ, writes_JQ)
 			), "could not create new rule '%s'", name);
 		NB_die_if(rule_emit(rule, outdoc, outlist), "");
 		break;
@@ -220,6 +235,18 @@ int rule_emit(struct rule *rule, yaml_document_t *outdoc, int outlist)
 			fval_emit(val, outdoc, matches)
 			, "fail to emit match");
 	);
+	int stores = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
+	JL_LOOP(&rule->stores_JQ,
+		NB_die_if(
+			fref_emit(val, outdoc, stores)
+			, "fail to emit match");
+	);
+	int copies = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
+	JL_LOOP(&rule->copies_JQ,
+		NB_die_if(
+			fref_emit(val, outdoc, copies)
+			, "fail to emit match");
+	);
 	int writes = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
 	JL_LOOP(&rule->writes_JQ,
 		NB_die_if(
@@ -230,6 +257,8 @@ int rule_emit(struct rule *rule, yaml_document_t *outdoc, int outlist)
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "rule", rule->name)
 		|| y_pair_insert_obj(outdoc, reply, "match", matches)
+		|| y_pair_insert_obj(outdoc, reply, "store", stores)
+		|| y_pair_insert_obj(outdoc, reply, "copy", copies)
 		|| y_pair_insert_obj(outdoc, reply, "write", writes)
 		, "");
 	NB_die_if(!(

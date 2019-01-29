@@ -99,9 +99,7 @@ int		field_emit	(struct field *field,
 	if (start < pkt)							\
 		return 1;							\
 										\
-	/* Size sanity.								\
-	 * We rely on the invariant that no set may have length 0		\
-	 */									\
+	/* Size sanity. */							\
 	size_t flen = set.len;							\
 	if ((start + flen) > (pkt + plen))					\
 		return 1;

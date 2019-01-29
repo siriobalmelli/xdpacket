@@ -15,6 +15,8 @@ void rout_set_free (void *arg)
 	struct rout_set *rts = arg;
 	int __attribute__((unused)) rc;
 	JLFA(rc, rts->writes_JQ);
+	JLFA(rc, rts->copies_JQ);
+	JLFA(rc, rts->stores_JQ);
 	free(rts);
 }
 
@@ -29,12 +31,19 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	size_t alloc_size = sizeof(*ret) + (sizeof(struct field_set) * match_cnt);
 
 	NB_die_if(!(
-		ret = malloc(alloc_size)
+		ret = calloc(1, alloc_size)
 		), "fail malloc size %zu", alloc_size);
 	ret->count_out = 0;
 	ret->if_out = output;
 
-	ret->writes_JQ = NULL;
+	JL_LOOP(&rule->stores_JQ,
+		struct fref *state = val;
+		jl_enqueue(&ret->stores_JQ, state->set_state);
+	);
+	JL_LOOP(&rule->copies_JQ,
+		struct fref *state = val;
+		jl_enqueue(&ret->copies_JQ, state->set_ref);
+	);
 	JL_LOOP(&rule->writes_JQ,
 		struct fval *write = val;
 		jl_enqueue(&ret->writes_JQ, write->set);
@@ -64,7 +73,7 @@ die:
 
 /*	rule_set_match()
  * Attempt to match 'pkt' of 'plen' Bytes against all rules in 'set'.
- * Return 'true' if matching (and increment matches counrter),
+ * Return 'true' if matching (and increment matches counter),
  * otherwise return 'false'.
  */
 bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt, size_t plen)
@@ -84,19 +93,32 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
 }
 
 
-/*	rout_set_write()
- * Write all fields in '*rst' to '*pkt' and output to 'out_fd'.
- * Returns 0 on success; on failure returns non-0 and '*pkt' will be in
- * an inconsistent state.
+/*	rout_set_exec()
+ * Execute all actions on 'pkt':
+ * - stores
+ * - copies
+ * - writes
+ * Returns true on success;
+ * on failure returns false and '*pkt' will be in an inconsistent state.
  */
-bool rout_set_write(struct rout_set *rst, void *pkt, size_t plen)
+bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 {
+	JL_LOOP(&rst->stores_JQ,
+		struct fref_set_state *state = val;
+		if (fref_set_store(state, pkt, plen))
+			return false;
+	);
+	JL_LOOP(&rst->copies_JQ,
+		struct fref_set_ref *ref = val;
+		if (fref_set_copy(ref, pkt, plen))
+			return false;
+	);
 	JL_LOOP(&rst->writes_JQ,
 		struct fval_set *fvb = val;
 		if (fval_set_write(fvb, pkt, plen))
-			return 1;
+			return false;
 	);
-	return 0;
+	return true;
 }
 
 

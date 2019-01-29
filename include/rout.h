@@ -8,7 +8,6 @@
  */
 
 #include <judyutils.h>
-#include <fval.h>
 #include <yaml.h>
 #include <iface.h>
 
@@ -33,6 +32,8 @@ struct rout_set {
 	struct iface		*if_out;
 
 	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_set *write) */
+	Pvoid_t			copies_JQ; /* (uint64_t seq) -> (struct fref_set_ref *copy) */
+	Pvoid_t			stores_JQ; /* (uint64_t seq) -> (struct fref_set_state *state) */
 
 	size_t			count_match;
 	uint64_t		hash;
@@ -50,7 +51,7 @@ bool		rout_set_match	(struct rout_set *set,
 				const void *pkt,
 				size_t plen);
 
-bool		rout_set_write	(struct rout_set *set,
+bool		rout_set_exec	(struct rout_set *set,
 				void *pkt,
 				size_t plen);
 
