@@ -60,13 +60,9 @@ choices such as "bytes", etc would have also worked.
 
 ## TODO
 
-1. regex-matcher fields with backreference 'write'
+1. packaging
 
-1. Mechanism to store/write state
-
-1. write-side fvals pointing to other fields (not clobbered by cross/writing)
-
-1. masquerade/snat flag on interfaces
+1. Documentation and man pages
 
 1. checksums validated in all cases
 
@@ -78,10 +74,6 @@ choices such as "bytes", etc would have also worked.
 
 1. Port over test cases, extenguish `src_old`, `include_old` and `test_old`
     (previous attempt under naive architecture assumptions).
-
-1. Documentation and man pages
-
-1. packaging
 
 1. Sanitizers for debug/testing builds
 

@@ -23,23 +23,31 @@
  * @match_cnt	: number of (struct field_set) in 'matches'.
  * @matches	: hash all bytes in the packet described 'matches'.
  *
- * NOTE: this is laid out in reverse sequence (because matches[] must be last);
- * the logic makes use of these struct params from bottom to top
- * (compute matches, check hash, increment counter, etc).
+ * NOTES:
+ * - this is laid out in reverse sequence (because matches[] must be last);
+ *   the logic makes use of these struct params from bottom to top
+ *   (compute matches, check hash, increment counter, etc).
+ * - counter sizes reduced and copies/stores combined into 'state'
+ *   to bring struct under one cache line for match_cnt <= 2.
  */
 struct rout_set {
-	size_t			count_out;
 	struct iface		*if_out;
 
 	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_set *write) */
+#ifdef FREF_COMBINED_STATE_REF
+	Pvoid_t			state_JQ; /* (uint64_t seq) -> (struct fref_set_(state|ref) *state) */
+#else
 	Pvoid_t			copies_JQ; /* (uint64_t seq) -> (struct fref_set_ref *copy) */
 	Pvoid_t			stores_JQ; /* (uint64_t seq) -> (struct fref_set_state *state) */
+#endif
 
-	size_t			count_match;
+	uint32_t		count_out;
+	uint32_t		count_match;
+
 	uint64_t		hash;
 	size_t			match_cnt;
 	struct field_set	matches[];
-};
+}__attribute__((aligned(4))); /* pack uint32's without incurring the compiler's wrath */
 
 
 void		rout_set_free	(void *arg);

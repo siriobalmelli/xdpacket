@@ -15,8 +15,12 @@ void rout_set_free (void *arg)
 	struct rout_set *rts = arg;
 	int __attribute__((unused)) rc;
 	JLFA(rc, rts->writes_JQ);
+#ifdef FREF_COMBINED_STATE_REF
+	JLFA(rc, rts->state_JQ);
+#else
 	JLFA(rc, rts->copies_JQ);
 	JLFA(rc, rts->stores_JQ);
+#endif
 	free(rts);
 }
 
@@ -36,6 +40,16 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	ret->count_out = 0;
 	ret->if_out = output;
 
+#ifdef FREF_COMBINED_STATE_REF
+	JL_LOOP(&rule->stores_JQ,
+		struct fref *state = val;
+		jl_enqueue(&ret->state_JQ, state->set_state);
+	);
+	JL_LOOP(&rule->copies_JQ,
+		struct fref *state = val;
+		jl_enqueue(&ret->state_JQ, state->set_ref);
+	);
+#else
 	JL_LOOP(&rule->stores_JQ,
 		struct fref *state = val;
 		jl_enqueue(&ret->stores_JQ, state->set_state);
@@ -44,6 +58,7 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 		struct fref *state = val;
 		jl_enqueue(&ret->copies_JQ, state->set_ref);
 	);
+#endif
 	JL_LOOP(&rule->writes_JQ,
 		struct fval *write = val;
 		jl_enqueue(&ret->writes_JQ, write->set);
@@ -103,6 +118,13 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
  */
 bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 {
+#ifdef FREF_COMBINED_STATE_REF
+	JL_LOOP(&rst->state_JQ,
+		struct fref_set_state *state = val;
+		if (fref_set_exec(state, pkt, plen))
+			return false;
+	);
+#else
 	JL_LOOP(&rst->stores_JQ,
 		struct fref_set_state *state = val;
 		if (fref_set_store(state, pkt, plen))
@@ -113,6 +135,8 @@ bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 		if (fref_set_copy(ref, pkt, plen))
 			return false;
 	);
+#endif
+
 	JL_LOOP(&rst->writes_JQ,
 		struct fval_set *fvb = val;
 		if (fval_set_write(fvb, pkt, plen))

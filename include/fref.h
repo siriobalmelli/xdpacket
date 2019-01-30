@@ -13,6 +13,13 @@
 #include <yaml.h>
 
 
+/* Combining 'state' and 'ref' saves 8B in 'struct rout_set'
+ * by combining all 'store' and 'copy' operations into a single JQ.
+ * TODO: remove after this has proved out in testing.
+ */
+#define FREF_COMBINED_STATE_REF
+
+
 /*	fref_type
  * Use the 'flags' byte of 'struct field_set' to store fref_type
  */
@@ -32,6 +39,42 @@ struct fref_set_state {
 	uint8_t			bytes[];
 };
 
+/*	fref_set_ref
+ * @where	: location in packet to write bytes TO
+ * @bytes	: pointer to 'bytes' of corresponding 'struct fref_set_state'
+ */
+struct fref_set_ref {
+	struct field_set	where;
+	uint8_t			*bytes;
+};
+
+
+#ifdef FREF_COMBINED_STATE_REF
+/*	fref_set_exec()
+ * Either'store' (copy from packet) or 'copy' (copy to packet)
+ * depending on fref_set type (encoded in flags variable).
+ */
+NLC_INLINE int fref_set_exec(void *fref_set, void *pkt, size_t plen)
+{
+	struct fref_set_state *state = fref_set;
+	struct field_set set = state->where;
+	FIELD_PACKET_INDEXING
+
+	if (set.flags & FREF_STATE) {
+		memcpy(state->bytes, start, flen-1);
+		state->bytes[flen-1] = ((uint8_t*)start)[flen-1] & set.mask;
+
+	} else {
+		struct fref_set_ref *ref = fref_set;
+		memcpy(start, ref->bytes, flen-1);
+		((uint8_t*)start)[flen-1] = ref->bytes[flen-1] & set.mask;
+
+	}
+
+	return 0;
+}
+
+#else
 /*	fref_set_store()
  * Store bytes from 'pkt' into 'state->bytes', obeying offset and mask values in 'state->where'.
  * Return 0 on success, non-0 on failure (e.g. packet no long enough).
@@ -45,16 +88,6 @@ NLC_INLINE int fref_set_store(struct fref_set_state *state, void *pkt, size_t pl
 	return 0;
 }
 
-
-/*	fref_set_ref
- * @where	: location in packet to write bytes TO
- * @bytes	: pointer to 'bytes' of corresponding 'struct fref_set_state'
- */
-struct fref_set_ref {
-	struct field_set	where;
-	uint8_t			*bytes;
-};
-
 /*	fref_set_copy()
  * Copy bytes from 'ref->bytes' into 'pkt', obeying offset and mask values in 'ref->where'.
  * Return 0 on success, non-0 on failure (e.g. packet no long enough).
@@ -67,6 +100,8 @@ NLC_INLINE int fref_set_copy(struct fref_set_ref *ref, void *pkt, size_t plen)
 	((uint8_t*)start)[flen-1] = ref->bytes[flen-1] & set.mask;
 	return 0;
 }
+
+#endif
 
 
 /*	fref
