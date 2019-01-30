@@ -12,17 +12,112 @@ the eXtremely Direct Packet handler (in userland)
 
 ## Raison D'etre
 
-TODO
+This project grew out of the desire to manipulate network packets in novel
+and interesting ways, and the dismay at discovering that both OpenFlow and P4
+could not match or mangle packet payloads past the first few bytes.
+
+xdpacket's purposes are to:
+
+-   Provide a terse, clean grammar with which to represent
+    arbitrary matching and manipulation of packets.
+-   Expose a full-featured API to allow control by higher-level services.
+-   Expose a CLI interface for manual control and rule testing/debugging.
+-   Be performant and lean (hot path with *no* mallocs, cache-optimized
+    data structures and sane algorithms).
 
 ## Grammar
 
-TODO: currently the following files show the grammar in action;
-from them it should be relatively easy to intuit (until proper docs are prepared):
+The language chosen for xdpacket's grammar is [YAML](https://yaml.org),
+for the following reasons:
+
+-   It is easier to type than JSON or XML, and more readable.
+-   The reference implementation [libyaml](https://github.com/yaml/libyaml)
+    is in C, with a decent API.
+-   It can be abbreviated sufficiently to be effective as a CLI language
+    (see [CLI usage][cli_usage_and_abbreviation]), avoiding dual
+    implementations for API vs CLI.
+
+The grammar is intuitive enough that if you are reasonably familiar with YAML,
+you will probably pick a lot of it up by just reading through some of the
+example configurations:
 
 - [checksums.yaml](docs/checksums.yaml)
 - [mdns.yaml](docs/mdns.yaml)
 - [mirror.yaml](docs/mirror.yaml)
 - [reflection.yaml](docs/reflection.yaml)
+
+The following subsections look at the grammar in detail, please keep
+the above examples handy as you read on.
+
+### YAML Nomenclature
+A quick note about the terminology used by the YAML standard:
+
+An "object" or "dictionary" or "key-value pair" is known as a *mapping*
+in YAML.
+
+A "list" or "array" is known as a *sequence*.
+
+```yaml
+# this is a mapping with key 'hello' and value 'world'
+hello: world
+```
+
+``` yaml
+# this is a mapping with key 'the fox' and value '[quick, brown]'
+the fox:
+  - quick
+  - brown
+```
+
+```yaml
+# this is a mapping with two keys 'a' and 'b' and corresponding values
+a: word
+b:
+  - kind
+  - effective
+```
+
+### document toplevel
+
+A YAML document with valid xdacket grammar contains one or more mappings
+with one of these keys:
+
+| mode    | action                                   |
+| ------- | ---------------------------------------- |
+| `xdpk`  | add/set the given configuration mappings |
+| `print` | print configuration                      |
+| `del`   | delete configuration mappings            |
+
+Each of these mappings must then contain a list of one or more of the following
+*subsystems*:
+
+### iface
+
+*TODO*: iface
+
+### field
+
+*TODO*: field
+
+### rule
+
+*TODO*: rule
+
+### process
+
+*TODO*: process
+
+### CLI usage and abbreviation
+
+*TODO*: CLI
+
+## Usage Notes
+
+1. xdpacket uses promiscuous sockets - all packets on the network are captured.
+
+1. All packets visible in xdpacket are *also* visible to the host network stack.
+This can lead to counterintutive behavior e.g. xdpacket processing
+and outputting a packet *and* the host system replying with an *ICMP unreachable*.
 
 ## Codebase Notes
 
@@ -72,10 +167,23 @@ choices such as "bytes", etc would have also worked.
     - tab completion
     - is there a library for this
 
+1. Refine printing:
+    - implement a "print everything unless specified" model
+    - implement regex matching of names
+
 1. Port over test cases, extenguish `src_old`, `include_old` and `test_old`
     (previous attempt under naive architecture assumptions).
 
 1. Sanitizers for debug/testing builds
+
+1. Multithreading:
+    - fence API/CLI parser instances from each other with a mutex.
+    - modify `process` installation into `iface`, and consumption thereof,
+      to be an atomic pointer swap.
+    - protect contentious state operations (`fref`) with a mutex
+    - modify `iface` to be a thread spawn, carefully audit init()/free() paths
+    - round-robin pin each new `iface` to one of the available CPUset;
+      pin the socket to this interface as well with an `ioctl`.
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
   - <https://patchwork.ozlabs.org/cover/867937/>
@@ -83,5 +191,6 @@ choices such as "bytes", etc would have also worked.
 
 ## Consider
 
-1. Merging with <https://github.com/netsniff-ng/netsniff-ng> which already
-  does a lot of what this program does, except better
+1. Merging with <https://github.com/netsniff-ng/netsniff-ng>.
+1. An alternate implementation that builds and loads eBPF filters
+instead of processing packets in userspace.
