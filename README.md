@@ -126,20 +126,21 @@ Each of these mappings must then contain a list of one or more of the following
 
 1. All packets visible in xdpacket are *also* visible to the host network stack.
     This can lead to counterintutive behavior e.g. xdpacket processing
-    and outputting a packet *and* the host system replying with an *ICMP unreachable*.
+    and outputting a packet *and* the host system replying
+    to the same packet with an *ICMP unreachable*.
 
     When xdpacket is used to NAT or forward traffic coming from an interface,
     it may be useful to set a netfilter rule to drop all incoming traffic
     so the host network stack doesn't see it.
 
     For an interface `eth9`, an [iptables](https://linux.die.net/man/8/iptables)
-    might look like:
+    rule might look like:
     ```bash
     iptables -A INPUT -i eth9 -j DROP
     ```
 
     An [nftables](https://wiki.nftables.org/wiki-nftables/index.php/Main_Page)
-    might look like:
+    rule might look like:
     ```bash
     nft insert rule filter input iif eth9 drop
     ```
@@ -180,6 +181,20 @@ Each of these mappings must then contain a list of one or more of the following
     Packets being handled must *only ever* touch *set* structures.  
     To be clear, the choice of the word *set* is purely arbitrary - other possible
     choices such as "bytes", etc would have also worked.
+
+## BUGS
+
+1. xdpacket does not currently handle IP fragmentation.
+    Large fragmented IP packets incoming *may* be reassembled by the network
+    driver and kernel and delivered to xdpacket, but when mangled
+    and/or forwarded by xdpacket will be dropped by the receiving RAW socket.
+
+    The fix for this will entail:
+    - ascertaining whether the kernel will *always* reassemble fragmented
+      IP packets on the way in (or whether we need to conditionally handle
+      fragmentation).
+    - reading the RFC and generating fragmented packets when required
+      (a better understanding of PMTU will be necessary here).
 
 ## TODO
 
