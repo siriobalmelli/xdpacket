@@ -119,26 +119,27 @@ Each of these mappings must then contain a list of one or more of the following
 ## Usage Notes
 
 1. xdpacket uses promiscuous sockets - all packets on the network are received,
-regardless of protocol or routing.
-Packets are also received regardless of firewall (netfilter) configuration.
-If it's on the wire, xdpacket will see it.
+    regardless of protocol or routing.
 
-2. All packets visible in xdpacket are *also* visible to the host network stack.
-This can lead to counterintutive behavior e.g. xdpacket processing
-and outputting a packet *and* the host system replying with an *ICMP unreachable*.
+    Packets are also received regardless of firewall (netfilter) configuration.  
+    If it's on the wire, xdpacket will see it.
 
-When xdpacket is used to NAT or forward traffic coming from an interface,
-it may be useful to set a netfilter rule to drop all incoming traffic
-so the host network stack doesn't see it.
+1. All packets visible in xdpacket are *also* visible to the host network stack.
+    This can lead to counterintutive behavior e.g. xdpacket processing
+    and outputting a packet *and* the host system replying with an *ICMP unreachable*.
 
-For an interface `eth9`, an [iptables](https://linux.die.net/man/8/iptables)
-might look like:
+    When xdpacket is used to NAT or forward traffic coming from an interface,
+    it may be useful to set a netfilter rule to drop all incoming traffic
+    so the host network stack doesn't see it.
+
+    For an interface `eth9`, an [iptables](https://linux.die.net/man/8/iptables)
+    might look like:
     ```bash
     iptables -A INPUT -i eth9 -j DROP
     ```
 
-An [nftables](https://wiki.nftables.org/wiki-nftables/index.php/Main_Page)
-might look like:
+    An [nftables](https://wiki.nftables.org/wiki-nftables/index.php/Main_Page)
+    might look like:
     ```bash
     nft insert rule filter input iif eth9 drop
     ```
@@ -146,39 +147,39 @@ might look like:
 ## Codebase Notes
 
 1. The build system is [Meson](https://mesonbuild.com/index.html).
-If you don't know Meson yet don't be discouraged, it's the easiest of the lot.
+    If you don't know Meson yet don't be discouraged, it's the easiest of the lot.
     - Start by scanning through the toplevel file [meson.build]()
     - Read [bootstrap.sh]() to see how Meson is used
 
-2. Functionality is broken down into "subsystems". A subsystem has:
+1. Functionality is broken down into "subsystems". A subsystem has:
     - a header in [include]() e.g. [include/field.h]()
     - a src file in [src]() e.g. [src/field.c]()
     - a test file in [test]() e.g. [test/field_test.c]()
     - all exported/visible (i.e. present in the header file) symbols
       beginning with the subsystem name e.g. `field_new()`
 
-3. This codebase is targeted at Linux on all architectures:
+1. This codebase is targeted at Linux on all architectures:
     - use linux-specific extensions as desired
     - avoid architecture-specific code without a generic fallback
 
-4. Use of the word *set*:
-In this codebase the word *set* is used to describe structures which have
-been "rendered" or "parsed" or "packed" for use in matching/handling packets.
+1. Use of the word *set*:
+    In this codebase the word *set* is used to describe structures which have
+    been "rendered" or "parsed" or "packed" for use in matching/handling packets.
 
-Generally speaking, every structure in the program represents an element
-in the YAML schema used for the CLI/API.
-This makes parsing and logic very straightforward, but if used by itself would
-cause a lot of pointer chasing and cache poisoning by pulling in unneeded strings
-and references when handling packets.
+    Generally speaking, every structure in the program represents an element
+    in the YAML schema used for the CLI/API.  
+    This makes parsing and logic very straightforward, but if used by itself would
+    cause a lot of pointer chasing and cache poisoning by pulling in unneeded strings
+    and references when handling packets.
 
-To solve this, certain structs have a corresponding `[struct name]_set` struct
-which is allocated and freed along with their "parent" (non-set) struct.
-When the "parse chain" or "hot path" is then built, these `_set` structs are
-copied or referenced (as appropriate).
+    To solve this, certain structs have a corresponding `[struct name]_set` struct
+    which is allocated and freed along with their "parent" (non-set) struct.  
+    When the "parse chain" or "hot path" is then built, these `_set` structs are
+    copied or referenced (as appropriate).
 
-Packets being handled must *only ever* touch *set* structures.
-To be clear, the choice of the word *set* is purely arbitrary - other possible
-choices such as "bytes", etc would have also worked.
+    Packets being handled must *only ever* touch *set* structures.  
+    To be clear, the choice of the word *set* is purely arbitrary - other possible
+    choices such as "bytes", etc would have also worked.
 
 ## TODO
 
@@ -220,4 +221,4 @@ choices such as "bytes", etc would have also worked.
 
 1. Merging with <https://github.com/netsniff-ng/netsniff-ng>.
 1. An alternate implementation that builds and loads eBPF filters
-instead of processing packets in userspace.
+    instead of processing packets in userspace.
