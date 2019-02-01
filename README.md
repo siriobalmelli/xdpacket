@@ -112,6 +112,8 @@ Each of these mappings must then contain a list of one or more of the following
 
 *TODO*: process
 
+NOTE: rule ordering is important
+
 ### CLI usage and abbreviation
 
 *TODO*: CLI

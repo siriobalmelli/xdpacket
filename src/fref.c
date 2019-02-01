@@ -7,6 +7,7 @@
 
 
 static Pvoid_t fref_JS = NULL; /* (char *ref_name) -> (struct fref *state) */
+static Pvoid_t fref_state_JS = NULL; /* (char *state_name) -> (struct fref_state *state) */
 
 
 /*	fref_free()

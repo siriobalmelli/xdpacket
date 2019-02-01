@@ -34,12 +34,7 @@ struct rout_set {
 	struct iface		*if_out;
 
 	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_set *write) */
-#ifdef FREF_COMBINED_STATE_REF
 	Pvoid_t			state_JQ; /* (uint64_t seq) -> (struct fref_set_(state|ref) *state) */
-#else
-	Pvoid_t			copies_JQ; /* (uint64_t seq) -> (struct fref_set_ref *copy) */
-	Pvoid_t			stores_JQ; /* (uint64_t seq) -> (struct fref_set_state *state) */
-#endif
 
 	uint32_t		count_out;
 	uint32_t		count_match;
