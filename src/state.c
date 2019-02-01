@@ -63,10 +63,12 @@ struct state *state_get(const char *name, size_t len)
 			ret->name = malloc(name_len +1)
 			), "fail alloc size %zu", name_len +1);
 		snprintf(ret->name, name_len+1, "%s", name);
+		js_insert(&state_JS, ret->name, ret, false);
 
 	} else if (ret && (ret->len < len)) {
 		ret = realloc(ret, sizeof(*ret) + len);
 		ret->len = len;
+		js_insert(&state_JS, ret->name, ret, true);
 	}
 
 	ret->refcnt++;

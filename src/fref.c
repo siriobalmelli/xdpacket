@@ -47,6 +47,7 @@ struct fref *fref_new(const char *field_name, const char *state_name, enum fref_
 	 /* Use 'flags' to store whether "store" or "copy" */
 	ret->ref->where = ret->field->set;
 	ret->ref->where.flags |= type;
+	ret->ref->bytes = ret->state->bytes;
 
 	return ret;
 die:
