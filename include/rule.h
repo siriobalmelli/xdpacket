@@ -18,7 +18,7 @@
 struct rule {
 	char		*name;
 	Pvoid_t		matches_JQ; /* (uint64_t seq) -> (struct fval *mch) */
-	Pvoid_t		stores_JQ; /* (uint64_t seq) -> (struct fref *state) */
+	Pvoid_t		stores_JQ; /* (uint64_t seq) -> (struct fref *store) */
 	Pvoid_t		copies_JQ; /* (uint64_t seq) -> (struct fref *copy) */
 	Pvoid_t		writes_JQ; /* (uint64_t seq) -> (struct fval *wrt) */
 	size_t		refcnt;

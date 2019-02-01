@@ -36,12 +36,12 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	ret->if_out = output;
 
 	JL_LOOP(&rule->stores_JQ,
-		struct fref *state = val;
-		jl_enqueue(&ret->state_JQ, state->set_state);
+		struct fref *fref = val;
+		jl_enqueue(&ret->state_JQ, fref->ref);
 	);
 	JL_LOOP(&rule->copies_JQ,
-		struct fref *state = val;
-		jl_enqueue(&ret->state_JQ, state->set_ref);
+		struct fref *fref = val;
+		jl_enqueue(&ret->state_JQ, fref->ref);
 	);
 	JL_LOOP(&rule->writes_JQ,
 		struct fval *write = val;
@@ -103,8 +103,8 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
 bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 {
 	JL_LOOP(&rst->state_JQ,
-		struct fref_set_state *state = val;
-		if (fref_set_exec(state, pkt, plen))
+		struct fref_set *ref = val;
+		if (fref_set_exec(ref, pkt, plen))
 			return false;
 	);
 
