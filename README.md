@@ -204,7 +204,9 @@ NOTE: rule ordering is important
 
 1. Documentation and man pages
 
-1. checksums validated in all cases
+1. checksums validated in all cases (IPv6)
+
+1. process rule expiry
 
 1. REPL reworked for CLI style usability
     - backspace
