@@ -7,6 +7,7 @@
 #include <judyutils.h>
 #include <yamlutils.h>
 #include <fnv.h>
+#include <nstring.h>
 
 
 static Pvoid_t	rule_JS = NULL; /* (char *rule_name) -> (struct rule *rule) */
@@ -67,12 +68,11 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 		ret = calloc(1, sizeof(*ret))
 		), "fail alloc size %zu", sizeof(*ret));
 
-	size_t name_len = strnlen(name, MAXLINELEN);
-	NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
 	NB_die_if(!(
-		ret->name = malloc(name_len +1)
-		), "fail alloc size %zu", name_len +1);
-	snprintf(ret->name, name_len+1, "%s", name);
+		ret->name = nstralloc(name, MAXLINELEN, NULL)
+		), "string alloc fail");
+	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
+
 
 	ret->matches_JQ = matches_JQ;
 	ret->stores_JQ = stores_JQ;

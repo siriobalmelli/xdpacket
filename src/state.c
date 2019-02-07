@@ -4,6 +4,7 @@
 
 #include <state.h>
 #include <judyutils.h>
+#include <nstring.h>
 
 
 static Pvoid_t state_JS = NULL; /* (char *state_name) -> (struct state *state) */
@@ -57,12 +58,11 @@ struct state *state_get(const char *name, size_t len)
 			), "fail alloc sz %zu", sizeof(*ret) + len);
 		ret->len = len;
 
-		size_t name_len = strnlen(name, MAXLINELEN);
-		NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
 		NB_die_if(!(
-			ret->name = malloc(name_len +1)
-			), "fail alloc size %zu", name_len +1);
-		snprintf(ret->name, name_len+1, "%s", name);
+			ret->name = nstralloc(name, MAXLINELEN, NULL)
+			), "string alloc fail");
+		NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
+
 		js_insert(&state_JS, ret->name, ret, false);
 
 	} else if (ret && (ret->len < len)) {

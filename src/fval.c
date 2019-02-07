@@ -6,6 +6,7 @@
 #include <regex.h>
 #include <arpa/inet.h> /* inet_pton() */
 #include <binhex.h>
+#include <nstring.h>
 
 
 /* Use regex to match special-case parser inputs.
@@ -295,19 +296,16 @@ struct fval *fval_new(const char *field_name, const char *value)
 		ret->field = field_get(field_name)
 		), "could not get field '%s'", field_name);
 
-	/* do not allow a length longer than the maximum length value of a field-set */
+	/* Do not allow a length longer than the maximum length value of a field-set;
+	 * reuse this value to store actual length.
+	 */
 	size_t max = ((size_t)1 << (sizeof(ret->field->set.len) * 8)) -1;
-	size_t vlen = strnlen(value, max);
-	NB_die_if(vlen == max, "value truncated:\n%.*s", (int)max, value);
-
-	/* alloc and copy user-supplied value string as-is */
-	NB_die_if(!(
-		ret->val = malloc(vlen +1) /* add \0 terminator */
-		), "fail alloc size %zu", vlen +1);
-	snprintf(ret->val, vlen +1, "%s", value);
+	ret->val = nstralloc(value, max, &max); /* a zero-length value is valid */
+	NB_die_if(errno == EINVAL, "");
+	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->val);
 
 	NB_die_if(!(
-		ret->set = fval_set_new(ret->val, vlen, ret->field->set)
+		ret->set = fval_set_new(ret->val, max, ret->field->set)
 		), "");
 	NB_die_if(!(
 		ret->bytes_prn = fval_set_print(ret->set)

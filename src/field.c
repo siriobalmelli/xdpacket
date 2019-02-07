@@ -1,6 +1,7 @@
 #include <field.h>
 #include <ndebug.h>
 #include <yamlutils.h>
+#include <nstring.h>
 
 
 static Pvoid_t field_JS = NULL; /* (char *field_name) -> (struct field *field) */
@@ -58,12 +59,10 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 		), "fail alloc sz %zu", sizeof(struct field));
 	ret->refcnt = 0;
 	
-	size_t name_len = strnlen(name, MAXLINELEN);
-	NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
 	NB_die_if(!(
-		ret->name = malloc(name_len +1)
-		), "fail alloc size %zu", name_len +1);
-	snprintf(ret->name, name_len+1, "%s", name);
+		ret->name = nstralloc(name, MAXLINELEN, NULL)
+		), "string alloc fail");
+	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
 
 	/* see 'test/overflow_test.c' for a proof that this is kosher */
 	#pragma GCC diagnostic push

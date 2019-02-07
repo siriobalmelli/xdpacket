@@ -8,6 +8,7 @@
 #include <sys/types.h>
 
 #include <ndebug.h>
+#include <nstring.h>
 #include <judyutils.h>
 #include <yamlutils.h>
 
@@ -74,12 +75,10 @@ struct iface *iface_new(const char *name)
 		ret = calloc(sizeof(struct iface), 1)
 		), "fail alloc size %zu", sizeof(struct iface));
 
-	size_t name_len = strnlen(name, MAXLINELEN);
-	NB_die_if(name_len >= MAXLINELEN, "rule name overflow '%s'", name);
 	NB_die_if(!(
-		ret->name = malloc(name_len +1)
-		), "fail alloc size %zu", name_len +1);
-	snprintf(ret->name, name_len+1, "%s", name);
+		ret->name = nstralloc(name, MAXLINELEN, NULL)
+		), "string alloc fail");
+	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
 
 	NB_die_if(!(
 		ret->ip_prn = calloc(1, INET_ADDRSTRLEN)
