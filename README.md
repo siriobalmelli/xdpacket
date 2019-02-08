@@ -20,6 +20,10 @@ The linux netfilter architecture is also of limited help, since it depends on
 ip routing, so cannot be used to e.g. NAT multicast packets between subnets
 without installing and configuring a routing daemon.
 
+eBPF on the other hand is extremely powerful but the toolchain still has
+teething pains and the compile-insert workflow doesn't lend itself well
+as an API.
+
 xdpacket's purposes are to:
 
 -   Provide a terse, clean grammar with which to represent
@@ -98,11 +102,49 @@ Each of these mappings must then contain a list of one or more of the following
 
 ### iface
 
-*TODO*: iface
+xdpacket sees no packets by default; each desired interface must be declared
+as a specific node.
+
+| key     | value  | description           |
+| ------- | ------ | --------------------- |
+| `iface` | string | system interface name |
+
+```yaml
+xdpk:
+  - iface: eth0  # open a socket for I/O on 'eth0'
+```
 
 ### field
 
-*TODO*: field
+A `field` is used to describe a set of bytes in a packet,
+both when reading and writing, and give that description an arbitrary name.
+
+| key     | value  | description                    | default              |
+| ------- | ------ | ------------------------------ | -------------------- |
+| `field` | string | user-supplied unique string ID | N/A: must be supplied |
+| `offt`  | int    | offset in Ethernet Frame       | `0`                  |
+| `len`   | uint   | length in bytes                | `0`                  |
+| `mask`  | uchar  | mask applied to trailing byte  | `0xff`               |
+
+- a field will not match if `offt` is higher than the size of the packet
+- negative `offt` means offset from end of packet
+- a `len` of `0` simply matches whether a packet is at least `offt` long
+- `len: 0` at `offt: 0` will match anything
+
+```yaml
+#field examples
+xdpk:
+  - field: any
+
+  - field: ttl
+    offt: 22
+    len: 1
+
+  - field: ip dont fragment
+    offt: 20
+    len: 1
+    mask: 0x40
+```
 
 ### rule
 

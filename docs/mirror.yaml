@@ -6,8 +6,6 @@
 xdpk:
   - iface: enp0s3
   - field: any
-    offt: 0
-    len: 0
   - field: ttl
     offt: 22
     len: 1
