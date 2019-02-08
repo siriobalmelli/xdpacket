@@ -45,7 +45,7 @@ struct field_set {
 struct field {
 	char			*name;
 	struct field_set	set;
-	size_t			refcnt;
+	uint32_t		refcnt;
 };
 
 

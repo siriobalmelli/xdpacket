@@ -18,8 +18,8 @@
  */
 struct state {
 	char		*name;
-	size_t		refcnt;
 	size_t		len;
+	uint32_t	refcnt;
 	uint8_t		bytes[];
 };
 

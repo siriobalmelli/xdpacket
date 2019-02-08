@@ -200,8 +200,6 @@ NOTE: rule ordering is important
 
 ## TODO
 
-1. Homogenize refcounts (32-bit standard refcount_t ?)
-
 1. packaging
 
 1. Documentation and man pages
