@@ -58,11 +58,16 @@ struct process *process_new(const char *in_iface_name, Pvoid_t rout_JQ)
 	struct process *ret = NULL;
 	NB_die_if(!in_iface_name, "process requires in_iface_name");
 
+#ifdef XDPACKET_DISALLOW_CLOBBER
+	NB_die_if(js_get(&process_JS, in_iface_name) != NULL,
+		"field '%s' already exists", in_iface_name);
+#else
 	/* no easy way of knowing if dups are identical, kill them */
 	if ((ret = js_get(&process_JS, in_iface_name))) {
 		NB_wrn("process '%s' already exists: deleting", in_iface_name);
 		process_free(ret);
 	}
+#endif
 
 	NB_die_if(!(
 		ret = calloc(1, sizeof(*ret))
