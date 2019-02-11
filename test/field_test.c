@@ -84,6 +84,15 @@ int test_field_parse(struct field_test *tst)
 	NB_die_if(!root || root->type != YAML_MAPPING_NODE,
 		"malformed test yaml '%s'", tst->yaml);
 
+#ifdef XDPACKET_DISALLOW_CLOBBER
+	/* attempting to add duplicates _should_ fail */
+	NB_die_if(
+		field_parse(PARSE_ADD, &doc, root, NULL, 0)
+		, "failed to add field from yaml '%s'", tst->yaml);
+	NB_die_if(
+		!field_parse(PARSE_ADD, &doc, root, NULL, 0)
+		, "duplicate field did not yield error, yaml '%s'", tst->yaml);
+#else
 	/* parse YAML "add" - TWICE to verify duplicates are handled cleanly */
 	NB_die_if(
 		field_parse(PARSE_ADD, &doc, root, NULL, 0)
@@ -91,6 +100,7 @@ int test_field_parse(struct field_test *tst)
 	NB_die_if(
 		field_parse(PARSE_ADD, &doc, root, NULL, 0)
 		, "failed to add field from yaml '%s'", tst->yaml);
+#endif
 
 	/* test get/refcount mechanics */
 	NB_die_if(!(

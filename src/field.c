@@ -15,11 +15,14 @@ void field_free(void *arg)
 		return;
 	struct field *fl = arg;
 	NB_wrn("erase field %s", fl->name);
-	NB_err_if(fl->refcnt, "field '%s' free with non-zero refcount", fl->name);
+	NB_die_if(fl->refcnt,
+		"field '%s' free with non-zero refcount. memory leak.", fl->name);
 
 	js_delete(&field_JS, fl->name);
 	free(fl->name);
 	free(fl);
+die:
+	return;
 }
 
 /*	field_free_all()
@@ -46,13 +49,18 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	if (!mask)
 		mask = 0xff;
 
-	/* return already existing ONLY if identical */
+#ifdef XDPACKET_DISALLOW_CLOBBER
+	NB_die_if(js_get(&field_JS, name) != NULL,
+		"field '%s' already exists", name);
+#else
+	/* Return already existing ONLY if identical */
 	if ((ret = js_get(&field_JS, name))) {
 		if (ret->set.offt == offt && ret->set.len == len && ret->set.mask == mask)
 			return ret;
 		NB_wrn("field '%s' already exists but not identical: deleting", name);
 		field_free(ret);
 	}
+#endif
 
 	NB_die_if(!(
 		ret = malloc(sizeof(struct field))

@@ -34,7 +34,8 @@ void iface_free(void *arg)
 	if (!arg)
 		return;
 	struct iface *iface = arg;
-	NB_err_if(iface->refcnt, "iface '%s' free with non-zero refcount.", iface->name);
+	NB_die_if(iface->refcnt,
+		"iface '%s' free with non-zero refcount. memory leak.", iface->name);
 
 	js_delete(&iface_JS, iface->name);
 	NB_wrn("close "XDPK_SOCK_PRN(iface));
@@ -47,6 +48,8 @@ void iface_free(void *arg)
 	free(iface->ip_prn);
 	free(iface->name);
 	free(iface);
+die:
+	return;
 }
 
 /*	iface_free_all()
@@ -67,9 +70,14 @@ struct iface *iface_new(const char *name)
 	struct iface *ret = NULL;
 	NB_die_if(!name, "no name given for iface");
 
+#ifdef XDPACKET_DISALLOW_CLOBBER
+	NB_die_if(js_get(&iface_JS, name) != NULL,
+		"iface '%s' already exists", name);
+#else
 	/* if already exists, return existing */
 	if ((ret = js_get(&iface_JS, name)))
 		return ret;
+#endif
 
 	NB_die_if(!(
 		ret = calloc(sizeof(struct iface), 1)

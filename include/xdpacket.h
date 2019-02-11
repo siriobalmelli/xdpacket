@@ -18,6 +18,26 @@
  */
 #define PORT "7044"
 
+/* Placeholder so that we can mark all areas of code affected.
+ * The basic question is how to behave if a caller wants to "create" a new
+ * resource (field, rule, iface).
+ * This is because the user may be describing:
+ * - an identical resource (in which case creation should be idempotent)
+ * - a different resource with the same name, in which case it's unclear whether
+ *   it is _really_ desired that the existing resource be clobbered/replaced.
+ * If we _do_ clobber, there is also the question of how to best handle an
+ * existing resource with a non-zero refcount (we don't necessarily know _who_
+ * refers to it, only that refcount is non-zero).
+ *
+ * Obviously, comparing a requested resource and an existing resource to device
+ * whether they are "identical" can introduce subtle errors.
+ * The simplest solution is to simply error _any_ time we are asked to create
+ * an identically named resource, and therefore ask the caller to explicitly
+ * delete a resource before creating a new, identically-named one.
+ * This can definitely be reviewed in future, but that's the call right now.
+ */
+#define XDPACKET_DISALLOW_CLOBBER
+
 /* TODO: stopgap measure, find a way to pass this cleanly without it being global */
 extern struct epoll_track *tk;
 

@@ -21,7 +21,8 @@ void rule_free(void *arg)
 		return;
 	struct rule *rule = arg;
 	NB_wrn("erase rule %s", rule->name);
-	NB_err_if(rule->refcnt, "rule '%s' free with non-zero refcount.", rule->name);
+	NB_die_if(rule->refcnt,
+		"rule '%s' free with non-zero refcount. memory leak.", rule->name);
 
 	js_delete(&rule_JS, rule->name);
 	free(rule->name);
@@ -38,6 +39,8 @@ void rule_free(void *arg)
 	JLFA(rc, rule->matches_JQ);
 
 	free(rule);
+die:
+	return;
 }
 
 /*	rule_free_all()
@@ -58,11 +61,15 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 	struct rule *ret = NULL;
 	NB_die_if(!name, "no name given for rule");
 
-	/* no easy way of knowing if dups are identical, kill them */
+#ifdef XDPACKET_DISALLOW_CLOBBER
+	NB_die_if(js_get(&rule_JS, name) != NULL,
+		"rule '%s' already exists", name);
+#else
 	if ((ret = js_get(&rule_JS, name))) {
 		NB_wrn("rule '%s' already exists: deleting", name);
 		rule_free(ret);
 	}
+#endif
 
 	NB_die_if(!(
 		ret = calloc(1, sizeof(*ret))
