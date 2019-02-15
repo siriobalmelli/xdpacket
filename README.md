@@ -46,22 +46,22 @@ for the following reasons:
     implementations for API vs CLI.
 
 The grammar is intuitive enough that if you are reasonably familiar with YAML,
-you will probably pick a lot of it up by reading through some
-example configurations:
+you will probably pick a lot of it up by reading through some configurations
+in the [example dir](example/README.md)
 
-- [checksums.yaml](docs/checksums.yaml)
-- [mdns.yaml](docs/mdns.yaml)
-- [mirror.yaml](docs/mirror.yaml)
-- [reflection.yaml](docs/reflection.yaml)
+- [checksums.yaml](example/checksums.yaml)
+- [mdns.yaml](example/mdns.yaml)
+- [mirror.yaml](example/mirror.yaml)
+- [reflection.yaml](example/reflection.yaml)
 
 The following subsections look at the grammar in detail, please keep
 the above examples handy as you read on.
 
-### YAML Nomenclature
+#### YAML Nomenclature
+
 A quick note about the terminology used by the YAML standard:
 
-An "object" or "dictionary" or "key-value pair" is known as a *mapping*
-in YAML.
+An "object" or "dictionary" or "key-value pair" is known as a *mapping* in YAML.
 
 A "list" or "array" is known as a *sequence*.
 
@@ -100,6 +100,15 @@ with one of these keys:
 Each of these mappings must then contain a list of one or more of the following
 *subsystems*:
 
+| subsystem | description                                                |
+| --------- | ---------------------------------------------------------- |
+| `iface`   | an I/O socket opened on a network interface                |
+| `field`   | a set of bytes inside a packet                             |
+| `rule`    | directives for matching and altering packets               |
+| `process` | a list of rules to be executed, in sequence, on an `iface` |
+
+These are described in detail below:
+
 ### iface
 
 xdpacket sees no packets by default; each desired interface must be declared
@@ -114,53 +123,7 @@ xdpk:
   - iface: eth0  # open a socket for I/O on 'eth0'
 ```
 
-### field
-
-A `field` is used to describe a set of bytes in a packet,
-both when reading and writing, and give that description an arbitrary name.
-
-| key     | value  | description                    | default              |
-| ------- | ------ | ------------------------------ | -------------------- |
-| `field` | string | user-supplied unique string ID | N/A: must be supplied |
-| `offt`  | int    | offset in Ethernet Frame       | `0`                  |
-| `len`   | uint   | length in bytes                | `0`                  |
-| `mask`  | uchar  | mask applied to trailing byte  | `0xff`               |
-
-- a field will not match if `offt` is higher than the size of the packet
-- negative `offt` means offset from end of packet
-- a `len` of `0` simply matches whether a packet is at least `offt` long
-- `len: 0` at `offt: 0` will match anything
-
-```yaml
-#field examples
-xdpk:
-  - field: any
-
-  - field: ttl
-    offt: 22
-    len: 1
-
-  - field: ip dont fragment
-    offt: 20
-    len: 1
-    mask: 0x40
-```
-
-### rule
-
-*TODO*: rule
-
-### process
-
-*TODO*: process
-
-NOTE: rule ordering is important
-
-### CLI usage and abbreviation
-
-*TODO*: CLI
-
-## Usage Notes
+#### NOTES
 
 1. xdpacket uses promiscuous sockets - all packets on the network are received,
     regardless of protocol or routing.
@@ -188,6 +151,153 @@ NOTE: rule ordering is important
     ```bash
     nft insert rule filter input iif eth9 drop
     ```
+
+### field
+
+A `field` is used to describe a set of bytes in a packet,
+both when reading and writing, and give that description an arbitrary name.
+
+| key     | value  | description                    | default               |
+| ------- | ------ | ------------------------------ | --------------------  |
+| `field` | string | user-supplied unique string ID | N/A: must be supplied |
+| `offt`  | int    | offset in Ethernet Frame       | `0`                   |
+| `len`   | uint   | length in bytes                | `0`                   |
+| `mask`  | uchar  | mask applied to trailing byte  | `0xff`                |
+
+- a field will not match if `offt` is higher than the size of the packet
+- negative `offt` means offset from end of packet
+- a `len` of `0` simply matches whether a packet is at least `offt` long
+- `len: 0` at `offt: 0` will match all packets
+
+```yaml
+# field examples
+xdpk:
+  - field: any
+
+  - field: ttl
+    offt: 22
+    len: 1
+
+  - field: ip dont fragment
+    offt: 20
+    len: 1
+    mask: 0x40
+```
+
+```yaml
+# Some more field examples.
+# NOTE: .pcap files (tcpdump, wireshark) are useful to check offsets, lengths.
+# The offsets in a .pcap are exactly those seen by xdpacket.
+xdpk:
+  - field: mac src
+    offt: 6
+    len: 6
+  - field: ip src
+    offt: 26
+    len: 4
+  - field: mac dst
+    offt: 0
+    len: 6
+  - field: ip dst
+    offt: 30
+    len: 4
+```
+
+It is worthwhile to note that no processing/alteration is done to incoming
+packets before matching.
+For example, the "mac source" field of a packet with an 802.11q VLAN tag
+is at a different offset in the header; xdpacket does nothing to account for
+this, it matches and writes precisely where it is told to.
+
+### field-value tuple (fval)
+
+Data to be matched or written is described using *field-value* tuples:
+
+| element | type   | description                                         |
+| ------- | ------ | --------------------------------------------------- |
+| `field` | string | must correspond to ID of a valid `field`            |
+| `value` | string | parsed to a big-endian array of bytes               |
+
+examples:
+
+```yaml
+# example field-value pairs
+- ip dst: 192.168.1.1                             # 4B IPv4 address
+- mac src: aa:bb:cc:dd:ee:ff                      # 6B MAC address
+- ipv6 dst: 2001:db8:85a3:8d3:1319:8a2e:370:7348  # 16B IPv6 address
+- ttl: 1                                          # integer
+- ip dont fragment: 0x40                          # integer
+- some field: 0xdeadbeef                          # hex-encoded byte array
+- http: "HTTP/1.1 200 OK"                         # string
+```
+
+#### NOTES
+
+1. `value` is parsed depending on its content (see above examples);
+    e.g. `192.168.0.1` is parsed as an IPv4 address, not a string.
+
+    This is done for simplicity and intuitiveness, see [fval.c](src/fval.c) for
+    exact regex matches and sequence used.
+
+1. Since *field-value tuple* is a big mouthful (or keyboardful), these are
+    referred to as *fvals* elsewhere, including the sources
+    (see [fval.h](include/fval.h)).
+
+### rule
+
+A `rule` uses lists of field-value tuples to describe a series of *matches*
+to test on packets, and what to do with packets that match *all* of these
+(AND relationship).
+
+| key     | value  | description                    | default               |
+| ------- | ------ | ------------------------------ | --------------------  |
+| `rule`  | string | user-supplied unique string ID | N/A: must be supplied |
+| `match` | list   | TODO                           | []                    |
+| `store` | list   | TODO                           | []                    |
+| `copy`  | list   | TODO                           | []                    |
+| `write` | list   | TODO                           | []                    |
+
+Here is an example rule:
+
+```yaml
+# match any packet, reverse source and destination addresses, set ttl to 1
+xdpk:
+  - rule: reflect
+    match:
+      - any:
+    store:
+      - mac src: msrc
+      - ip src: isrc
+      - mac dst: mdst
+      - ip dst: idst
+    copy:
+      - mac src: mdst
+      - ip src: idst
+      - mac dst: msrc
+      - ip dst: isrc
+    write:
+      - ttl: 1
+```
+
+A rule is executed in the following sequence:
+
+*TODO*: sequence
+
+#### NOTES
+
+1. *TODO*: global state variables
+
+### process
+
+*TODO*: process
+
+#### NOTES
+
+1. *TODO*: rule ordering is important
+
+### CLI usage and abbreviation
+
+*TODO*: CLI
 
 ## Codebase Notes
 
@@ -248,8 +358,6 @@ NOTE: rule ordering is important
 
 1. checksums validated in all cases (IPv6)
 
-1. process rule expiry
-
 1. REPL reworked for CLI style usability
     - backspace
     - arrow keys
@@ -260,7 +368,7 @@ NOTE: rule ordering is important
     - implement a "print everything unless specified" model
     - implement regex matching of names
 
-1. Port over test cases, extenguish `src_old`, `include_old` and `test_old`
+1. Port over test cases, extinguish `src_old`, `include_old` and `test_old`
     (previous attempt under naive architecture assumptions).
 
 1. Sanitizers for debug/testing builds
@@ -278,8 +386,9 @@ NOTE: rule ordering is important
   - <https://patchwork.ozlabs.org/cover/867937/>
   - <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
 
-## Consider
+## other useful projects
 
-1. Merging with <https://github.com/netsniff-ng/netsniff-ng>.
-1. An alternate implementation that builds and loads eBPF filters
-    instead of processing packets in userspace.
+1. <https://github.com/netsniff-ng/netsniff-ng>.
+1. <https://github.com/newtools/ebpf>
+1. <https://github.com/openvswitch/ovs>
+1. <https://github.com/p4lang/PI>
