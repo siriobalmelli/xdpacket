@@ -109,7 +109,7 @@ Each of these mappings must then contain a list of one or more of the following
 
 These are described in detail below:
 
-### iface
+### Iface
 
 xdpacket sees no packets by default; each desired interface must be declared
 as a specific node.
@@ -123,7 +123,7 @@ xdpk:
   - iface: eth0  # open a socket for I/O on 'eth0'
 ```
 
-#### NOTES
+#### Iface Notes
 
 1. xdpacket uses promiscuous sockets - all packets on the network are received,
     regardless of protocol or routing.
@@ -152,7 +152,7 @@ xdpk:
     nft insert rule filter input iif eth9 drop
     ```
 
-### field
+### Field
 
 A `field` is used to describe a set of bytes in a packet,
 both when reading and writing, and give that description an arbitrary name.
@@ -209,7 +209,7 @@ For example, the "mac source" field of a packet with an 802.11q VLAN tag
 is at a different offset in the header; xdpacket does nothing to account for
 this, it matches and writes precisely where it is told to.
 
-### field-value tuple (fval)
+### Field-Value Tuple (fval)
 
 Data to be matched or written is described using *field-value* tuples:
 
@@ -231,7 +231,7 @@ examples:
 - http: "HTTP/1.1 200 OK"                         # string
 ```
 
-#### NOTES
+#### Fval Notes
 
 1. `value` is parsed depending on its content (see above examples);
     e.g. `192.168.0.1` is parsed as an IPv4 address, not a string.
@@ -243,7 +243,7 @@ examples:
     referred to as *fvals* elsewhere, including the sources
     (see [fval.h](include/fval.h)).
 
-### rule
+### Rule
 
 A `rule` uses lists of field-value tuples to describe a series of *matches*
 to test on packets, and what to do with packets that match *all* of these
@@ -257,7 +257,7 @@ to test on packets, and what to do with packets that match *all* of these
 | `copy`  | list   | fields to copy from state into packet | []             |
 | `write` | list   | fval literals to write to packet      | []             |
 
-Here is an example rule:
+example rule:
 
 ```yaml
 # match any packet, reverse source and destination addresses, set ttl to 1
@@ -295,7 +295,7 @@ A rule is executed in the following sequence:
     Example:
 
     ```yaml
-    # only packets that match both
+    # only packets that match both fields will be processed
     match:
       - ip src: 192.168.1.1
       - mac src: aa:bb:cc:dd:ee:ff
@@ -303,23 +303,109 @@ A rule is executed in the following sequence:
 
 1. `store`:
     For each fval in the `store` sequence: store the contents of `field` into
-    the global state buffer `value`.
+    the global state buffer named `value`.
+
+    Example:
+
+    ```yaml
+    store:
+      # store the contents of 'ip dst' field into global 'idst' state variable
+      - ip dst: idst
+    ```
 
 1. `copy`:
+    For each fval in the `copy` sequence: copy the contents of
+    the global state buffer named by `value` into `field` bytes of the packet.
+
+    Example:
+
+    ```yaml
+    # use state variables to swap ip source and destination
+    store:
+      - ip src: isrc
+      - ip dst: idst
+    copy:
+      - ip src: idst
+      - ip dst: isrc
+    ```
+
+    State buffers are *global*, meaning they can be accessed by any rule.
+    - Multiple rules can store to or copy from the same state buffer
+    - Copies will see the latest store only
+    - Stores and copies are atomic (a copy will not see a half-formed store)
+    - Copies from a buffer that has not had a store will see zeroes
 
 1. `write`:
+    For each fval in the `write` sequence: write the literal `value` to `field`
+    bytes of the packet.
 
-#### NOTES
+    Example:
 
-1. *TODO*: global state variables
+    ```yaml
+    # set TTL to 1
+    write:
+      - ip ttl: 1
+    ```
 
-### process
+#### Rule Notes
 
-*TODO*: process
+1. All rule elements are executed in sequence: there is no error if a later
+    instruction overwrites some portion of the packet that was written
+    to by an earlier instruction.
+    For example, this is legal:
 
-#### NOTES
+    ```yaml
+    # copy the entire IP header (stored e.g. by a previous rule)
+    copy:
+      - ip header: iphdr
+    # clobber the TTL field of the header
+    write:
+      - ip ttl: 1
+    ```
 
-1. *TODO*: rule ordering is important
+### Process
+
+A `process` applies rules to packets incoming on an interface,
+specifies the order in which rules are applied,
+and specifies the output interface for packets which match and successfully
+execute each rule.
+
+| key       | value  | description                    | default        |
+| -------   | ------ | ------------------------------ | -------------- |
+| `process` | iface  | ID of a valid `iface`          | N/A: mandatory |
+| `rules`   | list   | sequence of rule-output tuples | []             |
+
+A `rule-output` tuple (`rout`):
+
+| element  | type   | description           |
+| -------  | ------ | --------------------- |
+| `rule`   | string | ID of a valid `rule`  |
+| `output` | string | ID of a valid `iface` |
+
+example process:
+
+```yaml
+# 1. Process all packets incoming on 'enp0s3'.
+# 2a.Those packets which match and successfully execute 'rule a'
+#    are routed out of 'enp0s3'.
+# 2b.Those packets which match and successfully execute 'rule b'
+#    are routed out of 'enp0s8'.
+# 3. Packets not matching any rules are discarded.
+xdpk:
+  - process: enp0s3
+    rules:
+      - rule a: enp0s3
+      - rule b: enp0s8
+```
+
+#### Process Notes
+
+1. Rules are processed in the sequence given:
+    - If a packet does not match a rule, the next rule is matched.
+    - Once a packet matches a rule, that rule is executed and the packet
+      is then discarded.
+    - If a packet matches no rules, it is discarded.
+
 1. When processing a `rules` sequence:
     - A rule which fails to match results in the next rule being checked.
     - A rule which fails to execute (`store`, `copy` and `write` stages)
@@ -339,7 +425,6 @@ A rule is executed in the following sequence:
     errors: 0
     ...
     ```
-
 
 ### CLI usage and abbreviation
 
