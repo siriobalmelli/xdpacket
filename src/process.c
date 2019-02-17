@@ -96,15 +96,22 @@ die:
 
 
 /*	process_exec()
+ * Packet matching/handling hot-path.
  */
-void process_exec(void *context, void *pkt, size_t len)
+void __attribute__((hot)) process_exec(void *context, void *pkt, size_t len)
 {
 	Pvoid_t rout_set_JQ = context;
 	JL_LOOP(&rout_set_JQ,
 		struct rout_set *rst = val;
-		if (rout_set_match(rst, pkt, len) && rout_set_exec(rst, pkt, len)) {
-			if (!(iface_output(rst->if_out, pkt, len)))
-				rst->count_out++;
+		/* Matching packets which fail rule execution should be discarded
+		 * rather than be processed by later rules in an incoherent
+		 * (half-mangled) state.
+		 */
+		if (rout_set_match(rst, pkt, len)) {
+			if (rout_set_exec(rst, pkt, len)) {
+				if (!(iface_output(rst->if_out, pkt, len)))
+					rst->count_out++;
+			}
 			break;
 		}
 	);
