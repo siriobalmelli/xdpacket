@@ -77,6 +77,7 @@ deps = [nonlibc_dep, Judy_dep, yaml_dep]
 inc = include_directories('include')
 subdir('src')
 subdir('test')
+subdir('man')
 #inc_old = include_directories('include_old')
 #subdir('src_old')
 #subdir('test_old')

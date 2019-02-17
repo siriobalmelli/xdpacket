@@ -43,6 +43,7 @@ nixpkgs.stdenv.mkDerivation rec {
   buildInputs = if ! lib.inNixShell then inputs else inputs ++ [
     nixpkgs.cscope
     nixpkgs.gdb
+    nixpkgs.man
     nixpkgs.pahole
     nixpkgs.valgrind
     nixpkgs.which
