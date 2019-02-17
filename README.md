@@ -157,12 +157,12 @@ xdpk:
 A `field` is used to describe a set of bytes in a packet,
 both when reading and writing, and give that description an arbitrary name.
 
-| key     | value  | description                    | default               |
-| ------- | ------ | ------------------------------ | --------------------  |
-| `field` | string | user-supplied unique string ID | N/A: must be supplied |
-| `offt`  | int    | offset in Ethernet Frame       | `0`                   |
-| `len`   | uint   | length in bytes                | `0`                   |
-| `mask`  | uchar  | mask applied to trailing byte  | `0xff`                |
+| key     | value  | description                    | default        |
+| ------- | ------ | ------------------------------ | -------------- |
+| `field` | string | user-supplied unique string ID | N/A: mandatory |
+| `offt`  | int    | offset in Ethernet Frame       | `0`            |
+| `len`   | uint   | length in bytes                | `0`            |
+| `mask`  | uchar  | mask applied to trailing byte  | `0xff`         |
 
 - a field will not match if `offt` is higher than the size of the packet
 - negative `offt` means offset from end of packet
@@ -249,13 +249,13 @@ A `rule` uses lists of field-value tuples to describe a series of *matches*
 to test on packets, and what to do with packets that match *all* of these
 (AND relationship).
 
-| key     | value  | description                    | default               |
-| ------- | ------ | ------------------------------ | --------------------  |
-| `rule`  | string | user-supplied unique string ID | N/A: must be supplied |
-| `match` | list   | TODO                           | []                    |
-| `store` | list   | TODO                           | []                    |
-| `copy`  | list   | TODO                           | []                    |
-| `write` | list   | TODO                           | []                    |
+| key     | value  | description                           | default        |
+| ------- | ------ | ------------------------------------- | -------------- |
+| `rule`  | string | user-supplied unique string ID        | N/A: mandatory |
+| `match` | list   | fval literals to match in packet      | []             |
+| `store` | list   | fields to store into global state     | []             |
+| `copy`  | list   | fields to copy from state into packet | []             |
+| `write` | list   | fval literals to write to packet      | []             |
 
 Here is an example rule:
 
@@ -281,7 +281,33 @@ xdpk:
 
 A rule is executed in the following sequence:
 
-*TODO*: sequence
+1. `match`:
+    Packet contents must match all fvals given in the `match` sequence.
+
+    Packets that don't match fail the rule and are not processed any further.
+
+    The implementation:
+    - All fields of the fvals are hashed in the packet,
+      using a [64-bit fnv1a hash](https://github.com/siriobalmelli/nonlibc/blob/master/include/fnv.h).
+    - The resulting hash is then checked against the pre-calculated hash
+      of the values given in the fvals.
+
+    Example:
+
+    ```yaml
+    # only packets that match both
+    match:
+      - ip src: 192.168.1.1
+      - mac src: aa:bb:cc:dd:ee:ff
+    ```
+
+1. `store`:
+    For each fval in the `store` sequence: store the contents of `field` into
+    the global state buffer `value`.
+
+1. `copy`:
+
+1. `write`:
 
 #### NOTES
 
@@ -294,6 +320,26 @@ A rule is executed in the following sequence:
 #### NOTES
 
 1. *TODO*: rule ordering is important
+1. When processing a `rules` sequence:
+    - A rule which fails to match results in the next rule being checked.
+    - A rule which fails to execute (`store`, `copy` and `write` stages)
+      results in the packet being discarded.
+
+    This is evident in the difference between `matches` and `writes` when
+    printing process status:
+
+    ```yaml
+    ---
+    print:
+    - process: enp0s3
+      nodes:
+      - reflect: enp0s3
+        matches: 2036
+        writes: 1773
+    errors: 0
+    ...
+    ```
+
 
 ### CLI usage and abbreviation
 

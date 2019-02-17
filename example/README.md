@@ -5,4 +5,11 @@ order: 10
 
 # Examples
 
-[This examples directory](./) holds `.yaml` files showing usage for `xdpacket`.
+The [examples](./) dir holds `.yaml` files showing usage cases for `xdpacket`:
+
+- [checksums.yaml](./checksums.yaml)
+- [mdns.yaml](./mdns.yaml)
+- [mirror.yaml](./mirror.yaml)
+- [README.md](./README.md)
+- [reflection.yaml](./reflection.yaml)
+- [strings.yaml](./strings.yaml)
