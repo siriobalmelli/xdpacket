@@ -165,8 +165,6 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. packaging
 
-1. Documentation and man pages
-
 1. checksums validated in all cases (IPv6)
 
 1. REPL reworked for CLI style usability
@@ -177,7 +175,7 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. Refine printing:
     - implement a "print everything unless specified" model
-    - implement regex matching of names
+    - implement regex matching of print names
 
 1. Port over test cases, extinguish `src_old`, `include_old` and `test_old`
     (previous attempt under naive architecture assumptions).
