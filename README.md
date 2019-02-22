@@ -182,6 +182,9 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. Sanitizers for debug/testing builds
 
+1. Produce a canonical AppArmor profile (use `audit` on a full run)
+    and add to repo.
+
 1. Multithreading:
     - fence API/CLI parser instances from each other with a mutex.
     - modify `process` installation into `iface`, and consumption thereof,
