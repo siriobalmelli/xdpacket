@@ -3,71 +3,64 @@
 set -e
 sudo echo "thanks for admin privileges"
 
-# Install dependencies
 
-# Run from $HOME directory
-pushd ~
+#	get_repo()
+# clone (if necessary) or update a repo
+#	$1	repo url
+#	$2	install steps (quoted)
+get_repo()
+{
+	pushd ~
 
+	# https://github.com/siriobalmelli/libjudy.git -> libjudy
+	NAME=${1##*/}; NAME=${NAME%%.*}
+	if [ ! -d $NAME ]; then
+		git clone $1
+		cd $NAME
+	else
+		cd $NAME
+		git fetch
+		git reset --hard origin/master
+	fi
+
+	# execute whatever install steps asked for
+	bash -c "$2"
+	popd
+}
+
+
+# platform dependencies
+DEPS=( \
+	autoconf \
+	build-essential \
+	libtool \
+	liburcu-dev \
+	libyaml-dev \
+	ninja-build \
+	pkg-config \
+	python3-pip \
+)
 sudo apt-get update
-
-sudo apt-get install -y libyaml-dev
-sudo apt-get install -y liburcu-dev
-
-# Install autotools for libjudy
-sudo apt-get install -y autoconf
-sudo apt-get install -y libtool
-sudo apt-get install -y build-essential
-
-if [ -d libjudy ]; then
-	rm -rf libjudy
-fi
-git clone https://github.com/siriobalmelli/libjudy.git
-
-pushd libjudy
-./configure
-make
-make check
-sudo make install
-
-popd # libjudy
-
-# Make sure meson is installed
-
-if [ -d nonlibc ]; then
-	rm -rf nonlibc
-fi
-
-sudo apt-get install -y pkg-config
-sudo apt-get install -y python3-pip
+sudo apt-get install -y ${DEPS[@]}
 sudo pip3 install meson
-sudo apt-get install -y ninja-build
 
-git clone https://github.com/siriobalmelli/nonlibc.git
 
-pushd nonlibc
+# dependencies from source
+get_repo https://github.com/siriobalmelli/libjudy.git \
+	"./configure \
+	&& make \
+	&& make check \
+	&& sudo make install"
 
-meson --buildtype=release build_release
-pushd build_release
+get_repo https://github.com/siriobalmelli/nonlibc.git \
+	"meson --buildtype=release build_release \
+	&& cd build_release \
+	&& ninja \
+	&& sudo ninja install"
 
-ninja
-sudo ninja install
-
-popd # build_release
-popd # nonlibc
-
-if [ ! -d xdpacket ]; then
-    git clone https://github.com/siriobalmelli/xdpacket.git
-fi
-
-pushd xdpacket
-
-meson --buildtype=release build_release
-pushd build_release
-
-# This step should fail with build errors
-ninja
-sudo ninja install
-
-popd # build_release
-popd # xdpacket
-popd # $HOME dir
+# our package
+get_repo https://github.com/siriobalmelli/xdpacket.git \
+	"meson --buildtype=release build_release \
+	&& cd build_release \
+	&& ninja \
+	&& sudo ninja install"
