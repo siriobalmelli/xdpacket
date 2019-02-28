@@ -58,9 +58,10 @@ get_repo https://github.com/siriobalmelli/nonlibc.git \
 	&& ninja \
 	&& sudo ninja install"
 
+
 # our package
-get_repo https://github.com/siriobalmelli/xdpacket.git \
-	"meson --buildtype=release build_release \
-	&& cd build_release \
-	&& ninja \
-	&& sudo ninja install"
+# assume we are in xdpacket toplevel dir already
+meson --buildtype=release build_release
+cd build_release
+ninja
+sudo ninja install
