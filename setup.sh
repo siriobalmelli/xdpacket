@@ -55,11 +55,9 @@ sudo ninja install
 popd # build_release
 popd # nonlibc
 
-if [ -d xdpacket ]; then
-	rm -rf xdpacket
+if [ ! -d xdpacket ]; then
+    git clone https://github.com/siriobalmelli/xdpacket.git
 fi
-
-git clone https://github.com/siriobalmelli/xdpacket.git
 
 pushd xdpacket
 
@@ -72,3 +70,4 @@ sudo ninja install
 
 popd # build_release
 popd # xdpacket
+popd # $HOME dir
