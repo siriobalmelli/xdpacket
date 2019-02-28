@@ -1,4 +1,7 @@
 #!/bin/bash
+#	ubuntu.sh
+# Distro build procedure for ubuntu hosts.
+# (c) 2018 Sirio Balmelli and Anthony Soenen
 
 set -e
 sudo echo "thanks for admin privileges"
@@ -61,7 +64,9 @@ get_repo https://github.com/siriobalmelli/nonlibc.git \
 
 # our package
 # assume we are in xdpacket toplevel dir already
+rm -rf build_release
 meson --buildtype=release build_release
-cd build_release
+pushd build_release
 ninja
 sudo ninja install
+popd
