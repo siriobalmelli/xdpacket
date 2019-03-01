@@ -127,12 +127,12 @@ int main(int argc, char **argv)
 {
 	int err_cnt = 0;
 	struct parse *ps = NULL;
-    char *ip = "localhost";
+	char *ip = "localhost";
 
 	{
 		int opt;
 		static struct option long_options[] = {
-			{ "ip",	required_argument,	0,	'l'},
+			{ "ip",		required_argument,	0,	'l'},
 			{ "help",	no_argument,		0,	'h'},
 			{0, 0, 0, 0}
 		};
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
 			switch(opt) {
 			case 'i':
 				NB_die_if(!optarg, "optarg not provided");
-                ip = optarg;
+				ip = optarg;
 				break;
 			case 'h':
 				fprintf(stderr, usage, argv[0]);
@@ -166,9 +166,9 @@ int main(int argc, char **argv)
 		eptk_register(tk, ps->fdin, EPOLLIN, parse_callback, ps, parse_free)
 		, "fd_in %d", fileno(stdin));
 
-    NB_die_if(
-        netsock(tk, ip)
-        , "");
+	NB_die_if(
+		netsock(tk, ip)
+	, "");
 
 	/* epoll loop */
 	int res;
