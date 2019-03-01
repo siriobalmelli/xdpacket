@@ -6,6 +6,7 @@
 #include <parse2.h>
 #include <ndebug.h>
 #include <process.h>
+#include <getopt.h>
 
 /* TCP socket
  */
@@ -54,7 +55,7 @@ die:
  * Get all localhost sockets and listen() on every one;
  * then add them to 'tk'
  */
-int netsock(struct epoll_track *tk)
+int netsock(struct epoll_track *tk, const char *ip_addr)
 {
 	int err_cnt = 0;
 	char *port = PORT;
@@ -65,7 +66,7 @@ int netsock(struct epoll_track *tk)
 		.ai_socktype = SOCK_STREAM /* TCP */
 	};
 	NB_die_if(
-		getaddrinfo("localhost", port, &hints, &servinfo)
+		getaddrinfo(ip_addr, port, &hints, &servinfo)
 		, "");
 
 	void *addr;
@@ -110,13 +111,46 @@ die:
 }
 
 
+/* Use as a printf prototype.
+ * Expects 'program_name' as a string variable.
+ */
+static const char *usage =
+"usage:\n"
+"Options:\n"
+"\t-i, --ip IP-ADDRESS	: ip address to listen on - localhost by default\n"
+"\t-h, --help		: print usage and exit\n";
+
 /*	main()
  * TODO: reopen an fd to stdin if given a file fd? (aka: don't abandon CLI)
  */
-int main()
+int main(int argc, char **argv)
 {
 	int err_cnt = 0;
 	struct parse *ps = NULL;
+    char *ip = "localhost";
+
+	{
+		int opt;
+		static struct option long_options[] = {
+			{ "ip",	required_argument,	0,	'l'},
+			{ "help",	no_argument,		0,	'h'},
+			{0, 0, 0, 0}
+		};
+		while ((opt = getopt_long(argc, argv, "i:h", long_options, NULL)) != -1) {
+			switch(opt) {
+			case 'i':
+				NB_die_if(!optarg, "optarg not provided");
+                ip = optarg;
+				break;
+			case 'h':
+				fprintf(stderr, usage, argv[0]);
+				goto die;
+				break;
+			default:
+				NB_die(""); /* libc will already complain about invalid option */
+			}
+		}
+	}
 
 	NB_die_if(
 		psg_sigsetup(NULL)
@@ -132,7 +166,9 @@ int main()
 		eptk_register(tk, ps->fdin, EPOLLIN, parse_callback, ps, parse_free)
 		, "fd_in %d", fileno(stdin));
 
-	netsock(tk);
+    NB_die_if(
+        netsock(tk, ip)
+        , "");
 
 	/* epoll loop */
 	int res;
