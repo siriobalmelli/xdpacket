@@ -115,10 +115,11 @@ die:
  * Expects 'program_name' as a string variable.
  */
 static const char *usage =
-"usage:\n"
+"usage: %s [[-i IP_ADDRESS], ...]\n"
 "Options:\n"
-"\t-i, --ip IP-ADDRESS	: ip address to listen on - localhost by default\n"
-"\t-h, --help		: print usage and exit\n";
+"	-i, --ip IP_ADDRESS	: open a CLI socket on IP_ADDRESS:7044\n"
+"	-h, --help		: print usage and exit\n";
+
 
 /*	main()
  * TODO: reopen an fd to stdin if given a file fd? (aka: don't abandon CLI)
@@ -127,30 +128,6 @@ int main(int argc, char **argv)
 {
 	int err_cnt = 0;
 	struct parse *ps = NULL;
-	char *ip = "localhost";
-
-	{
-		int opt;
-		static struct option long_options[] = {
-			{ "ip",		required_argument,	0,	'l'},
-			{ "help",	no_argument,		0,	'h'},
-			{0, 0, 0, 0}
-		};
-		while ((opt = getopt_long(argc, argv, "i:h", long_options, NULL)) != -1) {
-			switch(opt) {
-			case 'i':
-				NB_die_if(!optarg, "optarg not provided");
-				ip = optarg;
-				break;
-			case 'h':
-				fprintf(stderr, usage, argv[0]);
-				goto die;
-				break;
-			default:
-				NB_die(""); /* libc will already complain about invalid option */
-			}
-		}
-	}
 
 	NB_die_if(
 		psg_sigsetup(NULL)
@@ -166,9 +143,32 @@ int main(int argc, char **argv)
 		eptk_register(tk, ps->fdin, EPOLLIN, parse_callback, ps, parse_free)
 		, "fd_in %d", fileno(stdin));
 
-	NB_die_if(
-		netsock(tk, ip)
-	, "");
+	/* Parse options after setting up epoll_track:
+	 * create e.g. several listening sockets.
+	 */
+	{
+		int opt;
+		static struct option long_options[] = {
+			{ "ip",		required_argument,	0,	'i'},
+			{ "help",	no_argument,		0,	'h'},
+			{0, 0, 0, 0}
+		};
+		while ((opt = getopt_long(argc, argv, "i:h", long_options, NULL)) != -1) {
+			switch(opt) {
+			case 'i':
+				NB_die_if(
+					netsock(tk, optarg)
+					, "");
+				break;
+			case 'h':
+				fprintf(stderr, usage, argv[0]);
+				goto die;
+				break;
+			default:
+				NB_die(""); /* libc will already complain about invalid option */
+			}
+		}
+	}
 
 	/* epoll loop */
 	int res;
