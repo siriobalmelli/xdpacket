@@ -75,6 +75,7 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 		ret = calloc(1, sizeof(*ret))
 		), "fail alloc size %zu", sizeof(*ret));
 
+	errno = 0;
 	NB_die_if(!(
 		ret->name = nstralloc(name, MAXLINELEN, NULL)
 		), "string alloc fail");

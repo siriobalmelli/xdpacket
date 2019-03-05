@@ -58,6 +58,7 @@ struct state *state_get(const char *name, size_t len)
 			), "fail alloc sz %zu", sizeof(*ret) + len);
 		ret->len = len;
 
+		errno = 0;
 		NB_die_if(!(
 			ret->name = nstralloc(name, MAXLINELEN, NULL)
 			), "string alloc fail");

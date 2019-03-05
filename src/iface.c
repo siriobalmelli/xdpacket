@@ -83,6 +83,7 @@ struct iface *iface_new(const char *name)
 		ret = calloc(sizeof(struct iface), 1)
 		), "fail alloc size %zu", sizeof(struct iface));
 
+	errno = 0;
 	NB_die_if(!(
 		ret->name = nstralloc(name, MAXLINELEN, NULL)
 		), "string alloc fail");

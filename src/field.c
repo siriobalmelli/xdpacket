@@ -67,6 +67,7 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 		), "fail alloc sz %zu", sizeof(struct field));
 	ret->refcnt = 0;
 	
+	errno = 0;
 	NB_die_if(!(
 		ret->name = nstralloc(name, MAXLINELEN, NULL)
 		), "string alloc fail");
@@ -182,14 +183,17 @@ int field_parse(enum parse_mode	mode,
 			name = valtxt;
 
 		} else if (!strcmp("offt", keyname) || !strcmp("o", keyname)) {
+			errno = 0;
 			offt = strtol(valtxt, NULL, 0);
 			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
 
 		} else if (!strcmp("len", keyname) || !strcmp("l", keyname)) {
+			errno = 0;
 			len = strtol(valtxt, NULL, 0);
 			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
 
 		} else if (!strcmp("mask", keyname) || !strcmp("m", keyname)) {
+			errno = 0;
 			mask = strtol(valtxt, NULL, 0);
 			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
 
