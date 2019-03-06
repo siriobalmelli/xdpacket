@@ -52,7 +52,7 @@ elif get_option('buildtype') == 'release'
     '-DNDEBUG',
     '-march=native',
     '-mtune=native',
-    '-Ofast'
+    '-O3'
     ],
   language : 'c')
 
