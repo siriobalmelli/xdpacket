@@ -7,7 +7,7 @@
 
   # deps
   system ? builtins.currentSystem,
-  nixpkgs ? import <nixpkgs> { inherit system; }
+  nixpkgs ? import ./nixpkgs { inherit system; }
 }:
 
 with nixpkgs;
