@@ -7,7 +7,10 @@
 
   # deps
   system ? builtins.currentSystem,
-  nixpkgs ? import ./nixpkgs { inherit system; }
+  nixpkgs ? import (builtins.fetchGit {
+    url = "https://github.com/siriobalmelli-foss/nixpkgs.git";
+    ref = "sirio";
+    }) {}
 }:
 
 with nixpkgs;
@@ -25,8 +28,14 @@ nixpkgs.stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  libjudy = nixpkgs.libjudy or import ./libjudy {};
-  nonlibc = nixpkgs.nonlibc or import ./nonlibc {};
+  libjudy = nixpkgs.libjudy or import (builtins.fetchGit {
+    url = "https://github.com/siriobalmelli/libjudy.git";
+    ref = "master";
+    }) {};
+  nonlibc = nixpkgs.nonlibc or import (builtins.fetchGit {
+    url = "https://github.com/siriobalmelli/nonlibc.git";
+    ref = "master";
+    }) {};
 
   inputs = [
     nixpkgs.gcc
