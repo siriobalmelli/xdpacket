@@ -13,6 +13,7 @@
 #include <yamlutils.h>
 
 #include <checksums.h>
+#include <refcnt.h>
 
 
 #define XDPK_MAC_PROTO "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
@@ -178,7 +179,7 @@ void iface_release(struct iface *iface)
 {
 	if (!iface)
 		return;
-	iface->refcnt--;
+	refcnt_release(iface);
 }
 
 /*	iface_get()
@@ -188,7 +189,7 @@ struct iface *iface_get(const char *name)
 {
 	struct iface *ret = js_get(&iface_JS, name);
 	if (ret)
-		ret->refcnt++;
+		refcnt_take(ret);
 	return ret;
 }
 

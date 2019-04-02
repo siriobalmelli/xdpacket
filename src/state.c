@@ -5,6 +5,7 @@
 #include <state.h>
 #include <judyutils.h>
 #include <nstring.h>
+#include <refcnt.h>
 
 
 static Pvoid_t state_JS = NULL; /* (char *state_name) -> (struct state *state) */
@@ -30,8 +31,8 @@ void state_release(struct state *state)
 	if (!state)
 		return;
 	
-	/* don't free if there are still references */
-	if (state->refcnt && --state->refcnt)
+	refcnt_release(state);
+	if (state->refcnt)
 		return;
 
 	if (state->name) {
@@ -72,7 +73,7 @@ struct state *state_get(const char *name, size_t len)
 		js_insert(&state_JS, ret->name, ret, true);
 	}
 
-	ret->refcnt++;
+	refcnt_take(ret);
 	return ret;
 die:
 	state_release(ret);

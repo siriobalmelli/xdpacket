@@ -61,7 +61,7 @@ struct iface {
 	/* second cache line: metadata nonessentials */
 	char		*name;
 	char		*ip_prn;
-	size_t		refcnt;
+	uint32_t	refcnt;
 };
 
 

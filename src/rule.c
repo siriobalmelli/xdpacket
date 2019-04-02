@@ -8,6 +8,7 @@
 #include <yamlutils.h>
 #include <fnv.h>
 #include <nstring.h>
+#include <refcnt.h>
 
 
 static Pvoid_t	rule_JS = NULL; /* (char *rule_name) -> (struct rule *rule) */
@@ -101,7 +102,7 @@ void rule_release(struct rule *rule)
 {
 	if (!rule)
 		return;
-	rule->refcnt--;
+	refcnt_release(rule);
 }
 
 /*	rule_get()
@@ -111,7 +112,7 @@ struct rule *rule_get(const char *name)
 {
 	struct rule *ret = js_get(&rule_JS, name);
 	if (ret)
-		ret->refcnt++;
+		refcnt_take(ret);
 	return ret;
 }
 

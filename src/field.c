@@ -2,6 +2,7 @@
 #include <ndebug.h>
 #include <yamlutils.h>
 #include <nstring.h>
+#include <refcnt.h>
 
 
 static Pvoid_t field_JS = NULL; /* (char *field_name) -> (struct field *field) */
@@ -63,9 +64,8 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 #endif
 
 	NB_die_if(!(
-		ret = malloc(sizeof(struct field))
+		ret = calloc(sizeof(struct field), 1)
 		), "fail alloc sz %zu", sizeof(struct field));
-	ret->refcnt = 0;
 	
 	errno = 0;
 	NB_die_if(!(
@@ -102,7 +102,7 @@ void field_release(struct field *field)
 {
 	if (!field)
 		return;
-	field->refcnt--;
+	refcnt_release(field);
 }
 
 /*	field_get()
@@ -112,7 +112,7 @@ struct field *field_get(const char *field_name)
 {
 	struct field *ret = js_get(&field_JS, field_name);
 	if (ret)
-		ret->refcnt++;
+		refcnt_take(ret);
 	return ret;
 }
 
