@@ -10,6 +10,21 @@
 static Pvoid_t	process_JS = NULL; /* (char *in_iface_name) -> (struct process *process) */
 
 
+/*	process_release_refs()
+ * All references that a process takes should be freed here.
+ * This is a separate function because it may, in dire situations,
+ * be called by process_new().
+ */
+static void process_release_refs(Pvoid_t rout_JQ, Pvoid_t rout_set_JQ)
+{
+	int __attribute__((unused)) rc;
+	JL_LOOP(&rout_JQ,
+		rout_free(val);
+	);
+	JLFA(rc, rout_JQ);
+	JLFA(rc, rout_set_JQ);
+}
+
 /*	process_free()
  */
 void process_free(void *arg)
@@ -25,17 +40,13 @@ void process_free(void *arg)
 	NB_wrn_if(pc->in_iface != NULL, "erase process %s", pc->in_iface->name);
 
 	if (pc->in_iface) {
+		/* this will fail safely if we are not the handler ;) */
 		iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ);
 		iface_release(pc->in_iface);
 		js_delete(&process_JS, pc->in_iface->name);
 	}
 
-	JL_LOOP(&pc->rout_JQ,
-		rout_free(val);
-	);
-	int __attribute__((unused)) rc;
-	JLFA(rc, pc->rout_JQ);
-	JLFA(rc, pc->rout_set_JQ);
+	process_release_refs(pc->rout_JQ, pc->rout_set_JQ);
 
 	free(pc);
 }
@@ -52,15 +63,32 @@ void __attribute__((destructor(102))) process_free_all()
 
 /*	process_new()
  * Create a new process.
+ * Takes charge of rout_JQ: caller should _not_ touch it again.
  */
 struct process *process_new(const char *in_iface_name, Pvoid_t rout_JQ)
 {
+	/* Create an object _first_ so that later failures can be passed
+	 * to _free() which will do the right thing (tm).
+	 * The corner case the calloc() failure, where we explicitly
+	 * release references (which is otherwise done by process_free().
+	 */
 	struct process *ret = NULL;
+	if (!(ret = calloc(1, sizeof(*ret)))) {
+		process_release_refs(rout_JQ, NULL);
+		NB_die("fail alloc size %zu", sizeof(*ret));
+	}
+	ret->rout_JQ = rout_JQ;
+	JL_LOOP(&ret->rout_JQ,
+		struct rout *rt = val;
+		jl_enqueue(&ret->rout_set_JQ, rt->set);
+	);
+
 	NB_die_if(!in_iface_name, "process requires in_iface_name");
 
 #ifdef XDPACKET_DISALLOW_CLOBBER
+	/* fail on duplicate _before_ blobbering process state on interface */
 	NB_die_if(js_get(&process_JS, in_iface_name) != NULL,
-		"field '%s' already exists", in_iface_name);
+		"process on '%s' already exists", in_iface_name);
 #else
 	/* no easy way of knowing if dups are identical, kill them */
 	if ((ret = js_get(&process_JS, in_iface_name))) {
@@ -70,18 +98,8 @@ struct process *process_new(const char *in_iface_name, Pvoid_t rout_JQ)
 #endif
 
 	NB_die_if(!(
-		ret = calloc(1, sizeof(*ret))
-		), "fail alloc size %zu", sizeof(*ret));
-
-	NB_die_if(!(
 		ret->in_iface = iface_get(in_iface_name)
 		), "could not get interface '%s'", in_iface_name);
-	ret->rout_JQ = rout_JQ;
-
-	JL_LOOP(&ret->rout_JQ,
-		struct rout *rt = val;
-		jl_enqueue(&ret->rout_set_JQ, rt->set);
-	);
 	NB_die_if(
 		iface_handler_register(ret->in_iface, process_exec, ret->rout_set_JQ)
 		, "");
@@ -131,7 +149,7 @@ int process_parse(enum parse_mode mode,
 	 * All 'long' because we use strtol() to parse.
 	 */
 	const char *name = NULL;
-	Pvoid_t routs_JQ = NULL;
+	Pvoid_t rout_JQ = NULL;
 
 	/* parse mapping */
 	for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
@@ -156,7 +174,7 @@ int process_parse(enum parse_mode mode,
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
 					NB_err_if(
-						jl_enqueue(&routs_JQ, rout_new(keyname, valtxt))
+						jl_enqueue(&rout_JQ, rout_new(keyname, valtxt))
 						, "");
 					);
 
@@ -174,7 +192,7 @@ int process_parse(enum parse_mode mode,
 	case PARSE_ADD:
 	{
 		NB_die_if(!(
-			process = process_new(name, routs_JQ)
+			process = process_new(name, rout_JQ)
 			), "could not create process on interface '%s'", name);
 		NB_die_if(process_emit(process, outdoc, outlist), "");
 		break;

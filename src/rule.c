@@ -13,6 +13,28 @@
 
 static Pvoid_t	rule_JS = NULL; /* (char *rule_name) -> (struct rule *rule) */
 
+/*	rule_release_refs()
+ * All references that a rule takes should be freed here.
+ * This is a separate function because it may, in dire situations,
+ * be called by rule_new().
+ */
+static void rule_release_refs(Pvoid_t writes_JQ,
+				Pvoid_t copies_JQ,
+				Pvoid_t stores_JQ,
+				Pvoid_t matches_JQ)
+{
+	/* free in reverse order, for reference reasons */
+	JL_LOOP(&writes_JQ,	fval_free(val);		);
+	JL_LOOP(&copies_JQ,	fref_free(val);		);
+	JL_LOOP(&stores_JQ,	fref_free(val);		);
+	JL_LOOP(&matches_JQ,	fval_free(val);		);
+
+	int __attribute__((unused)) rc;
+	JLFA(rc, writes_JQ);
+	JLFA(rc, copies_JQ);
+	JLFA(rc, stores_JQ);
+	JLFA(rc, matches_JQ);
+}
 
 /*	rule_free()
  */
@@ -28,16 +50,7 @@ void rule_free(void *arg)
 	js_delete(&rule_JS, rule->name);
 	free(rule->name);
 
-	/* free in reverse order, for reference reasons */
-	JL_LOOP(&rule->writes_JQ,	fval_free(val);		);
-	JL_LOOP(&rule->copies_JQ,	fref_free(val);		);
-	JL_LOOP(&rule->stores_JQ,	fref_free(val);		);
-	JL_LOOP(&rule->matches_JQ,	fval_free(val);		);
-	int __attribute__((unused)) rc;
-	JLFA(rc, rule->writes_JQ);
-	JLFA(rc, rule->copies_JQ);
-	JLFA(rc, rule->stores_JQ);
-	JLFA(rc, rule->matches_JQ);
+	rule_release_refs(rule->writes_JQ, rule->copies_JQ, rule->stores_JQ, rule->matches_JQ);
 
 	free(rule);
 die:
@@ -59,8 +72,27 @@ void __attribute__((destructor(101))) rule_free_all()
 struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 			Pvoid_t copies_JQ, Pvoid_t writes_JQ)
 {
+	/* Create an object _first_ so that later failures can be passed
+	 * to _free() which will do the right thing (tm).
+	 * The corner case the calloc() failure, where we explicitly
+	 * release references (which is otherwise done by rule_free().
+	 */
 	struct rule *ret = NULL;
+	if(!(ret = calloc(1, sizeof(*ret)))) {
+		rule_release_refs(writes_JQ, copies_JQ, stores_JQ, matches_JQ);
+		NB_die("fail alloc size %zu", sizeof(*ret));
+	}
+	ret->matches_JQ = matches_JQ;
+	ret->stores_JQ = stores_JQ;
+	ret->copies_JQ = copies_JQ;
+	ret->writes_JQ = writes_JQ;
+
 	NB_die_if(!name, "no name given for rule");
+	errno = 0;
+	NB_die_if(!(
+		ret->name = nstralloc(name, MAXLINELEN, NULL)
+		), "string alloc fail");
+	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
 
 #ifdef XDPACKET_DISALLOW_CLOBBER
 	NB_die_if(js_get(&rule_JS, name) != NULL,
@@ -71,22 +103,6 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 		rule_free(ret);
 	}
 #endif
-
-	NB_die_if(!(
-		ret = calloc(1, sizeof(*ret))
-		), "fail alloc size %zu", sizeof(*ret));
-
-	errno = 0;
-	NB_die_if(!(
-		ret->name = nstralloc(name, MAXLINELEN, NULL)
-		), "string alloc fail");
-	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
-
-
-	ret->matches_JQ = matches_JQ;
-	ret->stores_JQ = stores_JQ;
-	ret->copies_JQ = copies_JQ;
-	ret->writes_JQ = writes_JQ;
 
 	js_insert(&rule_JS, ret->name, ret, true);
 	return ret;
