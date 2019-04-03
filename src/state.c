@@ -18,7 +18,7 @@ static void __attribute__((destructor)) state_check_exit()
 {
 	JS_LOOP(&state_JS,
 		struct state *state = val;
-		NB_err("state '%s' was not freed/release (memory leak)", state->name);
+		NB_err("state '%s' was not freed/released == leak", state->name);
 	);
 }
 

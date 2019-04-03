@@ -106,6 +106,7 @@ struct process *process_new(const char *in_iface_name, Pvoid_t rout_JQ)
 
 	js_insert(&process_JS, ret->in_iface->name, ret, true);
 
+	NB_inf("%s", ret->in_iface->name);
 	return ret;
 die:
 	process_free(ret);

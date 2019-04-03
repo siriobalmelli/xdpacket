@@ -271,8 +271,7 @@ void fval_free(void *arg)
 	 * - we are compiled with debug flags
 	 * - 'field' and 'val' are non-NULL
 	 */
-	NB_wrn_if(fv->field && fv->val,
-		"erase fval %s: %s", fv->field->name, fv->val);
+	NB_wrn_if(fv->field && fv->val, "%s: %s", fv->field->name, fv->val);
 
 	field_release(fv->field);
 	free(fv->val);
@@ -317,6 +316,7 @@ struct fval *fval_new(const char *field_name, const char *value)
 		fval_set_hash(ret->set, &ret->set_hash)
 		, "");
 
+	NB_inf("%s: %s", ret->field->name, ret->val);
 	return ret;
 die:
 	fval_free(ret);

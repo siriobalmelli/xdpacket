@@ -16,10 +16,13 @@ void field_free(void *arg)
 		return;
 	struct field *fl = arg;
 	NB_wrn("erase field %s", fl->name);
-	NB_die_if(fl->refcnt,
-		"field '%s' free with non-zero refcount. memory leak.", fl->name);
 
-	js_delete(&field_JS, fl->name);
+	/* first refcnt denotes added to field_JS */
+	NB_die_if(fl->refcnt > 1,
+		"field '%s' free with non-zero refcnt == leak", fl->name);
+	if (fl->refcnt == 1)
+		js_delete(&field_JS, fl->name);
+
 	free(fl->name);
 	free(fl);
 die:
@@ -43,15 +46,9 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	struct field *ret = NULL;
 	NB_die_if(!name, "no name given for field");
 
-	/* A '0' mask is irrational.
-	 * If a mask is not provided, assume 0xff.
-	 * Do this _before_ checking for identical duplicates.
-	 */
-	if (!mask)
-		mask = 0xff;
-
 #ifdef XDPACKET_DISALLOW_CLOBBER
-	NB_die_if(js_get(&field_JS, name) != NULL,
+	NB_die_if(
+		js_get(&field_JS, name) != NULL,
 		"field '%s' already exists", name);
 #else
 	/* Return already existing ONLY if identical */
@@ -62,6 +59,13 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 		field_free(ret);
 	}
 #endif
+
+	/* A '0' mask is irrational.
+	 * If a mask is not provided, assume 0xff.
+	 * Do this _before_ checking for identical duplicates.
+	 */
+	if (!mask)
+		mask = 0xff;
 
 	NB_die_if(!(
 		ret = calloc(sizeof(struct field), 1)
@@ -85,11 +89,15 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	ret->set.flags = 0;
 	#pragma GCC diagnostic pop
 
+	/* use refcnt to denote we were added to field_JS */
 	NB_die_if(
 		js_insert(&field_JS, ret->name, ret, true)
 		, "");
+	refcnt_take(ret);
 
+	NB_inf("%s", ret->name);
 	return ret;
+
 die:
 	field_free(ret);
 	return NULL;
@@ -217,7 +225,7 @@ int field_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			field = js_get(&field_JS, name)
 			), "could not get field '%s'", name);
-		NB_die_if(field->refcnt, "field '%s' still in use", name);
+		NB_die_if(field->refcnt > 1, "field '%s' still in use", name);
 		NB_die_if(
 			field_emit(field, outdoc, outlist)
 			, "");

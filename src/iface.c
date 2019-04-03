@@ -35,10 +35,13 @@ void iface_free(void *arg)
 	if (!arg)
 		return;
 	struct iface *iface = arg;
-	NB_die_if(iface->refcnt,
-		"iface '%s' free with non-zero refcount. memory leak.", iface->name);
 
-	js_delete(&iface_JS, iface->name);
+	/* first refcnt denotes a rule was logged in iface_JS */
+	NB_die_if(iface->refcnt > 1,
+		"iface '%s' free with non-zero refcnt == leak.", iface->name);
+	if (iface->refcnt == 1)
+		js_delete(&iface_JS, iface->name);
+
 	NB_wrn("close "XDPK_SOCK_PRN(iface));
 
 	if (iface->fd != -1)
@@ -161,10 +164,13 @@ struct iface *iface_new(const char *name)
 		bind(ret->fd, (struct sockaddr *)&saddr, sizeof(saddr))
 		, "");
 
+	/* First refcount denotes _free() must remove us from array. */
 	NB_die_if(
 		js_insert(&iface_JS, ret->name, ret, true)
 		, "");
-	NB_inf("add "XDPK_SOCK_PRN(ret));
+	refcnt_take(ret);
+
+	NB_inf(XDPK_SOCK_PRN(ret));
 
 	return ret;
 die:
@@ -326,7 +332,7 @@ int iface_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			iface = js_get(&iface_JS, name)
 			), "could not get iface '%s'", name);
-		NB_die_if(iface->refcnt, "iface '%s' still in use", name);
+		NB_die_if(iface->refcnt > 1, "iface '%s' still in use", name);
 		NB_die_if(
 			iface_emit(iface, outdoc, outlist)
 			, "");

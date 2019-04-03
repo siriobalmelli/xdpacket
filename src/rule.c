@@ -44,14 +44,20 @@ void rule_free(void *arg)
 		return;
 	struct rule *rule = arg;
 	NB_wrn("erase rule %s", rule->name);
-	NB_die_if(rule->refcnt,
-		"rule '%s' free with non-zero refcount. memory leak.", rule->name);
 
-	js_delete(&rule_JS, rule->name);
-	free(rule->name);
+	/* Refcounts: we expect exactly 1.
+	 * The first/initial refcount denotes a rule has been added to rule_JS.
+	 * This is to avoid a 'rule_new() -(dup)-(error)-> rule_free()'
+	 * sequence from removing the _existing_ rule from rule_JS.
+	 */
+	NB_die_if(rule->refcnt > 1,
+		"rule '%s' free with non-zero recfnt == leak", rule->name);
+	if (rule->refcnt == 1)
+		js_delete(&rule_JS, rule->name);
 
 	rule_release_refs(rule->writes_JQ, rule->copies_JQ, rule->stores_JQ, rule->matches_JQ);
 
+	free(rule->name);
 	free(rule);
 die:
 	return;
@@ -69,7 +75,8 @@ void __attribute__((destructor(101))) rule_free_all()
 /*	rule_new()
  * Create a new rule.
  */
-struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
+struct rule *rule_new(const char *name,
+			Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 			Pvoid_t copies_JQ, Pvoid_t writes_JQ)
 {
 	/* Create an object _first_ so that later failures can be passed
@@ -95,17 +102,21 @@ struct rule *rule_new(const char *name, Pvoid_t matches_JQ, Pvoid_t stores_JQ,
 	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->name);
 
 #ifdef XDPACKET_DISALLOW_CLOBBER
-	NB_die_if(js_get(&rule_JS, name) != NULL,
-		"rule '%s' already exists", name);
+	NB_die_if(js_insert(&rule_JS, ret->name, ret, false)
+		, "rule '%s' already exists", name);
 #else
 	if ((ret = js_get(&rule_JS, name))) {
 		NB_wrn("rule '%s' already exists: deleting", name);
 		rule_free(ret);
+		js_insert(&rule_JS, ret->name, ret, true);
 	}
 #endif
 
-	js_insert(&rule_JS, ret->name, ret, true);
+	/* Take refcnt to signal to _free() that it can remove from rule_JS */
+	refcnt_take(ret);
+	NB_inf("%s", ret->name);
 	return ret;
+
 die:
 	rule_free(ret);
 	return NULL;
@@ -216,7 +227,7 @@ int rule_parse (enum parse_mode mode,
 		NB_die_if(!(
 			rule = js_get(&rule_JS, name)
 			), "could not get rule '%s'", name);
-		NB_die_if(rule->refcnt, "rule '%s' still in use", name);
+		NB_die_if(rule->refcnt > 1, "rule '%s' still in use", name);
 		NB_die_if(
 			rule_emit(rule, outdoc, outlist)
 			, "");

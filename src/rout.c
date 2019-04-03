@@ -130,8 +130,7 @@ void rout_free(void *arg)
 	 * - we are compiled with debug flags
 	 * - 'rule' and 'output' are non-NULL
 	 */
-	NB_wrn_if(rt->rule && rt->output,
-		"erase rout %s: %s", rt->rule->name, rt->output->name);
+	NB_wrn_if(rt->rule && rt->output, "%s: %s", rt->rule->name, rt->output->name);
 
 	rule_release(rt->rule);
 	iface_release(rt->output);
@@ -160,6 +159,7 @@ struct rout *rout_new(const char *rule_name, const char *out_name)
 		ret->set = rout_set_new(ret->rule, ret->output)
 		), "could not create set for rout");
 
+	NB_inf("%s: %s", ret->rule->name, ret->output->name);
 	return ret;
 die:
 	rout_free(ret);
