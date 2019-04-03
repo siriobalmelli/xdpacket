@@ -17,10 +17,11 @@ void field_free(void *arg)
 	struct field *fl = arg;
 	NB_wrn("erase field %s", fl->name);
 
-	/* first refcnt denotes added to field_JS */
-	NB_die_if(fl->refcnt > 1,
+	NB_die_if(fl->refcnt,
 		"field '%s' free with non-zero refcnt == leak", fl->name);
-	if (fl->refcnt == 1)
+
+	/* _only_ remove from field_JS if _we_ are there: we may be a dup */
+	if (js_get(&field_JS, fl->name) == fl)
 		js_delete(&field_JS, fl->name);
 
 	free(fl->name);
@@ -89,12 +90,9 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 	ret->set.flags = 0;
 	#pragma GCC diagnostic pop
 
-	/* use refcnt to denote we were added to field_JS */
 	NB_die_if(
 		js_insert(&field_JS, ret->name, ret, true)
 		, "");
-	refcnt_take(ret);
-
 	NB_inf("%s", ret->name);
 	return ret;
 
@@ -225,7 +223,7 @@ int field_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			field = js_get(&field_JS, name)
 			), "could not get field '%s'", name);
-		NB_die_if(field->refcnt > 1, "field '%s' still in use", name);
+		NB_die_if(field->refcnt, "field '%s' still in use", name);
 		NB_die_if(
 			field_emit(field, outdoc, outlist)
 			, "");

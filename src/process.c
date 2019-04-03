@@ -43,7 +43,10 @@ void process_free(void *arg)
 		/* this will fail safely if we are not the handler ;) */
 		iface_handler_clear(pc->in_iface, process_exec, pc->rout_set_JQ);
 		iface_release(pc->in_iface);
-		js_delete(&process_JS, pc->in_iface->name);
+
+		/* we may be a dup: only remove from process_JS if it points to us */
+		if (js_get(&process_JS, pc->in_iface->name) == pc)
+			js_delete(&process_JS, pc->in_iface->name);
 	}
 
 	process_release_refs(pc->rout_JQ, pc->rout_set_JQ);
