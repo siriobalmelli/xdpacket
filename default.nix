@@ -15,7 +15,7 @@
 
 with nixpkgs;
 
-nixpkgs.stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   name = "xdpacket";
   version = "0.3.0";
   outputs = [ "out" ];
@@ -60,9 +60,10 @@ nixpkgs.stdenv.mkDerivation rec {
   ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
-  src = if lib.inNixShell then null else ./.;
+  src = if nixpkgs.lib.inNixShell then null
+    else nixpkgs.nix-gitignore.gitignoreSource [] ./.;
 
-  # Override the setupHook in the meson nix derviation,
+  # Override the setupHook in the meson nix derivation,
   # so that meson doesn't automatically get invoked from there.
   meson = nixpkgs.pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
 
