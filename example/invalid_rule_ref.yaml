@@ -1,0 +1,24 @@
+# segfault xdpacket by referring to a field that has been deleted
+---
+xdpk:
+  - field: ip dst
+    offt: 30
+    len: 4
+...
+---
+xdpk:
+  - rule: CC_chrome_unicast_udp_8616_ffb7
+    copy:
+      - ip dst: ipsrc_ffb7
+...
+---
+del:
+  - rule: CC_chrome_unicast_udp_8616_ffb7
+  - field: ip dst
+...
+---
+xdpk:
+  - rule: CC_chrome_unicast_udp_8616_ffb7
+    copy:
+      - ip dst: ipsrc_ffb7
+...
