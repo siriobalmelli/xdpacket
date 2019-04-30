@@ -158,11 +158,12 @@ it is also available on the command line with `man 1 xdpacket`.
     and/or forwarded by xdpacket will be dropped by the receiving RAW socket.
 
     The fix for this will entail:
-    -   ascertaining whether the kernel will *always* reassemble fragmented
-        IP packets on the way in (or whether we need to conditionally handle
-        fragmentation).
-    -   reading the RFC and generating fragmented packets when required
-        (a better understanding of PMTU will be necessary here).
+    - ascertaining whether the kernel will *always* reassemble fragmented
+      IP packets on the way in (or whether we need to conditionally handle
+      fragmentation).
+
+    - reading the RFC and generating fragmented packets when required
+      (a better understanding of PMTU will be necessary here).
 
 ## TODO
 
@@ -171,14 +172,14 @@ it is also available on the command line with `man 1 xdpacket`.
 1. checksums validated in all cases (IPv6)
 
 1. REPL reworked for CLI style usability
-    -   backspace
-    -   arrow keys
-    -   tab completion
-    -   is there a library for this
+    - backspace
+    - arrow keys
+    - tab completion
+    - is there a library for this
 
 1. Refine printing:
-    -   implement a "print everything unless specified" model
-    -   implement regex matching of print names
+    - implement a "print everything unless specified" model
+    - implement regex matching of print names
 
 1. Port over test cases, extinguish `src_old`, `include_old` and `test_old`
     (previous attempt under naive architecture assumptions).
@@ -190,16 +191,20 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. Multithreading:
     -   fence API/CLI parser instances from each other with a mutex.
+
     -   modify `process` installation into `iface`, and consumption thereof,
         to be an atomic pointer swap.
+
     -   protect contentious state operations (`fref`) with a mutex
+
     -   modify `iface` to be a thread spawn, carefully audit init()/free() paths
+
     -   round-robin pin each new `iface` to one of the available CPUset;
         pin the socket to this interface as well with an `ioctl`.
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
-    -   <https://patchwork.ozlabs.org/cover/867937/>
-    -   <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
+    - <https://patchwork.ozlabs.org/cover/867937/>
+    - <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
 
 ## other useful projects
 
