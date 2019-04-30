@@ -13,7 +13,7 @@ the eXtremely Direct Packet handler (in userland)
 ## Quick Start
 
 1. Build or install xdpacket:
-    - from source with [meson](https://mesonbuild.com)
+    -   from source with [meson](https://mesonbuild.com):
         ```bash
         git clone https://github.com/siriobalmelli/xdpacket.git
         cd xdpacket
@@ -23,23 +23,23 @@ the eXtremely Direct Packet handler (in userland)
         sudo ninja install
         ```
 
-    - with [nix](https://nixos.org/nix/):
+    -   with [nix](https://nixos.org/nix/):
         TODO: confirm merged into nixpkgs Master
         ```bash
         nix-env --install xdpacket
         ```
 
-    - on Debian/Ubuntu:
+    -   on Debian/Ubuntu:
         TODO: ppa info
         ```bash
         sudo apt-get install xdpacket
         ```
 
-    - on Fedora/RedHat:
-        TODO
+    -   on Fedora/RedHat:
+        *TODO*
 
 1. Run `sudo xdpacket` and you are in a YAML REPL which takes the
-[xdpacket grammar](TODO: link).
+    [xdpacket grammar](TODO: link).
 
 1. Input a very basic set of directives (see the [examples dir](../example/README.md)),
     for example:
@@ -100,8 +100,11 @@ xdpacket's purposes are to:
 
 -   Provide a terse, clean grammar with which to represent
     arbitrary matching and manipulation of packets.
+
 -   Expose a full-featured API to allow control by higher-level services.
+
 -   Expose a CLI interface for manual control and rule testing/debugging.
+
 -   Be performant and lean (hot path with *no* mallocs, cache-optimized
     data structures and sane algorithms).
 
@@ -114,19 +117,19 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. The build system is [Meson](https://mesonbuild.com/index.html).
     If you don't know Meson yet don't be discouraged, it's the easiest of the lot.
-    - Start by scanning through the toplevel file [meson.build]()
-    - Read [bootstrap.sh]() to see how Meson is used
+    -   Start by scanning through the toplevel file [meson.build]()
+    -   Read [bootstrap.sh]() to see how Meson is used
 
 1. Functionality is broken down into "subsystems". A subsystem has:
-    - a header in [include]() e.g. [include/field.h]()
-    - a src file in [src]() e.g. [src/field.c]()
-    - a test file in [test]() e.g. [test/field_test.c]()
-    - all exported/visible (i.e. present in the header file) symbols
-      beginning with the subsystem name e.g. `field_new()`
+    -   a header in [include]() e.g. [include/field.h]()
+    -   a src file in [src]() e.g. [src/field.c]()
+    -   a test file in [test]() e.g. [test/field_test.c]()
+    -   all exported/visible (i.e. present in the header file) symbols
+        beginning with the subsystem name e.g. `field_new()`
 
 1. This codebase is targeted at Linux on all architectures:
-    - use linux-specific extensions as desired
-    - avoid architecture-specific code without a generic fallback
+    -   use linux-specific extensions as desired
+    -   avoid architecture-specific code without a generic fallback
 
 1. Use of the word *set*:
     In this codebase the word *set* is used to describe structures which have
@@ -155,11 +158,11 @@ it is also available on the command line with `man 1 xdpacket`.
     and/or forwarded by xdpacket will be dropped by the receiving RAW socket.
 
     The fix for this will entail:
-    - ascertaining whether the kernel will *always* reassemble fragmented
-      IP packets on the way in (or whether we need to conditionally handle
-      fragmentation).
-    - reading the RFC and generating fragmented packets when required
-      (a better understanding of PMTU will be necessary here).
+    -   ascertaining whether the kernel will *always* reassemble fragmented
+        IP packets on the way in (or whether we need to conditionally handle
+        fragmentation).
+    -   reading the RFC and generating fragmented packets when required
+        (a better understanding of PMTU will be necessary here).
 
 ## TODO
 
@@ -168,14 +171,14 @@ it is also available on the command line with `man 1 xdpacket`.
 1. checksums validated in all cases (IPv6)
 
 1. REPL reworked for CLI style usability
-    - backspace
-    - arrow keys
-    - tab completion
-    - is there a library for this
+    -   backspace
+    -   arrow keys
+    -   tab completion
+    -   is there a library for this
 
 1. Refine printing:
-    - implement a "print everything unless specified" model
-    - implement regex matching of print names
+    -   implement a "print everything unless specified" model
+    -   implement regex matching of print names
 
 1. Port over test cases, extinguish `src_old`, `include_old` and `test_old`
     (previous attempt under naive architecture assumptions).
@@ -186,17 +189,17 @@ it is also available on the command line with `man 1 xdpacket`.
     and add to repo.
 
 1. Multithreading:
-    - fence API/CLI parser instances from each other with a mutex.
-    - modify `process` installation into `iface`, and consumption thereof,
-      to be an atomic pointer swap.
-    - protect contentious state operations (`fref`) with a mutex
-    - modify `iface` to be a thread spawn, carefully audit init()/free() paths
-    - round-robin pin each new `iface` to one of the available CPUset;
-      pin the socket to this interface as well with an `ioctl`.
+    -   fence API/CLI parser instances from each other with a mutex.
+    -   modify `process` installation into `iface`, and consumption thereof,
+        to be an atomic pointer swap.
+    -   protect contentious state operations (`fref`) with a mutex
+    -   modify `iface` to be a thread spawn, carefully audit init()/free() paths
+    -   round-robin pin each new `iface` to one of the available CPUset;
+        pin the socket to this interface as well with an `ioctl`.
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
-  - <https://patchwork.ozlabs.org/cover/867937/>
-  - <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
+    -   <https://patchwork.ozlabs.org/cover/867937/>
+    -   <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
 
 ## other useful projects
 
