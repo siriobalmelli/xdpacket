@@ -179,6 +179,9 @@ int rule_parse (enum parse_mode mode,
 						jl_enqueue(&matches_JQ, fval_new(keyname, valtxt))
 						, "");
 					);
+			/* TODO: add "state"
+			 * To match a packet, "keyname" _state_ should have "valtxt" value.
+			 */
 			} else if (!strcmp("store", keyname) || !strcmp("s", keyname)) {
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					NB_err_if(

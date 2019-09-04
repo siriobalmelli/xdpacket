@@ -112,8 +112,7 @@ int		field_emit	(struct field *field,
  * NOTES:
  * - a 0-length packet simply hashes the 'set' itself
  * - a 0-offt and 0-len 'set' will match _all_ packets.
- * - a 0-length packet should with offt X should match all packets where
- *   (len >= X)
+ * - a 0-length packet with offt X should match all packets where (len >= X)
  */
 #define FIELD_PACKET_HASHING							\
 	/* must not error after we start changing 'outhash' */			\

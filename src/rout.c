@@ -87,6 +87,10 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
 	if (hash != set->hash)
 		return false;
 
+	/* TODO: STATE: walk through set of global state matches to perform,
+	 * bail at the first sign that one is missing.
+	 */
+
 	set->count_match++;
 	return true;
 }
@@ -102,6 +106,7 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
  */
 bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 {
+	/* TODO STATE: these would be coalesced, with a test for TYPE */
 	JL_LOOP(&rst->state_JQ,
 		struct fref_set *ref = val;
 		if (fref_set_exec(ref, pkt, plen))

@@ -7,6 +7,8 @@
  * "value" is not user-supplied but is a memory area which:
  * - can be written to from a packet using a "store" (state)
  * - can be read from (and written to a packet) using a "copy" (reference)
+ *
+ * TODO: STATE: coalesce this with fval.h, use _type_ field to distinguish.
  */
 
 #include <field.h>

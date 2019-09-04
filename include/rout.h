@@ -33,11 +33,16 @@
 struct rout_set {
 	struct iface		*if_out;
 
+	/* TODO: STATE: coalesce 'writes_JQ' and 'state_JQ', handle both in rout_set_exec() */
 	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_set *write) */
 	Pvoid_t			state_JQ; /* (uint64_t seq) -> (struct fref_set_(state|ref) *state) */
+	/* TODO: STATE: add 'test_JQ', containing an optional set of "state matches" */
 
 	uint32_t		count_out;
 	uint32_t		count_match;
+	/* TODO: make room for one more match by killing one counter
+	 * and converting 'match_cnt' to uint32_t
+	 */
 
 	uint64_t		hash;
 	size_t			match_cnt;
