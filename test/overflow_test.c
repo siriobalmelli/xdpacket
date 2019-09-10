@@ -51,6 +51,7 @@ int main()
 	struct test stack = { 0 };
 
 	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wpragmas"  /* GCC ignoring own option */
 	#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 	input = (long)INT32_MAX;
 	NB_die_if(__builtin_add_overflow(input, 0, &stack.i32)

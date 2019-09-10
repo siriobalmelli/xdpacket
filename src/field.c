@@ -80,6 +80,7 @@ struct field *field_new	(const char *name, long offt, long len, long mask)
 
 	/* see 'test/overflow_test.c' for a proof that this is kosher */
 	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wpragmas"  /* GCC ignoring own option */
 	#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 	NB_die_if(__builtin_add_overflow(offt, 0, &ret->set.offt),
 		"offt '%ld' out of bounds", offt);

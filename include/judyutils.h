@@ -17,9 +17,8 @@
  *
  * (c) 2018 Sirio Balmelli
  *
- * TODO: handle "Conditional jump or move depends on uninitialised value(s)"
- * errors thrown by Valgrind when dealing with Judy
- * ... until then use '--undef-value-errors=no'
+ * NOTE: "Conditional jump or move depends on uninitialised value(s)"
+ * errors thrown by Valgrind when dealing with Judy, use '--undef-value-errors=no'
  */
 
 #include <xdpacket.h>
@@ -109,12 +108,9 @@ NLC_INLINE int jl_enqueue(Pvoid_t *array, void *datum)
  * Pop 'datum' from the FIRST FILLED SLOT of '*array', removing it from the array.
  * See enqueue() above for comments and caveats.
  * Return 'datum' or NULL if not found (NULL is not a valid array datum).
+ *
+ * NOTE: placeholder, no implementation at this time.
  */
-NLC_INLINE void *jl_pop(Pvoid_t *array)
-{
-	/* TODO: implement */
-	return NULL;
-}
 
 
 /*	j[type]_get()
