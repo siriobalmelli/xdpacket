@@ -42,16 +42,16 @@ pushd ./build-debugoptimized-gcc \
 popd
 
 ## build and test sanitizers
-# TODO: wait for clang 4.0.1 bugfix in nix repos, or go with 5.0.0?
-#sanitizers="b_sanitize=address b_sanitize=thread" # Nix's clang-4.0.1 has no tsan?
-#for san in $sanitizers; do
-#	type="debugoptimized"
-#	name="build-${type}-${san##*=}"
-#	CC=clang meson -D$san --buildtype=$type $name \
-#		&& pushd $name \
-#		&& VALGRIND=1 ninja test
-#	popd
-#done
+sanitizers="b_sanitize=address b_sanitize=thread"
+for san in $sanitizers; do
+	type="debugoptimized"
+	name="build-${type}-${san##*=}"
+	CC=clang meson -D$san -Db_lundef=false --buildtype=$type $name \
+		&& pushd $name \
+		&& ninja test
+		# && VALGRIND=1 ninja test
+	popd
+done
 
 if [[ $FAILS ]]; then
 	# flush current stdout (if user is watching all logs)
