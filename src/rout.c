@@ -32,7 +32,6 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	NB_die_if(!(
 		ret = calloc(1, alloc_size)
 		), "fail malloc size %zu", alloc_size);
-	ret->count_out = 0;
 	ret->if_out = output;
 
 	JL_LOOP(&rule->stores_JQ,
@@ -183,7 +182,6 @@ int rout_emit(struct rout *rout, yaml_document_t *outdoc, int outlist)
 		y_pair_insert(outdoc, reply, rout->rule->name, rout->output->name)
 		// || y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, rout->set->hash)
 		|| y_pair_insert_nf(outdoc, reply, "matches", "%zu", rout->set->count_match)
-		|| y_pair_insert_nf(outdoc, reply, "writes", "%zu", rout->set->count_out)
 		, "");
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)

@@ -15,10 +15,9 @@
 /*	rout_set
  * Packed representation of a rule (match -> write -> output) sequence.
  *
- * @count_out	: number of packets successfully output after writing.
+ * @count_match	: number of packets matched and processed
  * @out_fd	: fd of socket where packets should be output after writing/mangling.
  * @writes_JQ	: queue (sequence) of (struct fval_set) to be applied to packet.
- * @count_match	: number of packets matched.
  * @hash	: fnv1a hash for a matching packet.
  * @match_cnt	: number of (struct field_set) in 'matches'.
  * @matches	: hash all bytes in the packet described 'matches'.
@@ -38,14 +37,10 @@ struct rout_set {
 	Pvoid_t			state_JQ; /* (uint64_t seq) -> (struct fref_set_(state|ref) *state) */
 	/* TODO: STATE: add 'test_JQ', containing an optional set of "state matches" */
 
-	uint32_t		count_out;
 	uint32_t		count_match;
-	/* TODO: make room for one more match by killing one counter
-	 * and converting 'match_cnt' to uint32_t
-	 */
 
+	uint32_t		match_cnt;
 	uint64_t		hash;
-	size_t			match_cnt;
 	struct field_set	matches[];
 }__attribute__((aligned(4))); /* pack uint32's without incurring the compiler's wrath */
 

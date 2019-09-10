@@ -131,8 +131,7 @@ void __attribute__((hot)) process_exec(void *context, void *pkt, size_t len)
 		 */
 		if (rout_set_match(rst, pkt, len)) {
 			if (rout_set_exec(rst, pkt, len)) {
-				if (!(iface_output(rst->if_out, pkt, len)))
-					rst->count_out++;
+				iface_output(rst->if_out, pkt, len);
 			}
 			break;
 		}
