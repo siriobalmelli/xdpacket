@@ -166,7 +166,7 @@ int field_parse(enum parse_mode	mode,
 	/* possible params for a new field.
 	 * All 'long' because we use strtol() to parse.
 	 */
-	const char *name = NULL;
+	const char *name = "";
 	long offt = 0;
 	long len = 0;
 	long mask = 0;
@@ -216,7 +216,9 @@ int field_parse(enum parse_mode	mode,
 		NB_die_if(!(
 			field = field_new(name, offt, len, mask)
 			), "could not create new field '%s'", name);
-		NB_die_if(field_emit(field, outdoc, outlist), "");
+		NB_die_if(
+			field_emit(field, outdoc, outlist)
+			, "");
 		break;
 	}
 
@@ -234,14 +236,14 @@ int field_parse(enum parse_mode	mode,
 	case PARSE_PRN:
 		/* if nothing is given, print all */
 		if (!strcmp("", name)) {
-			JS_LOOP(&field_JS,
-				NB_die_if(
-					field_emit(val, outdoc, outlist)
-					, "");
-			);
+			NB_die_if(
+				field_emit_all(outdoc, outlist),
+				"");
 		/* otherwise, search for a literal match */
 		} else if ((field = js_get(&field_JS, name))) {
-			NB_die_if(field_emit(field, outdoc, outlist), "");
+			NB_die_if(
+				field_emit(field, outdoc, outlist)
+				, "");
 		}
 		break;
 
@@ -281,3 +283,20 @@ int field_emit(struct field *field, yaml_document_t *outdoc, int outlist)
 die:
 	return err_cnt;
 }
+
+/*	field_emit_all()
+ */
+int field_emit_all (yaml_document_t *outdoc, int outlist)
+{
+	int err_cnt = 0;
+
+	JS_LOOP(&field_JS,
+		NB_die_if(
+			field_emit(val, outdoc, outlist)
+			, "");
+	);
+
+die:
+	return err_cnt;
+}
+

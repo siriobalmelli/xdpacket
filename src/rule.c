@@ -147,7 +147,7 @@ int rule_parse (enum parse_mode mode,
 	int err_cnt = 0;
 	struct rule *rule = NULL;
 
-	const char *name = NULL;
+	const char *name = "";
 	Pvoid_t matches_JQ = NULL;
 	Pvoid_t stores_JQ = NULL;
 	Pvoid_t copies_JQ = NULL;
@@ -218,7 +218,9 @@ int rule_parse (enum parse_mode mode,
 		NB_die_if(!(
 			rule = rule_new(name, matches_JQ, stores_JQ, copies_JQ, writes_JQ)
 			), "could not create new rule '%s'", name);
-		NB_die_if(rule_emit(rule, outdoc, outlist), "");
+		NB_die_if(
+			rule_emit(rule, outdoc, outlist)
+			, "");
 		break;
 	}
 
@@ -236,14 +238,14 @@ int rule_parse (enum parse_mode mode,
 	case PARSE_PRN:
 		/* if nothing is given, print all */
 		if (!strcmp("", name)) {
-			JS_LOOP(&rule_JS,
-				NB_die_if(
-					rule_emit(val, outdoc, outlist)
-					, "");
-			);
+			NB_die_if(
+				rule_emit_all(outdoc, outlist)
+				, "");
 		/* otherwise, search for a literal match */
 		} else if ((rule = js_get(&rule_JS, name))) {
-			NB_die_if(rule_emit(rule, outdoc, outlist), "");
+			NB_die_if(
+				rule_emit(rule, outdoc, outlist)
+				, "");
 		}
 		break;
 
@@ -299,6 +301,22 @@ int rule_emit(struct rule *rule, yaml_document_t *outdoc, int outlist)
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
 		), "");
+die:
+	return err_cnt;
+}
+
+/*	rule_emit_all()
+ */
+int rule_emit_all (yaml_document_t *outdoc, int outlist)
+{
+	int err_cnt = 0;
+
+	JS_LOOP(&rule_JS,
+		NB_die_if(
+			rule_emit(val, outdoc, outlist)
+			, "");
+	);
+
 die:
 	return err_cnt;
 }

@@ -277,6 +277,19 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 		int reply_list = yaml_document_add_sequence(outdoc, NULL,
 					YAML_BLOCK_SEQUENCE_STYLE);
 
+		/* Special case: a print statement with an empty list
+		 * (which means "everything")
+		 */
+		if (mode == PARSE_PRN && y_seq_empty(val)) {
+			err_cnt += iface_emit_all(outdoc, reply_list);
+			err_cnt += field_emit_all(outdoc, reply_list);
+			err_cnt += rule_emit_all(outdoc, reply_list);
+			err_cnt += process_emit_all(outdoc, reply_list);
+			/* NOTE: will skip the following 'for' loop,
+			 * but was _way_ ugly putting it in an 'else' block.
+			 */
+		}
+
 		/* process children list objects */
 		for (yaml_node_item_t *child = val->data.sequence.items.start;
 			child < val->data.sequence.items.top;

@@ -91,14 +91,18 @@ int	iface_output		(struct iface *iface,
 
 /* integrate into parse2.h
  */
-int iface_parse(enum parse_mode	mode,
-		yaml_document_t	*doc,
-		yaml_node_t	*mapping,
-		yaml_document_t	*outdoc,
-		int		outlist);
+int	iface_parse	(enum parse_mode mode,
+			yaml_document_t	*doc,
+			yaml_node_t	*mapping,
+			yaml_document_t	*outdoc,
+			int		outlist);
 
-int iface_emit(struct iface	*iface,
-		yaml_document_t	*outdoc,
-		int		outlist);
+int	iface_emit	(struct iface	*iface,
+			yaml_document_t	*outdoc,
+			int		outlist);
+
+int	iface_emit_all	(yaml_document_t *outdoc,
+			int		outlist);
+
 
 #endif /* iface_h_ */

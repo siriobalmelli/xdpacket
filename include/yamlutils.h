@@ -111,8 +111,7 @@ die:
 
 /*	y_map_count()
  */
-NLC_INLINE
-int y_map_count(const yaml_node_t *node)
+NLC_INLINE int y_map_count(const yaml_node_t *node)
 {
 	int cnt = 0;
 	NB_die_if(node->type != YAML_MAPPING_NODE, "Not a mapping node");
@@ -121,6 +120,15 @@ int y_map_count(const yaml_node_t *node)
 		cnt++;
 die:
 	return cnt;
+}
+
+
+/*	y_seq_empty()
+ * Return true if 'seq' is, in fact, an empty list.
+ */
+NLC_INLINE bool y_seq_empty(yaml_node_t *seq)
+{
+	return (seq->data.sequence.items.start == seq->data.sequence.items.top);
 }
 
 

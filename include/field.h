@@ -79,6 +79,9 @@ int		field_emit	(struct field *field,
 				yaml_document_t *outdoc,
 				int outlist);
 
+int		field_emit_all	(yaml_document_t *outdoc,
+				int outlist);
+
 
 /* Common code for sanitizing and computing lengths when a 'set' needs to
  * deal with (hash, write to) a packet.

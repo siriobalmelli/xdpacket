@@ -284,7 +284,7 @@ int iface_parse(enum parse_mode	mode,
 		yaml_document_t *outdoc, int outlist)
 {
 	int err_cnt = 0;
-	const char *name = NULL;
+	const char *name = "";
 	struct iface *iface = NULL;
 
 	/* parse mapping */
@@ -321,7 +321,9 @@ int iface_parse(enum parse_mode	mode,
 		NB_die_if(
 			eptk_register(tk, iface->fd, EPOLLIN, iface_callback, iface, iface_free)
 			, "could not register epoll on '%s'", iface->name);
-		NB_die_if(iface_emit(iface, outdoc, outlist), "");
+		NB_die_if(
+			iface_emit(iface, outdoc, outlist)
+			, "");
 		break;
 	}
 
@@ -344,14 +346,14 @@ int iface_parse(enum parse_mode	mode,
 	case PARSE_PRN:
 		/* if nothing is given, print all */
 		if (!strcmp("", name)) {
-			JS_LOOP(&iface_JS,
-				NB_die_if(
-					iface_emit(val, outdoc, outlist)
-					, "");
-			);
+			NB_die_if(
+				iface_emit_all(outdoc, outlist)
+				, "");
 		/* otherwise, search for a literal match */
 		} else if ((iface = js_get(&iface_JS, name))) {
-			NB_die_if(iface_emit(iface, outdoc, outlist), "");
+			NB_die_if(
+				iface_emit(iface, outdoc, outlist)
+				, "");
 		}
 		break;
 
@@ -381,6 +383,22 @@ int iface_emit(struct iface *iface, yaml_document_t *outdoc, int outlist)
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
 		), "");
+
+die:
+	return err_cnt;
+}
+
+/*	iface_emit_all()
+ */
+int iface_emit_all(yaml_document_t *outdoc, int outlist)
+{
+	int err_cnt = 0;
+
+	JS_LOOP(&iface_JS,
+		NB_die_if(
+			iface_emit(val, outdoc, outlist)
+			, "");
+	);
 
 die:
 	return err_cnt;

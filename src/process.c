@@ -151,7 +151,7 @@ int process_parse(enum parse_mode mode,
 	/* possible params for a new field.
 	 * All 'long' because we use strtol() to parse.
 	 */
-	const char *name = NULL;
+	const char *name = "";
 	Pvoid_t rout_JQ = NULL;
 
 	/* parse mapping */
@@ -197,7 +197,9 @@ int process_parse(enum parse_mode mode,
 		NB_die_if(!(
 			process = process_new(name, rout_JQ)
 			), "could not create process on interface '%s'", name);
-		NB_die_if(process_emit(process, outdoc, outlist), "");
+		NB_die_if(
+			process_emit(process, outdoc, outlist)
+			, "");
 		break;
 	}
 
@@ -214,14 +216,14 @@ int process_parse(enum parse_mode mode,
 	case PARSE_PRN:
 		/* if nothing is given, print all */
 		if (!strcmp("", name)) {
-			JS_LOOP(&process_JS,
-				NB_die_if(
-					process_emit(val, outdoc, outlist)
-					, "");
-			);
+			NB_die_if(
+				process_emit_all(outdoc, outlist)
+				, "");
 		/* otherwise, search for a literal match */
 		} else if ((process = js_get(&process_JS, name))) {
-			NB_die_if(process_emit(process, outdoc, outlist), "");
+			NB_die_if(
+				process_emit(process, outdoc, outlist)
+				, "");
 		}
 		break;
 
@@ -256,6 +258,22 @@ int process_emit(struct process *process, yaml_document_t *outdoc, int outlist)
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
 		), "");
+die:
+	return err_cnt;
+}
+
+/*	process_emit_all()
+ */
+int process_emit_all (yaml_document_t *outdoc, int outlist)
+{
+	int err_cnt = 0;
+
+	JS_LOOP(&process_JS,
+		NB_die_if(
+			process_emit(val, outdoc, outlist)
+			, "");
+	);
+
 die:
 	return err_cnt;
 }

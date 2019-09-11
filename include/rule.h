@@ -47,5 +47,8 @@ int		rule_emit	(struct rule *node,
 				yaml_document_t *outdoc,
 				int outlist);
 
+int		rule_emit_all	(yaml_document_t *outdoc,
+				int outlist);
+
 
 #endif /* rule_h_ */

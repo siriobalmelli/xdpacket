@@ -406,8 +406,8 @@ xdpk:
 
 # AUTHORS
 
-Sirio Balmelli
-Alan Morrissett
+- Sirio Balmelli
+- Alan Morrissett
 
 # SEE ALSO
 
