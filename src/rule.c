@@ -185,13 +185,15 @@ int rule_parse (enum parse_mode mode,
 			} else if (!strcmp("store", keyname) || !strcmp("s", keyname)) {
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					NB_err_if(
-						jl_enqueue(&stores_JQ, fref_new(keyname, valtxt, FREF_STORE))
+						jl_enqueue(&stores_JQ,
+							fref_new(keyname, valtxt, FIELD_FREF_STORE))
 						, "");
 					);
 			} else if (!strcmp("copy", keyname) || !strcmp("c", keyname)) {
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					NB_err_if(
-						jl_enqueue(&copies_JQ, fref_new(keyname, valtxt, FREF_COPY))
+						jl_enqueue(&copies_JQ,
+							fref_new(keyname, valtxt, FIELD_FREF_COPY))
 						, "");
 					);
 			} else if (!strcmp("write", keyname) || !strcmp("w", keyname)) {

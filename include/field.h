@@ -30,6 +30,7 @@
  * @flags	: opaque byte that can be used by others when handling copies
  *		  of field_set structures.
  *		  Must always be zero inside a 'struct field'.
+ *		  Valid values must be registered in 'field_flags.h'.
  */
 struct field_set {
 	int32_t			offt;
@@ -37,6 +38,8 @@ struct field_set {
 	uint8_t			mask;
 	uint8_t			flags;
 }__attribute__((packed));
+
+NLC_ASSERT(field_set_size, sizeof(struct field_set) == sizeof(uint64_t));
 
 
 /*	field
@@ -104,7 +107,7 @@ int		field_emit	(struct field *field,
 	if ((start + flen) > (pkt + plen))					\
 		return 1;
 
-/* Common code for calculating a packet hash given an fval_set.
+/* Common code for calculating a packet hash given a field_set and some memory.
  * Expects to see the following variables:
  * - (struct field_set) set
  * - (size_t) flen

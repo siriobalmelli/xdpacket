@@ -90,6 +90,7 @@ struct fval_set *fval_set_new(const char *value, size_t value_len, struct field_
 		ret = malloc(alloc_size)
 		), "fail malloc size %zu", alloc_size);
 	ret->where = set;
+	ret->where.flags |= FIELD_FVAL;
 
 	/* 0-length fields are valid: just ignore any user-supplied values */
 	if (!len) {

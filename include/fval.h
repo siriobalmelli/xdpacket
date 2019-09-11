@@ -23,6 +23,7 @@
  */
 
 #include <field.h>
+#include <field_flags.h>
 #include <yaml.h>
 
 

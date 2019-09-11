@@ -42,7 +42,11 @@ struct rout_set {
 	uint32_t		match_cnt;
 	uint64_t		hash;
 	struct field_set	matches[];
-}__attribute__((aligned(4))); /* pack uint32's without incurring the compiler's wrath */
+}__attribute__((aligned(4))); /* Pack uint32's without incurring
+			       * the compiler's wrath at Judy macro misalignment.
+			       */
+
+NLC_ASSERT(rout_set_size, sizeof(struct rout_set) == NLC_CACHE_LINE - (sizeof(struct field_set) * 3));
 
 
 void		rout_set_free	(void *arg);

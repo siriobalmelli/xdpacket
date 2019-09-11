@@ -24,11 +24,12 @@ void fref_free(void *arg)
 
 /*	fref_new()
  */
-struct fref *fref_new(const char *field_name, const char *state_name, enum fref_type type)
+struct fref *fref_new(const char *field_name, const char *state_name, enum field_flags type)
 {
 	struct fref *ret = NULL;
 	NB_die_if(!field_name || !state_name, "fref requires 'field_name' and 'ref_name'");
-	NB_die_if(type != FREF_STORE && type != FREF_COPY, "invalid fref_type %d", type);
+	NB_die_if(type != FIELD_FREF_STORE && type != FIELD_FREF_COPY,
+		"invalid fref_type %d", type);
 
 	NB_die_if(!(
 		ret = calloc(1, sizeof(*ret))
