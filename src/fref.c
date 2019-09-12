@@ -13,7 +13,8 @@ void fref_free(void *arg)
 	if (!arg)
 		return;
 	struct fref *fref = arg;
-	NB_wrn("erase fref %s: %s", fref->field->name, fref->state->name);
+	NB_wrn_if(fref->field && fref->state,
+		"erase fref %s: %s", fref->field->name, fref->state->name);
 
 	state_release(fref->state);
 	field_release(fref->field);

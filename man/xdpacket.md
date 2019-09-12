@@ -248,13 +248,14 @@ Data to be matched or written is described using *field-value* tuples:
 A `rule` uses lists of field-value tuples to describe a series of *matches*
 to test on packets, and what to do with packets that match *all* of these:
 
-| key     | value  | description                           | default        |
-| ------- | ------ | ------------------------------------- | -------------- |
-| `rule`  | string | user-supplied unique string ID        | N/A: mandatory |
-| `match` | list   | fval literals to match in packet      | []             |
-| `store` | list   | fields to store into global state     | []             |
-| `copy`  | list   | fields to copy from state into packet | []             |
-| `write` | list   | fval literals to write to packet      | []             |
+| key     | value  | description                            | default        |
+| ------- | ------ | -------------------------------------- | -------------- |
+| `rule`  | string | user-supplied unique string ID         | N/A: mandatory |
+| `match` | list   | fval literals to match in packet       | []             |
+| `state` | list   | fval literals to match in global state | []             |
+| `store` | list   | fields to store into global state      | []             |
+| `copy`  | list   | fields to copy from state into packet  | []             |
+| `write` | list   | fval literals to write to packet       | []             |
 
 ```yaml
 # example rule:
@@ -303,6 +304,8 @@ A rule is executed in the following sequence:
 
     Each global state buffer `buffer` must match the literal `value` given,
     else packet is considered not to match and not processed any further.
+
+    See `store` and `copy` below for explanation of global state buffers.
 
     Example:
 
@@ -434,7 +437,6 @@ xdpk:
       nodes:
       - reflect: enp0s3
         matches: 2036
-        writes: 1773
     errors: 0
     ...
     ```

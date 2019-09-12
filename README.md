@@ -105,7 +105,6 @@ and shunting it off to a second L2 segment for IDS/analysis.
       nodes:
       - set ttl: enp0s3
         matches: 4
-        writes: 4
     errors: 0
     ...
     ```

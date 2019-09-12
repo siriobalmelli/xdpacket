@@ -43,7 +43,8 @@ void rule_free(void *arg)
 	if (!arg)
 		return;
 	struct rule *rule = arg;
-	NB_wrn("erase rule %s", rule->name);
+	NB_wrn_if(rule->name != NULL,
+		"erase rule %s", rule->name);
 	NB_die_if(rule->refcnt,
 		"rule '%s' free with non-zero recfnt == leak", rule->name);
 

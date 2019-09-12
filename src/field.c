@@ -15,7 +15,8 @@ void field_free(void *arg)
 	if (!arg)
 		return;
 	struct field *fl = arg;
-	NB_wrn("erase field %s", fl->name);
+	NB_wrn_if(fl->name != NULL,
+		"erase field %s", fl->name);
 
 	NB_die_if(fl->refcnt,
 		"field '%s' free with non-zero refcnt == leak", fl->name);

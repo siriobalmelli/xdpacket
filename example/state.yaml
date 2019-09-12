@@ -41,7 +41,6 @@ xdpk:
       - mac src: aa:bb:cc:dd:ee:ff
       - mac dst: ff:ff:ff:ff:ff:ff
       - vlan: 1
-
   # return packets for v10
   - rule: ret10
     state:
@@ -51,7 +50,6 @@ xdpk:
     write:
       - mac src: 00:11:22:33:44:55
       - vlan: 10
-
   # return packets for v20
   - rule: ret20
     state:
@@ -61,3 +59,11 @@ xdpk:
     write:
       - mac src: 66:77:88:99:aa:bb
       - vlan: 20
+
+  - process: enp0s3
+    rules:
+      - rx: enp0s8
+  - process: enp0s8
+    rules:
+      - ret10: enp0s3
+      - ret20: enp0s3
