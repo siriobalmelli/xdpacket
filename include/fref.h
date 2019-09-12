@@ -25,25 +25,30 @@ struct fref_set {
 };
 
 
-/*	fref_set_exec()
- * Either'store' (copy from packet) or 'copy' (copy to packet)
- * depending on fref_set type (encoded in flags variable).
+/*	fref_set_store()
+ * Copy from packet to global state variable.
  */
-NLC_INLINE int fref_set_exec(struct fref_set *ref, void *pkt, size_t plen)
+NLC_INLINE int fref_set_store(struct fref_set *ref, void *pkt, size_t plen)
 {
 	struct field_set set = ref->where;
 	FIELD_PACKET_INDEXING
 
-	if (set.flags & FIELD_FREF_STORE) {
-		memcpy(ref->bytes, start, flen-1);
-		ref->bytes[flen-1] = ((uint8_t*)start)[flen-1] & set.mask;
+	memcpy(ref->bytes, start, flen-1);
+	ref->bytes[flen-1] = ((uint8_t*)start)[flen-1] & set.mask;
 
-	/* we assume: (set.flags & FREF_COPY) */
-	} else {
-		memcpy(start, ref->bytes, flen-1);
-		((uint8_t*)start)[flen-1] = ref->bytes[flen-1] & set.mask;
+	return 0;
+}
 
-	}
+/*	fref_set_copy()
+ * Copy from global state variable to packet.
+ */
+NLC_INLINE int fref_set_copy(struct fref_set *ref, void *pkt, size_t plen)
+{
+	struct field_set set = ref->where;
+	FIELD_PACKET_INDEXING
+
+	memcpy(start, ref->bytes, flen-1);
+	((uint8_t*)start)[flen-1] = ref->bytes[flen-1] & set.mask;
 
 	return 0;
 }

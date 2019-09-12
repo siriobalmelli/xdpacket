@@ -14,8 +14,7 @@ void rout_set_free (void *arg)
 		return;
 	struct rout_set *rts = arg;
 	int __attribute__((unused)) rc;
-	JLFA(rc, rts->writes_JQ);
-	JLFA(rc, rts->state_JQ);
+	JLFA(rc, rts->actions_JQ);
 	free(rts);
 }
 
@@ -34,17 +33,18 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 		), "fail malloc size %zu", alloc_size);
 	ret->if_out = output;
 
+	/* follow standard sequence: store, copy, write */
 	JL_LOOP(&rule->stores_JQ,
 		struct fref *fref = val;
-		jl_enqueue(&ret->state_JQ, fref->ref);
+		jl_enqueue(&ret->actions_JQ, fref->ref);
 	);
 	JL_LOOP(&rule->copies_JQ,
 		struct fref *fref = val;
-		jl_enqueue(&ret->state_JQ, fref->ref);
+		jl_enqueue(&ret->actions_JQ, fref->ref);
 	);
 	JL_LOOP(&rule->writes_JQ,
 		struct fval *write = val;
-		jl_enqueue(&ret->writes_JQ, write->set);
+		jl_enqueue(&ret->actions_JQ, write->set);
 	);
 
 	ret->count_match = 0;
@@ -105,17 +105,19 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
  */
 bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 {
-	/* TODO STATE: these would be coalesced, with a test for TYPE */
-	JL_LOOP(&rst->state_JQ,
-		struct fref_set *ref = val;
-		if (fref_set_exec(ref, pkt, plen))
-			return false;
-	);
-
-	JL_LOOP(&rst->writes_JQ,
-		struct fval_set *fvb = val;
-		if (fval_set_write(fvb, pkt, plen))
-			return false;
+	JL_LOOP(&rst->actions_JQ,
+		struct fref_set *set = val;
+		/* follow standard sequence: store, copy, write */
+		if (set->where.flags & FIELD_FREF_STORE) {
+			if (fref_set_store(set, pkt, plen))
+				return false;
+		} else if (set->where.flags & FIELD_FREF_COPY) {
+			if (fref_set_copy(set, pkt, plen))
+				return false;
+		} else {
+			if (fval_set_write((struct fval_set *)set, pkt, plen))
+				return false;
+		}
 	);
 	return true;
 }

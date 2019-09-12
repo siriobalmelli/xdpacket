@@ -26,15 +26,13 @@
  * - this is laid out in reverse sequence (because matches[] must be last);
  *   the logic makes use of these struct params from bottom to top
  *   (compute matches, check hash, increment counter, etc).
- * - counter sizes reduced and copies/stores combined into 'state'
- *   to bring struct under one cache line for match_cnt <= 2.
+ * - counter sizes reduced and copies, stores and writes combined into 'actions'
+ *   to bring struct to one cache line for match_cnt <= 3.
  */
 struct rout_set {
 	struct iface		*if_out;
 
-	/* TODO: STATE: coalesce 'writes_JQ' and 'state_JQ', handle both in rout_set_exec() */
-	Pvoid_t			writes_JQ; /* (uint64_t seq) -> (struct fval_set *write) */
-	Pvoid_t			state_JQ; /* (uint64_t seq) -> (struct fref_set_(state|ref) *state) */
+	Pvoid_t			actions_JQ; /* (uint64_t seq) -> (struct (fval|fref)_set *action) */
 	/* TODO: STATE: add 'test_JQ', containing an optional set of "state matches" */
 
 	uint32_t		count_match;
@@ -46,7 +44,7 @@ struct rout_set {
 			       * the compiler's wrath at Judy macro misalignment.
 			       */
 
-NLC_ASSERT(rout_set_size, sizeof(struct rout_set) == NLC_CACHE_LINE - (sizeof(struct field_set) * 3));
+NLC_ASSERT(rout_set_size, sizeof(struct rout_set) <= NLC_CACHE_LINE - (sizeof(struct field_set) * 3));
 
 
 void		rout_set_free	(void *arg);
