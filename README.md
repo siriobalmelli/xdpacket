@@ -10,6 +10,27 @@ the eXtremely Direct Packet handler (in userland)
 - [on github](https://github.com/siriobalmelli/xdpacket)
 - [as a web page](https://siriobalmelli.github.io/xdpacket/)
 
+A very flexible match-execute packet engine:
+attach it to one or more interfaces,
+it matches packets against your rules
+and does whatever you want with them.
+
+- It knows nothing about protocols: it just sees packets as fields of bytes.
+- It sees *every* packet, broadcast, multicast, non-IP: everything.
+- It drops everything it can't match against your rules:
+think of it as a reverse-firewall.
+- It can do any brilliant or stupid or intentionally
+wrong thing you can think of.
+
+Example usages:
+
+- Passing Ethernet PAUSE frames between L2 segments.
+- Transparently connecting only 2 hosts between separate L2 segments.
+- Selective NATing of broacast or multicast frames (e.g. mDNS, Bonjour)
+between L3 networks.
+- Refelcting/tapping (making a second copy) every packet received on an interface
+and shunting it off to a second L2 segment for IDS/analysis.
+
 ## Quick Start
 
 1. Build or install xdpacket:
@@ -133,20 +154,20 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. Use of the word *set*:
     In this codebase the word *set* is used to describe structures which have
-    been "rendered" or "parsed" or "packed" for use in matching/handling packets.
+    been "compiled" or "parsed" or "packed" for use in matching/handling packets.
 
     Generally speaking, every structure in the program represents an element
-    in the YAML schema used for the CLI/API.  
+    in the YAML schema used for the CLI/API.
     This makes parsing and logic very straightforward, but if used by itself would
     cause a lot of pointer chasing and cache poisoning by pulling in unneeded strings
     and references when handling packets.
 
     To solve this, certain structs have a corresponding `[struct name]_set` struct
-    which is allocated and freed along with their "parent" (non-set) struct.  
+    which is allocated and freed along with their "parent" (non-set) struct.
     When the "parse chain" or "hot path" is then built, these `_set` structs are
     copied or referenced (as appropriate).
 
-    Packets being handled must *only ever* touch *set* structures.  
+    Packets being handled must *only ever* touch *set* structures.
     To be clear, the choice of the word *set* is purely arbitrary - other possible
     choices such as "bytes", etc would have also worked.
 
@@ -178,29 +199,25 @@ it is also available on the command line with `man 1 xdpacket`.
     - is there a library for this
 
 1. Refine printing:
-    - implement a "print everything unless specified" model
     - implement regex matching of print names
-
-1. Port over test cases, extinguish `src_old`, `include_old` and `test_old`
-    (previous attempt under naive architecture assumptions).
-
-1. Sanitizers for debug/testing builds
 
 1. Produce a canonical AppArmor profile (use `audit` on a full run)
     and add to repo.
 
 1. Multithreading:
-    -   fence API/CLI parser instances from each other with a mutex.
+    - fence API/CLI parser instances from each other with a mutex.
 
-    -   modify `process` installation into `iface`, and consumption thereof,
-        to be an atomic pointer swap.
+    - modify `process` installation into `iface`, and consumption thereof,
+      to be an atomic pointer swap.
 
-    -   protect contentious state operations (`fref`) with a mutex
+    - Protect contentious state operations (`fref`) with a mutex.
+      Consider a naive RCU-like behavior rotating a circular buffer
+      of write regions.
 
-    -   modify `iface` to be a thread spawn, carefully audit init()/free() paths
+    - modify `iface` to be a thread spawn, carefully audit init()/free() paths
 
-    -   round-robin pin each new `iface` to one of the available CPUset;
-        pin the socket to this interface as well with an `ioctl`.
+    - round-robin pin each new `iface` to one of the available CPUset;
+      pin the socket to this interface as well with an `ioctl`.
 
 1. migrate from AF_PACKET to AF_XDP as soon as it is upstreamed
     - <https://patchwork.ozlabs.org/cover/867937/>

@@ -7,10 +7,15 @@ order: 1
 
 xdpacket - the eXtremely Direct Packet handler (in userland)
 
+A very flexible match-execute packet engine:
+attach it to one or more interfaces,
+it matches packets against your rules
+and does whatever you want with them.
+
 # SYNOPSIS
 
 ```bash
-xdpacket
+xdpacket  # must run as root or have CAP_NET_RAW
 ```
 
 Invocation opens a YAML REPL on stdin/stdout,
@@ -32,9 +37,10 @@ for the following reasons:
 
 -   It is easier to type than JSON or XML, and more readable.
 -   The reference implementation [libyaml](https://github.com/yaml/libyaml)
-    is in C, with a decent API.
+is in C, with a decent API.
 -   It can be abbreviated sufficiently to be effective as a CLI language,
-    avoiding dual implementations for API vs CLI.
+avoiding dual implementations for API vs CLI.
+See [CLI Usage Notes](#cli-usage-notes) below.
 
 The grammar is intuitive enough that if you are reasonably familiar with YAML,
 you will probably pick a lot of it up by reading through some configurations
@@ -71,16 +77,16 @@ b:
   - effective
 ```
 
-## document toplevel
+## document toplevel: modes
 
-A YAML document with valid xdacket grammar contains one or more mappings
-with one of these keys:
+The toplevel of an xdpacket grammar is the mode,
+which tells xdpacket what action it should take on the ruleset in memory:
 
-| mode    | action                                   |
-| ------- | ---------------------------------------- |
-| `xdpk`  | add/set the given configuration mappings |
-| `print` | print configuration                      |
-| `del`   | delete configuration mappings            |
+| mode     | action                                         |
+| -------  | ---------------------------------------------- |
+| `xdpk`   | add/set the given configuration mappings       |
+| `print`  | print full ruleset, or only the given mappings |
+| `delete` | delete the give configuration mappings         |
 
 Each of these mappings must then contain a list of one or more of the following
 *subsystems*:
@@ -91,6 +97,14 @@ Each of these mappings must then contain a list of one or more of the following
 | `field`   | a set of bytes inside a packet                             |
 | `rule`    | directives for matching and altering packets               |
 | `process` | a list of rules to be executed, in sequence, on an `iface` |
+
+A YAML document with valid xdacket grammar contains one or more mappings
+of the type:
+
+```yaml
+mode:
+    - subsystem: subsystem_name
+```
 
 These are described in detail below:
 
@@ -104,6 +118,7 @@ as a specific node.
 | `iface` | string | system interface name |
 
 ```yaml
+# to create a new interface, use 'xdpk'
 xdpk:
   - iface: eth0  # open a socket for I/O on 'eth0'
 ```
@@ -393,6 +408,11 @@ xdpk:
     printing process status:
 
     ```yaml
+    # input to xdpacket
+    print:
+    - process: enp0s3
+
+    # output from xdpacket
     ---
     print:
     - process: enp0s3
@@ -403,6 +423,31 @@ xdpk:
     errors: 0
     ...
     ```
+
+# CLI usage notes
+
+Modes and subsystems have abbreviations to reduce CLI typing requirements:
+
+| mode     | three-letter | one-letter |
+| -------  | ------------ | ---------- |
+| `xdpk`   | `add`        | `a`        |
+| `print`  | `prn`        | `p`        |
+| `delete` | `del`        | `d`        |
+
+| subsystem | one-letter |
+| --------- | ---------- |
+| `iface`   | `i`        |
+| `field`   | `f`        |
+| `rule`    | `r`        |
+| `process` | `p`        |
+
+Note that YAML allows a more terse format, similar to JSON:
+
+```yaml
+p: []  # print entire ruleset in memory
+a: [i: enp0s3]  # add interface 'enp0s3'
+a: [{f: ttl, offt: 22, len: 1}]  # add a 'ttl' field pointing to Byte 22
+```
 
 # AUTHORS
 
