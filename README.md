@@ -92,6 +92,13 @@ and shunting it off to a second L2 segment for IDS/analysis.
 1. Print process stats to verify it's functional:
 
     ```yaml
+    # input to xdpacket:
+    ---
+    print:
+    - process: enp0s3
+    ...
+
+    # output from xdpacket
     ---
     print:
     - process: enp0s3
