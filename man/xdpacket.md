@@ -298,6 +298,21 @@ A rule is executed in the following sequence:
       - mac src: aa:bb:cc:dd:ee:ff
     ```
 
+1. `state`:
+    This is a list of `buffer: value` tuples.
+
+    Each global state buffer `buffer` must match the literal `value` given,
+    else packet is considered not to match and not processed any further.
+
+    Example:
+
+    ```yaml
+    # Global state buffer 'current_vlan' must contain the value '20'
+    # for this packet to match.
+    state:
+      - current_vlan: 20
+    ```
+
 1. `store`:
     For each fval in the `store` sequence, store the contents of `field` into
     the global state buffer named `value`.

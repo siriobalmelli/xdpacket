@@ -13,3 +13,4 @@ The [examples](./) dir holds `.yaml` files showing usage cases for `xdpacket`:
 - [README.md](./README.md)
 - [reflection.yaml](./reflection.yaml)
 - [strings.yaml](./strings.yaml)
+- [state.yaml](./state.yaml)

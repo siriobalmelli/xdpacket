@@ -1,0 +1,63 @@
+---
+# state.yaml
+#
+# This example is a bit simplistic, but serves to illustrate and test
+# the global state mechanisms.
+#
+# We have:
+# | interface | vlan    | mac               |
+# | --------- | ------- | ----------------- |
+# | enp0s3    | vlan 10 | 00:11:22:33:44:55 |
+# | enp0s3    | vlan 20 | 66:77:88:99:aa:bb |
+# | enp0s8    | vlan 1  | aa:bb:cc:dd:ee:ff |
+#
+# The approach:
+# - use global state to store source VLAN and MAC for packets incoming to enp0s3
+# - packets incoming on enp0s3 are NATed out of enp0s8, to a broadcast MAC
+# - returning packets on enp0s8 match against VLAN value in global state
+#   to apply proper MAC source when NATing
+xdpk:
+  - iface: enp0s3
+  - iface: enp0s8
+
+  - field: any
+    offt: 0
+    len: 0
+  - field: mac dst
+    offt: 0
+    len: 6
+  - field: mac src
+    offt: 6
+    len: 6
+
+  # receiving all VLANs
+  - rule: rx
+    match:
+      - any:
+    store:
+      - vlan: current_vlan
+      - mac src: current_client
+    write:
+      - mac src: aa:bb:cc:dd:ee:ff
+      - mac dst: ff:ff:ff:ff:ff:ff
+      - vlan: 1
+
+  # return packets for v10
+  - rule: ret10
+    state:
+      - current_vlan: 10
+    copy:
+      - mac dst: current_client
+    write:
+      - mac src: 00:11:22:33:44:55
+      - vlan: 10
+
+  # return packets for v20
+  - rule: ret20
+    state:
+      - current_vlan: 20
+    copy:
+      - mac dst: current_client
+    write:
+      - mac src: 66:77:88:99:aa:bb
+      - vlan: 20
