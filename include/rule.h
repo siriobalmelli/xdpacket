@@ -8,6 +8,7 @@
 
 #include <xdpacket.h>
 #include <fval.h>
+#include <sval.h>
 #include <fref.h>
 
 
@@ -18,6 +19,7 @@
 struct rule {
 	char		*name;
 	Pvoid_t		matches_JQ; /* (uint64_t seq) -> (struct fval *mch) */
+	Pvoid_t		states_JQ; /* (uint64_t seq) -> (struct sval *state) */
 	Pvoid_t		stores_JQ; /* (uint64_t seq) -> (struct fref *store) */
 	Pvoid_t		copies_JQ; /* (uint64_t seq) -> (struct fref *copy) */
 	Pvoid_t		writes_JQ; /* (uint64_t seq) -> (struct fval *wrt) */
@@ -29,6 +31,7 @@ void		rule_free	(void *arg);
 void		rule_free_all	();
 struct rule	*rule_new	(const char *name,
 				Pvoid_t matches_JQ,
+				Pvoid_t states_JQ,
 				Pvoid_t stores_JQ,
 				Pvoid_t copies_JQ,
 				Pvoid_t writes_JQ);

@@ -15,6 +15,7 @@ void rout_set_free (void *arg)
 	struct rout_set *rts = arg;
 	int __attribute__((unused)) rc;
 	JLFA(rc, rts->actions_JQ);
+	JLFA(rc, rts->states_JQ);
 	free(rts);
 }
 
@@ -32,6 +33,12 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 		ret = calloc(1, alloc_size)
 		), "fail malloc size %zu", alloc_size);
 	ret->if_out = output;
+
+	/* state checking */
+	JL_LOOP(&rule->states_JQ,
+		struct sval *sval = val;
+		jl_enqueue(&ret->states_JQ, sval->set);
+	);
 
 	/* follow standard sequence: store, copy, write */
 	JL_LOOP(&rule->stores_JQ,
@@ -86,9 +93,11 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
 	if (hash != set->hash)
 		return false;
 
-	/* TODO: STATE: walk through set of global state matches to perform,
-	 * bail at the first sign that one is missing.
-	 */
+	/* match any expected global state variables */
+	JL_LOOP(&set->actions_JQ,
+		if (!sval_test(val))
+			return false;
+	);
 
 	set->count_match++;
 	return true;

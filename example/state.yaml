@@ -29,6 +29,9 @@ xdpk:
   - field: mac src
     offt: 6
     len: 6
+  - field: vlan
+    offt: 14
+    len: 2
 
   # receiving all VLANs
   - rule: rx

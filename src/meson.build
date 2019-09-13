@@ -9,6 +9,7 @@ src_files = files([
 	'rout.c',
     'rule.c',
 	'state.c',
+	'sval.c',
 	'value.c',
     'xdpacket_globals.c',
     'yamlutils.c'

@@ -458,6 +458,14 @@ Modes and subsystems have abbreviations to reduce CLI typing requirements:
 | `rule`    | `r`        |
 | `process` | `p`        |
 
+| `rule` directive | one-letter |
+| ---------------- | ---------- |
+| `match`          | `m`        |
+| `state`          | `t`        |
+| `store`          | `s`        |
+| `copy`           | `c`        |
+| `write`          | `w`        |
+
 Note that YAML allows a more terse format, similar to JSON:
 
 ```yaml

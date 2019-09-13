@@ -60,7 +60,7 @@ and shunting it off to a second L2 segment for IDS/analysis.
         *TODO*
 
 1. Run `sudo xdpacket` and you are in a YAML REPL which takes the
-    [xdpacket grammar](TODO: link).
+    [xdpacket grammar](man/xdpacket.md).
 
 1. Input a very basic set of directives (see the [examples dir](../example/README.md)),
     for example:

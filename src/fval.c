@@ -96,9 +96,7 @@ struct fval *fval_new(const char *field_name, const char *value)
 	 * it can definitely store the resulting parsed set of bytes.
 	 */
 	errno = 0;
-	ret->val = nstralloc(value,
-			((size_t)1 << (sizeof(ret->field->set.len) * 8)) -1,
-			NULL); /* a zero-length value is valid */
+	ret->val = nstralloc(value, MAXVALUELEN, NULL); /* a zero-length value is valid */
 	NB_die_if(errno == EINVAL, "");
 	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->val);
 

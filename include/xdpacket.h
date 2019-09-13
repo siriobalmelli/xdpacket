@@ -13,6 +13,12 @@
  */
 #define MAXLINELEN 48
 
+/* User-supplied value strings must be checked for overflow, and should:
+ * - never result in a binary value larger than (struct field_set).len can represent.
+ * - not impose arbitrarily low limits to users trying to match enormous fields.
+ */
+#define MAXVALUELEN (((size_t)1 << (sizeof(uint16_t) * 8)) -1)
+
 /* TCP port for xdpacket socket.
  * This is the 16bit fnv1a hash of "xdpacket"
  */

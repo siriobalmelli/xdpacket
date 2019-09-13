@@ -33,8 +33,7 @@ struct rout_set {
 	struct iface		*if_out;
 
 	Pvoid_t			actions_JQ; /* (uint64_t seq) -> (struct (fval|fref)_set *action) */
-	/* TODO: STATE: add 'test_JQ', containing an optional set of "state matches" */
-	Pvoid_t			state_JQ; /* TODO: ?? */
+	Pvoid_t			states_JQ; /* (uint64_t seq) -> (struct sref_set *state) */
 
 	uint32_t		count_match;
 

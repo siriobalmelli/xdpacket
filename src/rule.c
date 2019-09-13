@@ -21,18 +21,21 @@ static Pvoid_t	rule_JS = NULL; /* (char *rule_name) -> (struct rule *rule) */
 static void rule_release_refs(Pvoid_t writes_JQ,
 				Pvoid_t copies_JQ,
 				Pvoid_t stores_JQ,
+				Pvoid_t states_JQ,
 				Pvoid_t matches_JQ)
 {
 	/* free in reverse order, for reference reasons */
 	JL_LOOP(&writes_JQ,	fval_free(val);		);
 	JL_LOOP(&copies_JQ,	fref_free(val);		);
 	JL_LOOP(&stores_JQ,	fref_free(val);		);
+	JL_LOOP(&states_JQ,	sval_free(val);		);
 	JL_LOOP(&matches_JQ,	fval_free(val);		);
 
 	int __attribute__((unused)) rc;
 	JLFA(rc, writes_JQ);
 	JLFA(rc, copies_JQ);
 	JLFA(rc, stores_JQ);
+	JLFA(rc, states_JQ);
 	JLFA(rc, matches_JQ);
 }
 
@@ -52,7 +55,8 @@ void rule_free(void *arg)
 	if (js_get(&rule_JS, rule->name) == rule)
 		js_delete(&rule_JS, rule->name);
 
-	rule_release_refs(rule->writes_JQ, rule->copies_JQ, rule->stores_JQ, rule->matches_JQ);
+	rule_release_refs(rule->writes_JQ, rule->copies_JQ, rule->stores_JQ,
+			rule->states_JQ, rule->matches_JQ);
 
 	free(rule->name);
 	free(rule);
@@ -73,8 +77,8 @@ void __attribute__((destructor(101))) rule_free_all()
  * Create a new rule.
  */
 struct rule *rule_new(const char *name,
-			Pvoid_t matches_JQ, Pvoid_t stores_JQ,
-			Pvoid_t copies_JQ, Pvoid_t writes_JQ)
+			Pvoid_t matches_JQ, Pvoid_t states_JQ,
+			Pvoid_t stores_JQ, Pvoid_t copies_JQ, Pvoid_t writes_JQ)
 {
 	/* Create an object _first_ so that later failures can be passed
 	 * to _free() which will do the right thing (tm).
@@ -83,10 +87,11 @@ struct rule *rule_new(const char *name,
 	 */
 	struct rule *ret = NULL;
 	if(!(ret = calloc(1, sizeof(*ret)))) {
-		rule_release_refs(writes_JQ, copies_JQ, stores_JQ, matches_JQ);
+		rule_release_refs(writes_JQ, copies_JQ, stores_JQ, states_JQ, matches_JQ);
 		NB_die("fail alloc size %zu", sizeof(*ret));
 	}
 	ret->matches_JQ = matches_JQ;
+	ret->states_JQ = states_JQ;
 	ret->stores_JQ = stores_JQ;
 	ret->copies_JQ = copies_JQ;
 	ret->writes_JQ = writes_JQ;
@@ -150,6 +155,7 @@ int rule_parse (enum parse_mode mode,
 
 	const char *name = "";
 	Pvoid_t matches_JQ = NULL;
+	Pvoid_t states_JQ = NULL;
 	Pvoid_t stores_JQ = NULL;
 	Pvoid_t copies_JQ = NULL;
 	Pvoid_t writes_JQ = NULL;
@@ -180,9 +186,13 @@ int rule_parse (enum parse_mode mode,
 						jl_enqueue(&matches_JQ, fval_new(keyname, valtxt))
 						, "");
 					);
-			/* TODO: add "state"
-			 * To match a packet, "keyname" _state_ should have "valtxt" value.
-			 */
+			} else if (!strcmp("state", keyname) || !strcmp("t", keyname)) {
+				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
+					/* rely on enqueue() to test 'sv' (a NULL datum is invalid) */
+					NB_err_if(
+						jl_enqueue(&states_JQ, sval_new(keyname, valtxt))
+						, "");
+					);
 			} else if (!strcmp("store", keyname) || !strcmp("s", keyname)) {
 				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
 					NB_err_if(
@@ -217,7 +227,7 @@ int rule_parse (enum parse_mode mode,
 	case PARSE_ADD:
 	{
 		NB_die_if(!(
-			rule = rule_new(name, matches_JQ, stores_JQ, copies_JQ, writes_JQ)
+			rule = rule_new(name, matches_JQ, states_JQ, stores_JQ, copies_JQ, writes_JQ)
 			), "could not create new rule '%s'", name);
 		NB_die_if(
 			rule_emit(rule, outdoc, outlist)
@@ -273,6 +283,12 @@ int rule_emit(struct rule *rule, yaml_document_t *outdoc, int outlist)
 			fval_emit(val, outdoc, matches)
 			, "fail to emit match");
 	);
+	int states = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
+	JL_LOOP(&rule->states_JQ,
+		NB_die_if(
+			sval_emit(val, outdoc, states)
+			, "fail to emit state");
+	);
 	int stores = yaml_document_add_sequence(outdoc, NULL, YAML_BLOCK_SEQUENCE_STYLE);
 	JL_LOOP(&rule->stores_JQ,
 		NB_die_if(
@@ -295,6 +311,7 @@ int rule_emit(struct rule *rule, yaml_document_t *outdoc, int outlist)
 	NB_die_if(
 		y_pair_insert(outdoc, reply, "rule", rule->name)
 		|| y_pair_insert_obj(outdoc, reply, "match", matches)
+		|| y_pair_insert_obj(outdoc, reply, "state", states)
 		|| y_pair_insert_obj(outdoc, reply, "store", stores)
 		|| y_pair_insert_obj(outdoc, reply, "copy", copies)
 		|| y_pair_insert_obj(outdoc, reply, "write", writes)

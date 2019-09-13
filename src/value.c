@@ -68,7 +68,8 @@ static void __attribute__((destructor)) value_set_cleanup()
 
 /*	value_parse()
  * Parse 'value' user input text into 'parsed' big-endian representation,
- * which may be at most (TODO: always?) 'len' bytes long.
+ * which is always 'len' bytes long (or padded thereto).
+ * Length is important since we use memcmp() in sval_test().
  *
  * Returns 0 on success.
  */
@@ -224,5 +225,3 @@ die:
 	free(ret);
 	return NULL;
 }
-
-
