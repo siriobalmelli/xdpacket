@@ -16,7 +16,7 @@
 
 
 /*	fref_set
- * @where	: location in packet to write bytes TO
+ * @where	: location in packet where to read ("copy) or write ("store")
  * @bytes	: pointer to 'bytes' in corresponding 'struct state'
  */
 struct fref_set {

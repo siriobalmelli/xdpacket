@@ -229,6 +229,9 @@ it is also available on the command line with `man 1 xdpacket`.
     - <https://patchwork.ozlabs.org/cover/867937/>
     - <https://fosdem.org/2018/schedule/event/af_xdp/attachments/slides/2221/export/events/attachments/af_xdp/slides/2221/fosdem_2018_v3.pdf>
 
+1. Replace all `_JQ` "queue-type" lists with a generic packed list tool
+(see if glibc provides something, or otherwise implement in nonlibc?).
+
 ## other useful projects
 
 1. <https://github.com/netsniff-ng/netsniff-ng>.

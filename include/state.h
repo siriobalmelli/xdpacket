@@ -18,10 +18,10 @@
  */
 struct state {
 	char		*name;
-	size_t		len;
+	uint32_t	len;
 	uint32_t	refcnt;
 	uint8_t		bytes[];
-};
+}__attribute__((aligned(4)));
 
 
 void		state_release(struct state *state);

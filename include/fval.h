@@ -41,7 +41,6 @@ struct fval_set {
 void		fval_set_free	(void * arg);
 
 struct fval_set	*fval_set_new	(const char *value,
-				size_t value_len,
 				struct field_set set);
 
 char		*fval_set_print	(struct fval_set *fvb);
@@ -77,13 +76,18 @@ int		fval_set_write	(struct fval_set *fvb,
 
 
 /*	fval
+ * @field	:	ref to field being matched
+ * @val		:	user literal text of value to match
+ * @set		:	compiled: field_set and big-endian bytes parsed from 'val'
+ * @rendered	:	human-readable printed form of set->bytes
+ * @set_hash	:	fnv1a_64 hash of set->bytes
  */
 struct fval {
 	struct field		*field;
 	char			*val;
 
 	struct fval_set		*set;
-	char			*bytes_prn;
+	char			*rendered;
 	uint64_t		set_hash;
 };
 
