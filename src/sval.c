@@ -72,6 +72,9 @@ struct sval *sval_new (const char *state_name, const char *value)
 	NB_die_if(!(
 		ret->state = state_get(state_name, 0)
 		), "could not get state '%s'", state_name);
+	/* We rely on state to tell us the length to parse 'value' into,
+	 * so a 0-length state is nonsensical even though it may grow in future.
+	 */
 	NB_die_if(!ret->state->len, "state '%s' is zero-length", state_name);
 
 	/* guard against insane values from the user */
@@ -88,7 +91,6 @@ struct sval *sval_new (const char *state_name, const char *value)
 		), "");
 
 	NB_inf("%s: %s", ret->state->name, ret->val);
-	NB_die_if(ret->state->name != ret->set->state->name, "TODO: remove");
 	return ret;
 die:
 	sval_free(ret);

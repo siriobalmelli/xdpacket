@@ -43,7 +43,6 @@ struct rout_set {
 }__attribute__((aligned(4))); /* Pack uint32's without incurring
 			       * the compiler's wrath at Judy macro misalignment.
 			       */
-
 NLC_ASSERT(rout_set_size, sizeof(struct rout_set) <= NLC_CACHE_LINE - (sizeof(struct field_set) * 3));
 
 
@@ -59,7 +58,6 @@ bool		rout_set_match	(struct rout_set *set,
 bool		rout_set_exec	(struct rout_set *set,
 				void *pkt,
 				size_t plen);
-
 
 
 /*	rout

@@ -34,12 +34,6 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 		), "fail malloc size %zu", alloc_size);
 	ret->if_out = output;
 
-	/* state checking */
-	JL_LOOP(&rule->states_JQ,
-		struct sval *sval = val;
-		jl_enqueue(&ret->states_JQ, sval->set);
-	);
-
 	/* follow standard sequence: store, copy, write */
 	JL_LOOP(&rule->stores_JQ,
 		struct fref *fref = val;
@@ -52,6 +46,12 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	JL_LOOP(&rule->writes_JQ,
 		struct fval *write = val;
 		jl_enqueue(&ret->actions_JQ, write->set);
+	);
+
+	/* state checking */
+	JL_LOOP(&rule->states_JQ,
+		struct sval *sval = val;
+		jl_enqueue(&ret->states_JQ, sval->set);
 	);
 
 	ret->count_match = 0;
@@ -94,7 +94,7 @@ bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt,
 		return false;
 
 	/* match any expected global state variables */
-	JL_LOOP(&set->actions_JQ,
+	JL_LOOP(&set->states_JQ,
 		if (!sval_test(val))
 			return false;
 	);

@@ -15,7 +15,11 @@ and does whatever you want with them.
 # SYNOPSIS
 
 ```bash
-xdpacket  # must run as root or have CAP_NET_RAW
+xdpacket [[-i IP_ADDRESS], ...]  # must run as root or have CAP_NET_RAW
+
+Options:
+	-i, --ip IP_ADDRESS	: open a CLI socket on IP_ADDRESS:7044
+	-h, --help	        : print usage and exit
 ```
 
 Invocation opens a YAML REPL on stdin/stdout,
