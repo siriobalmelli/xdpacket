@@ -198,6 +198,10 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. checksums validated in all cases (IPv6)
 
+1. Fix CLI I/O:
+    - BUG: SIGPIPE from a client FD kills entire program
+    - piping a set of commands to xdpacket at startup is broken
+
 1. REPL reworked for CLI style usability
     - backspace
     - arrow keys
