@@ -204,6 +204,11 @@ it is also available on the command line with `man 1 xdpacket`.
     - tab completion
     - is there a library for this
 
+    Perhaps we can try to parse the YAML document at every LF?
+    - once we have a valid document the next LF or `...` triggers action
+    - `Ctrl+C` should then reset the input *unless* nothing is there, then
+        should exit
+
 1. Refine printing:
     - implement regex matching of print names
 
