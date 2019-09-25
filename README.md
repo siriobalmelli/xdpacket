@@ -198,7 +198,6 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. checksums validated in all cases:
     - IPv6
-    - 802.1q
 
 1. Fix CLI I/O:
     - BUG: SIGPIPE from a client FD kills entire program
