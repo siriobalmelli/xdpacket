@@ -20,7 +20,7 @@ for cc in $compilers; do
 			&& ninja test
 		# log if build didn't succeed
 		poop=$?
-		if (( $poop )); then
+		if ((poop)); then
 			FAILS="${FAILS}$name\n"
 		fi
 		# out regardless

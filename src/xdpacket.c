@@ -171,10 +171,9 @@ int main(int argc, char **argv)
 	}
 
 	/* epoll loop */
-	int res;
 	while(!psg_kill_check()) {
 		NB_die_if((
-			res = eptk_pwait_exec(tk, -1, NULL)
+			eptk_pwait_exec(tk, -1, NULL)
 			) < 0, "");
 	}
 
