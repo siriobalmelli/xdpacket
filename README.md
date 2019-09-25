@@ -3,7 +3,7 @@ title: xDPacket
 order: 100
 ---
 
-# xDPacket [![Build Status](https://travis-ci.org/siriobalmelli/xdpacket.svg?branch=master)]
+# xDPacket ![Build Status](https://travis-ci.org/siriobalmelli/xdpacket.svg?branch=master) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7cc5ea1210cd44d2bc177451dc48b6b8)](https://www.codacy.com/manual/siriobalmelli/xdpacket?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=siriobalmelli/xdpacket&amp;utm_campaign=Badge_Grade)
 
 the eXtremely Direct Packet handler (in userland)
 
