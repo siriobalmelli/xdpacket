@@ -196,7 +196,9 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. packaging
 
-1. checksums validated in all cases (IPv6)
+1. checksums validated in all cases:
+    - IPv6
+    - 802.1q
 
 1. Fix CLI I/O:
     - BUG: SIGPIPE from a client FD kills entire program
@@ -235,6 +237,11 @@ it is also available on the command line with `man 1 xdpacket`.
 
 1. Replace all `_JQ` "queue-type" lists with a generic packed list tool
 (see if glibc provides something, or otherwise implement in nonlibc?).
+
+1. TODO: store a full `struct field_set` in `struct state`:
+    - validate references to this more rigidly
+    - mask copies to/from as standard for a field
+    - move away from `memcpy()` into a standard check using field_set
 
 ## other useful projects
 

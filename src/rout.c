@@ -62,10 +62,10 @@ struct rout_set *rout_set_new(struct rule *rule, struct iface *output)
 	 * accumulate the hash of all fields.
 	 */
 	JL_LOOP(&rule->matches_JQ,
-		struct fval *current = val;
-		ret->matches[i] = current->field->set;
+		struct fval *fval = val;
+		ret->matches[i] = fval->set->where;
 		NB_die_if(
-			fval_set_hash(current->set, &ret->hash)
+			fval_set_hash(fval->set, &ret->hash)
 			, "");
 	);
 
