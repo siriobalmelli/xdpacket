@@ -1,0 +1,19 @@
+# mac_src.yaml
+# match a MAC source address and reflect these packets back out another iface
+---
+xdpk:
+  - iface: enp0s8
+  - iface: enp0s3
+
+  - field: mac src
+    offt: 6
+    len: 6
+
+  - rule: check src
+    match:
+      - mac src: 0a:00:27:00:00:00
+
+  - process: enp0s8
+    rules:
+      - check src: enp0s3
+...
