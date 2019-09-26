@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	if (errno == 0x26) errno = 0;  /* weird getopt errno, pointedly ignore */
 
 	/* epoll loop */
 	while(!psg_kill_check()) {
