@@ -68,7 +68,9 @@ struct state *state_get(const char *name, size_t len)
 		js_insert(&state_JS, ret->name, ret, false);
 
 	} else if (ret && (ret->len < len)) {
-		ret = realloc(ret, sizeof(*ret) + len);
+		NB_die_if(!(
+			ret = realloc(ret, sizeof(*ret) + len)
+			), "fail realloc sz %zu", sizeof(*ret) + len);
 		ret->len = len;
 		js_insert(&state_JS, ret->name, ret, true);
 	}

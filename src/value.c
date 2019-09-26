@@ -183,7 +183,7 @@ int value_parse(const char *value, uint8_t *parsed, size_t len)
 	 *   such as "\r" should be escaped into their proper ASCII value e.g. 0x0d.
 	 */
 	} else {
-		size_t value_len = strlen(value);
+		size_t value_len = strnlen(value, len + 1);
 		if (value_len > len) {
 			NB_wrn("truncate character sequence value to %zu bytes", len);
 			value_len = len;

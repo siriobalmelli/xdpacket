@@ -75,8 +75,7 @@ die:
  */
 static int parse_cmptail(const char *check, const unsigned char *buf, size_t buf_pos)
 {
-	/* 'check' is hardcoded, strlen() guaranteed to terminate */
-	size_t check_len = strlen(check);
+	size_t check_len = strnlen(check, buf_pos +1);
 	if (check_len > buf_pos)
 		return -1;
 	return strncmp(check, (const char *)&buf[buf_pos-check_len], check_len);
