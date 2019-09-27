@@ -81,22 +81,6 @@ static uint16_t ones_final(uint32_t sum)
 }
 
 
-/*	l2_parse()
- * Ethernet frames may have an 802.1q tag, which changes their length
- * and moves the location of the ethertype field.
- *
- * Writes the length of *l2 to *out_size.
- * Returns the ethertype.
- */
-__be16 l2_parse(const struct ethhdr *l2, size_t *out_size)
-{
-	*out_size = l2->h_proto == ETH_P_8021Q ? sizeof(*l2) + 2 : sizeof(*l2);
-	/* ethertype is always the last 2 bytes of the frame header */
-	__be16 *math = (__be16 *)l2 + *out_size -2;
-	return *math;
-}
-
-
 /*	checksum()
  * Calculate IP and protocol (tcp/udp) checksums on an ethernet frame.
  * Returns 0 on success (was able to calculate all checksums).
@@ -104,16 +88,9 @@ __be16 l2_parse(const struct ethhdr *l2, size_t *out_size)
  */
 int __attribute__((hot)) checksum(void *frame, size_t len)
 {
-	/* l2 sanity */
-	if (!frame)
-		return -1;
-	size_t l2len;
-	__be16 ethertype = l2_parse(frame, &l2len);
-	if (be16toh(ethertype) != ETH_P_IP)
-		return -1;
+	struct ethhdr *l2 = frame;
 
-
-	struct iphdr *l3 = frame + l2len;
+	struct iphdr *l3 = frame + sizeof(*l2);
 	uint16_t head_len; /* length of ip(4|6) header */
 	uint8_t *l3_proto; /* location of protocol/next_header */
 
@@ -146,7 +123,11 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 
 
 	/* sanity check provided pointer and length values */
-	if (len <= (l2len + sizeof(*l3)) || len > UINT16_MAX)
+	if (!l2 || len <= (sizeof(*l2) + sizeof(*l3)) || len > UINT16_MAX)
+		return -1;
+
+	/* verify protocol */
+	if (be16toh(l2->h_proto) != ETH_P_IP)
 		return -1;
 
 
@@ -162,7 +143,7 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 			return -1;
 		l4.ptr = (void *)l3 + head_len;
 		l4_len = be16toh(l3->tot_len) - head_len;
-		if (l4_len > (len - l2len - head_len))
+		if (l4_len > (len - sizeof(*l2) - head_len))
 			return -1;
 
 		l3_proto = &l3->protocol;
@@ -196,11 +177,11 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 	 * but it's good enough for now.
 	 */
 	} else if (l3->version == 6) {
-		struct ipv6hdr *l3 = frame + l2len; /* clobber for clarity */
+		struct ipv6hdr *l3 = frame + sizeof(*l2); /* clobber for clarity */
 		head_len = 40;
 		l4.ptr = (void *)l3 + head_len;
 		l4_len = be16toh(l3->payload_len);
-		if (l4_len > (len - l2len - head_len))
+		if (l4_len > (len - sizeof(*l2) - head_len))
 			return -1;
 
 		l3_proto = &l3->nexthdr;
