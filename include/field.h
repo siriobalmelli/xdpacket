@@ -121,8 +121,11 @@ int		field_emit_all	(yaml_document_t *outdoc,
  * - a 0-length packet with offt X should match all packets where (len >= X)
  */
 #define FIELD_PACKET_HASHING							\
+	/* zero field flags before matching */					\
+	struct field_set set__ = set;						\
+	set__.flags = 0;							\
 	/* must not error after we start changing 'outhash' */			\
-	*outhash = fnv_hash64(outhash, &set, sizeof(set));			\
+	*outhash = fnv_hash64(outhash, &set__, sizeof(set__));			\
 	if (flen) {								\
 		*outhash = fnv_hash64(outhash, start, flen-1);			\
 		/* last byte must be run through the mask */			\
