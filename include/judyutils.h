@@ -95,7 +95,7 @@ NLC_INLINE int js_insert(Pvoid_t *array, const char *index, void *datum, bool cl
  */
 NLC_INLINE int jl_enqueue(Pvoid_t *array, void *datum)
 {
-	uint64_t index=0;
+	Word_t index=0;
 	int rc;
 	JLFE(rc, *array, index);
 	if (!rc)
@@ -171,7 +171,7 @@ NLC_INLINE void js_delete(Pvoid_t *array, const char *index)
  */
 #define JL_LOOP(array_ptr, statements)				\
 do {								\
-	uint64_t index = 0;					\
+	Word_t index = 0;					\
 	void **pval;						\
 	Pvoid_t __attribute__((unused)) *parr = array_ptr;	\
 	unsigned int __attribute__((unused)) i = 0;		\
