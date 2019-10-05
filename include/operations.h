@@ -14,20 +14,29 @@
 #include <nonlibc.h>
 
 
+/* TODO: delete this */
+#if 1
+typedef uint64_t size_t;
+#define NULL 0ULL
+#define	NLC_INLINE static inline __attribute__((always_inline))
+#endif
+
+
+/* infer operation type from usage context */
+# if 0
 /* encoded in 'flags' byte of op->set */
 enum op_type {
 	OP_MATCH	= 0x10,
 	OP_COPY		= 0x20,
 	OP_MOVE		= 0x40
 };
+#endif
 
 struct op_set {
-	struct field_set	set;
-	void			*where;
-union {
-	void			*from;
+	struct field_set	set_to;
+	void			*to;
 	struct field_set	set_from;
-};
+	void			*from;
 } __attribute__((packed));
 
 int op_execute(struct op_set *op, void *pkt, size_t plen);
@@ -37,13 +46,14 @@ int op_execute(struct op_set *op, void *pkt, size_t plen);
  * Encode operation and relevant parameters.
  */
 struct op {
-	enum op_type	type;
-	struct field	*field;
-	struct state	*where;
+	// enum op_type	type;		/* infer type from usage context */ /* TODO: delete this */
+	struct field	*field_to;
+	struct state	*to;
+	struct field	*field_from;
 union {
 	struct state	*from_state;
 	struct field	*from_field;
-	char		*literal;
+	char		*from_value;
 };
 };
 
