@@ -5,6 +5,7 @@
 #include <binhex.h>
 #include <nstring.h>
 #include <ndebug.h>
+#include <nlc_endian.h> /* htobeXX macros */
 
 
 /* Use regex to match special-case parser inputs.
