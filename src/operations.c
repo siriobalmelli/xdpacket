@@ -50,6 +50,7 @@ int op_common(struct op_set *op, void *pkt, size_t plen,
 		return 1;
 	if (!*out_from && !(*out_from = op_pkt_offset(pkt, plen, op->set_from)))
 		return 1;
+	return 0;
 }
 
 
@@ -87,64 +88,3 @@ int op_write(struct op_set *op, void *pkt, size_t plen)
 
 	return 0;
 }
-
-
-#if 0  /* TODO: delete this */
-/*	op_execute()
- *
- * NOTES:
- * - If a pointer (where || from) is NULL, it will be replaced
- *   with 'pkt + set.offt' at runtime.
- *   Otherwise, we will use the given pointer and _ignore_ 'set.offt'.
- * - An OP_MOVE will mask the trailing byte with the mask
- *   of _both_ 'set' and 'set_from'.
- */
-int op_execute(struct op_set *op, void *pkt, size_t plen)
-{
-	uint8_t *where;
-	uint8_t *from;
-	enum op_type type = op->set.flags & 0xF0;
-	size_t len = op->set.len -1; /* last byte is masked */
-	uint8_t mask = op->set.mask;
-
-	/* addressing */
-	where = op->where;
-	if (!where && !(where = op_pkt_offset(pkt, plen, op->set)))
-		return 1;
-	switch (type) {
-	case OP_MATCH:
-	case OP_COPY:
-		from = op->from;
-		if (!from && !(from = op_pkt_offset(pkt, plen, op->set)))
-			return 1;
-		break;
-	case OP_MOVE:
-		if (!(from = op_pkt_offset(pkt, plen, op->set_from)))
-			return 1;
-		break;
-	}
-
-	/* operation */
-	switch (type) {
-	case OP_MATCH:
-		if (memcmp(where, from, len))
-			return 1;
-		if (where[len] & mask != from[len] & mask)
-			return 1;
-		break;
-
-	case OP_COPY:
-		memcpy(where, from, len);
-		/* mask source; preserve masked bits in destination */
-		where[len] = (where[len] & ~mask) | (from[len] & mask);
-		break;
-
-	case OP_MOVE:
-		memcpy(where, from, len);
-		where[len] = (where[len] & ~mask) |
-			((from[len] & mask) & op->set_from.mask);
-		break;
-
-	return 0;
-}
-#endif

@@ -8,8 +8,8 @@
   # deps
   system ? builtins.currentSystem,
   nixpkgs ? import (builtins.fetchGit {
-    url = "https://siriobalmelli@github.com/siriobalmelli-foss/nixpkgs.git";
-    ref = "sirio";
+    url = "https://github.com/siriobalmelli-foss/nixpkgs.git";
+    ref = "master";
     }) {}
 }:
 
@@ -28,7 +28,7 @@ stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  libjudy = nixpkgs.libjudy or import (builtins.fetchGit {
+  libjudy = import (builtins.fetchGit {  # TODO: upstream pkgconfig or Meson Judy
     url = "https://github.com/siriobalmelli/libjudy.git";
     ref = "master";
     }) {};
@@ -37,26 +37,24 @@ stdenv.mkDerivation rec {
     ref = "master";
     }) {};
 
-  inputs = [
-    nixpkgs.gcc
-    nixpkgs.clang
-    nixpkgs.meson
-    nixpkgs.ninja
-    nixpkgs.pandoc
-    nixpkgs.pkgconfig
-  ];
-  buildInputs = if ! lib.inNixShell then inputs else inputs ++ [
-    nixpkgs.cscope
-    nixpkgs.gdb
-    nixpkgs.man
-    nixpkgs.pahole
-    nixpkgs.valgrind
-    nixpkgs.which
-  ];
-  propagatedBuildInputs = [
-    nixpkgs.libyaml
+  buildInputs = [
+    clang
+    gcc
     libjudy
+    libyaml
+    meson
+    ninja
     nonlibc
+    pandoc
+    pkgconfig
+  ] ++ lib.optional lib.inNixShell [
+    cscope
+    gdb
+    man
+    valgrind
+    which
+  ] ++ lib.optional (lib.inNixShell && (!stdenv.isDarwin)) [
+    pahole
   ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
