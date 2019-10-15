@@ -56,7 +56,7 @@ int op_common(struct op_set *op, void *pkt, size_t plen,
 
 /*	op_match()
  */
-int op_match(struct op_set *op, void *pkt, size_t plen)
+int __attribute__((hot)) op_match(struct op_set *op, void *pkt, size_t plen)
 {
 	size_t len;
 	uint8_t *to;
@@ -74,7 +74,7 @@ int op_match(struct op_set *op, void *pkt, size_t plen)
 
 /*	op_write()
  */
-int op_write(struct op_set *op, void *pkt, size_t plen)
+int __attribute__((hot)) op_write(struct op_set *op, void *pkt, size_t plen)
 {
 	size_t len;
 	uint8_t *to;
@@ -87,4 +87,39 @@ int op_write(struct op_set *op, void *pkt, size_t plen)
 		((from[len] & op->set_to.mask) & op->set_from.mask);
 
 	return 0;
+}
+
+/*	op_free()
+ */
+void op_free (void *arg)
+{
+
+}
+
+/*	op_new()
+ */
+struct op *op_new (const char *field_to_name, const char *state_to_name,
+		const char *field_from_name, const char *from)
+{
+
+}
+
+/*	op_emit()
+ */
+int op_emit (struct op *op, yaml_document_t *outdoc, int outlist)
+{
+	int err_cnt = 0;
+	int reply = yaml_document_add_mapping(outdoc, NULL, YAML_BLOCK_MAPPING_STYLE);
+	NB_die_if(
+		y_pair_insert(outdoc, reply, fval->field->name, fval->val)
+#ifndef NDEBUG
+		|| y_pair_insert(outdoc, reply, "bytes", fval->rendered)
+#endif
+		// || y_pair_insert_nf(outdoc, reply, "hash", "0x%"PRIx64, fval->set_hash)
+		, "");
+	NB_die_if(!(
+		yaml_document_append_sequence_item(outdoc, outlist, reply)
+		), "");
+die:
+	return err_cnt;
 }
