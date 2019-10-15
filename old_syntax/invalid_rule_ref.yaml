@@ -8,9 +8,8 @@ xdpk:
 ---
 xdpk:
   - rule: CC_chrome_unicast_udp_8616_ffb7
-    write:
-      - dst: {field: ip dst}
-        src: {state: ipsrc_ffb7}
+    copy:
+      - ip dst: ipsrc_ffb7
 ...
 ---
 del:
@@ -20,7 +19,6 @@ del:
 ---
 xdpk:
   - rule: CC_chrome_unicast_udp_8616_ffb7
-    write:
-      - dst: {field: ip dst}
-        src: {state: ipsrc_ffb7}
+    copy:
+      - ip dst: ipsrc_ffb7
 ...

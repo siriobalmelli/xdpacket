@@ -23,25 +23,19 @@ xdpk:
     len: 4
   - rule: reflect
     match:
-      - dst: {field: any}
-        src: {field: any}
+      - any:
+    store:
+      - mac src: msrc
+      - ip src: isrc
+      - mac dst: mdst
+      - ip dst: idst
+    copy:
+      - mac src: mdst
+      - ip src: idst
+      - mac dst: msrc
+      - ip dst: isrc
     write:
-      # swap MAC address fields
-      - dst: {state: msrc}
-        src: {field: mac src}
-      - dst: {field: mac src}
-        src: {field: mac dst}
-      - dst: {field: mac dst}
-        src: {state: msrc}
-      # swap IP address fields
-      - dst: {state: isrc}
-        src: {field: ip src}
-      - dst: {field: ip src}
-        src: {field: ip dst}
-      - dst: {field: ip dst}
-        src: {state: isrc}
-      - dst: {field: ttl}
-        src: {value: 1}
+      - ttl: 1
   - process: enp0s3
     rules:
       - reflect: enp0s3

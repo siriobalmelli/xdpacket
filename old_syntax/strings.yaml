@@ -11,9 +11,7 @@ xdpk:
     len: 23
   - rule: chrome A ssdp
     match:
-      - dst: {field: http200}
-        src: {value: HTTP/1.1 200 OK}
+      - http200: HTTP/1.1 200 OK
     write:
-      - dst: {field: http200 new}
-        src: {value: "HTTP/1.1 200 OK\r\nEXT:\r\n"}
+      - http200 new: "HTTP/1.1 200 OK\r\nEXT:\r\n"
 ...

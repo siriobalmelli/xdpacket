@@ -1,0 +1,56 @@
+# field names abbreviated for clarity:
+# "msrc" == Multicast Source
+# "mdst" == Multicast Destination
+#
+# NOTE: 'match' and 'write' semantics are identical;
+# 'match' is used for the YAML-style longform
+# 'write' is used for the JSON-style shortform representation
+
+---
+# "verbose" syntax:
+# - The rule is a single object containing 'dst' and 'src' objects.
+# - A src/dst object contains a combination of the keys
+#   ['field', 'state', 'value'] which explicitly give the type.
+rule:
+  match:
+    # packet->msrc == 0x0A0027000000
+    - dst:
+        field: msrc
+      src:
+        value: 0a:00:27:00:00:00
+    # state1->msrc == 0x0A0027000000
+    - dst:
+        field: msrc
+        state: state1
+      src:
+        value: 0a:00:27:00:00:00
+    # packet->msrc == packet->mdst
+    - dst:
+        field: msrc
+      src:
+        field: mdst
+    # state1->msrc == packet->mdst
+    - dst:
+        field: msrc
+        state: state1
+      src:
+        field: mdst
+    # state1->msrc == state2->msrc
+    - dst:
+        field: msrc
+        state: state1
+      src:
+        field: mdst
+        state: state2
+  write:
+    # packet->msrc = 0x0A0027000000
+    - {dst: {field: msrc}, src: {value: 0a:00:27:00:00:00}}
+    # state1->msrc = 0x0A0027000000
+    - {dst: {field: msrc, state: state1}, src: {value: 0a:00:27:00:00:00}}
+    # packet->msrc = packet->mdst
+    - {dst: {field: msrc}, src: {field: mdst}}
+    # state1->msrc = packet->mdst
+    - {dst: {field: msrc, state: state1}, src: {field: mdst}}
+    # state1->msrc = state2->msrc
+    - {dst: {field: msrc, state: state1}, src: {field: mdst, state: state2}}
+...

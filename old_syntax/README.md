@@ -15,4 +15,3 @@ The [examples](./) dir holds `.yaml` files showing usage cases for `xdpacket`:
 - [strings.yaml](./strings.yaml)
 - [state.yaml](./state.yaml)
 - [mac_src.yaml](./mac_src.yaml)
-- [syntax.yaml](./syntax.yaml)
