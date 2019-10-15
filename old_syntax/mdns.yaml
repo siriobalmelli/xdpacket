@@ -1,0 +1,143 @@
+---
+# multicast DNS mangling using new grammar
+# in this example:
+# eth0 == 192.168.1.1/24 -> client 192.168.1.20
+# eth1 == 10.1.1.1/24 -> chromecast 10.1.1.20
+xdpk:
+  # iface is a system interface on which to open a socket
+  - iface: eth0
+  - iface: eth1
+
+  # field: a named set of bytes to be hashed or written
+  - field: mac dst
+    offt: 0
+    len: 6
+  - field: mac src
+    offt: 6
+    len: 6
+  - field: ip proto
+    offt: 25
+    len: 1
+  - field: ip src
+    offt: 26
+    len: 4
+  - field: ip dst
+    offt: 32
+    len: 4
+  - field: mdns rec
+    offt: 377
+    len: 2
+  - field: mdns rec addr
+    offt: -4
+    len: 4
+
+  # rule is a named set of matches and writes (bytes to be mangled in packet),
+  # using fields to describe them
+  - rule: client unicast
+    match:
+      - ip proto: 0x1  ## ICMP
+      - ip src: 192.168.1.20
+      - ip dst: 192.168.1.1
+    write:
+      - mac src: 00:11:22:33:44:55
+      - ip src: 10.1.1.1
+      - mac dst: aa:bb:cc:dd:ee:ff
+      - ip dst: 10.1.1.20
+
+
+  - rule: client A tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 192.168.1.20
+      - ip dst: 192.168.1.1
+    store:
+      - tcp sport: sporta
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.20
+      - tcp sport: 20001
+  - rule: client B tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 192.168.1.40
+      - ip dst: 192.168.1.1
+    store:
+      - tcp sport: sportb
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.20
+      - tcp sport: 20002
+
+  - rule: chrome A tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 10.1.1.20
+      - ip dst: 10.1.1.1
+      - tcp dport: 20001
+    copy:
+      - tcp dport: sporta
+    write:
+      - ip src: 192.168.1.1
+      - ip dst: 192.168.1.20
+  - rule: chrome B tcp
+    match:
+      - ip proto: 0x6
+      - ip src: 10.1.1.20
+      - ip dst: 10.1.1.1
+      - tcp dport: 20002
+    copy:
+      - tcp dport: sportb
+    write:
+      - ip src: 192.168.1.1
+      - ip dst: 192.168.1.40
+
+
+  - rule: client 2 unicast
+    match:
+      - ip proto: 0x1  ## ICMP
+      - ip src: 192.168.1.21
+      - ip dst: 192.168.1.1
+    write:
+      - ip src: 10.1.1.1
+      - ip dst: 10.1.1.21
+  - rule: chrome unicast
+    match:
+      - ip src: 10.1.1.20
+      - ip dst: 10.1.1.1
+    write:
+      - ip src: 192.168.1.1
+      - ip dst: 192.168.1.20
+  - rule: client mdns
+    match:
+      - ip src: 192.168.1.20
+      - ip dst: 224.0.0.251
+    write:
+      - ip src: 10.1.1.1
+  - rule: chrome mdns A
+    match:
+      - ip src: 10.1.1.20
+      - ip dst: 224.0.0.251
+      - mdns rec: 0x0001  # DNS A record
+    write:
+      - ip src: 192.168.1.1
+      - mdns rec addr: 192.168.1.1
+  # MUST be matched AFTER preceding (more specific) 'A' rule
+  - rule: chrome mdns
+    match:
+      - ip src: 10.1.1.20
+      - ip dst: 224.0.0.251
+    write:
+      - ip src: 192.168.1.1
+
+  # process is an input interface and a list of (rule, output)
+  # tuples to be executed on it.
+  - process: eth0
+    rules:
+      - client unicast: eth1
+      - client 2 unicast: eth1
+      - client mdns: eth1
+  - process: eth1
+    rules:
+      - chrome unicast: eth0
+      - chrome mdns A: eth0
+      - chrome mdns: eth0

@@ -11,8 +11,7 @@ xdpk:
 
   - rule: check src
     match:
-      - dst: {field: mac src}
-        src: {value: 0a:00:27:00:00:00}
+      - mac src: 0a:00:27:00:00:00
 
   - process: enp0s8
     rules:

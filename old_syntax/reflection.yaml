@@ -12,11 +12,9 @@ xdpk:
     len: 1
   - rule: reflect
     match:
-      - dst: {field: any}
-        src: {field: any}
+      - any:
     write:
-      - dst: {field: ttl}
-        src: {value: 1}
+      - ttl: 1
   - process: enp0s3
     rules:
       - reflect: enp0s3

@@ -35,99 +35,150 @@ xdpk:
   # using fields to describe them
   - rule: client unicast
     match:
-      - ip proto: 0x1  ## ICMP
-      - ip src: 192.168.1.20
-      - ip dst: 192.168.1.1
+      - dst: {field: ip proto}
+        src: {value: 0x1}  ## ICMP
+      - dst: {field: ip src}
+        src: {value: 192.168.1.20}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.1}
     write:
-      - mac src: 00:11:22:33:44:55
-      - ip src: 10.1.1.1
-      - mac dst: aa:bb:cc:dd:ee:ff
-      - ip dst: 10.1.1.20
+      - dst: {field: mac src}
+        src: {value: 00:11:22:33:44:55}
+      - dst: {field: ip src}
+        src: {value: 10.1.1.1}
+      - dst: {field: mac dst}
+        src: {value: aa:bb:cc:dd:ee:ff}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.20}
 
 
   - rule: client A tcp
     match:
-      - ip proto: 0x6
-      - ip src: 192.168.1.20
-      - ip dst: 192.168.1.1
-    store:
-      - tcp sport: sporta
+      - dst: {field: ip proto}
+        src: {value: 0x6}
+      - dst: {field: ip src}
+        src: {value: 192.168.1.20}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.1}
     write:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.20
-      - tcp sport: 20001
+      - dst: {state: sporta}
+        src: {field: tcp sport}
+      - dst: {field: ip src}
+        src: {value: 10.1.1.1}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.20}
+      - dst: {field: tcp sport}
+        src: {value: 20001}
   - rule: client B tcp
     match:
-      - ip proto: 0x6
-      - ip src: 192.168.1.40
-      - ip dst: 192.168.1.1
-    store:
-      - tcp sport: sportb
+      - dst: {field: ip proto}
+        src: {value: 0x6}
+      - dst: {field: ip src}
+        src: {value: 192.168.1.40}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.1}
     write:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.20
-      - tcp sport: 20002
+      - dst: {state: sportb}
+        src: {field: tcp sport}
+      - dst: {field: ip src}
+        src: {value: 10.1.1.1}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.20}
+      - dst: {field: tcp sport}
+        src: {value: 20002}
 
   - rule: chrome A tcp
     match:
-      - ip proto: 0x6
-      - ip src: 10.1.1.20
-      - ip dst: 10.1.1.1
-      - tcp dport: 20001
-    copy:
-      - tcp dport: sporta
+      - dst: {field: ip proto}
+        src: {value: 0x6}
+      - dst: {field: ip src}
+        src: {value: 10.1.1.20}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.1}
+      - dst: {field: tcp dport}
+        src: {value: 20001}
     write:
-      - ip src: 192.168.1.1
-      - ip dst: 192.168.1.20
+      - dst: {field: tcp dport}
+        src: {state: sporta}
+      - dst: {field: ip src}
+        src: {value: 192.168.1.1}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.20}
   - rule: chrome B tcp
     match:
-      - ip proto: 0x6
-      - ip src: 10.1.1.20
-      - ip dst: 10.1.1.1
-      - tcp dport: 20002
-    copy:
-      - tcp dport: sportb
+      - dst: {field: ip proto}
+        src: {value: 0x6}
+      - dst: {field: ip src}
+        src: {value: 10.1.1.20}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.1}
+      - dst: {field: tcp dport}
+        src: {value: 20002}
     write:
-      - ip src: 192.168.1.1
-      - ip dst: 192.168.1.40
+      - dst: {field: tcp dport}
+        src: {state: sportb}
+      - dst: {field: ip src}
+        src: {value: 192.168.1.1}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.40}
 
 
   - rule: client 2 unicast
     match:
-      - ip proto: 0x1  ## ICMP
-      - ip src: 192.168.1.21
-      - ip dst: 192.168.1.1
+      - dst: {field: ip proto}
+        src: {value: 0x1}  ## ICMP
+      - dst: {field: ip src}
+        src: {value: 192.168.1.21}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.1}
     write:
-      - ip src: 10.1.1.1
-      - ip dst: 10.1.1.21
+      - dst: {field: ip src}
+        src: {value: 10.1.1.1}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.21}
   - rule: chrome unicast
     match:
-      - ip src: 10.1.1.20
-      - ip dst: 10.1.1.1
+      - dst: {field: ip src}
+        src: {value: 10.1.1.20}
+      - dst: {field: ip dst}
+        src: {value: 10.1.1.1}
     write:
-      - ip src: 192.168.1.1
-      - ip dst: 192.168.1.20
+      - dst: {field: ip src}
+        src: {value: 192.168.1.1}
+      - dst: {field: ip dst}
+        src: {value: 192.168.1.20}
   - rule: client mdns
     match:
-      - ip src: 192.168.1.20
-      - ip dst: 224.0.0.251
+      - dst: {field: ip src}
+        src: {value: 192.168.1.20}
+      - dst: {field: ip dst}
+        src: {value: 224.0.0.251}
     write:
-      - ip src: 10.1.1.1
+      - dst: {field: ip src}
+        src: {value: 10.1.1.1}
   - rule: chrome mdns A
     match:
-      - ip src: 10.1.1.20
-      - ip dst: 224.0.0.251
-      - mdns rec: 0x0001  # DNS A record
+      - dst: {field: ip src}
+        src: {value: 10.1.1.20}
+      - dst: {field: ip dst}
+        src: {value: 224.0.0.251}
+      - dst: {field: mdns rec}
+        src: {value: 0x0001}  # DNS A record
     write:
-      - ip src: 192.168.1.1
-      - mdns rec addr: 192.168.1.1
+      - dst: {field: ip src}
+        src: {value: 192.168.1.1}
+      - dst: {field: mdns rec addr}
+        src: {value: 192.168.1.1}
   # MUST be matched AFTER preceding (more specific) 'A' rule
   - rule: chrome mdns
     match:
-      - ip src: 10.1.1.20
-      - ip dst: 224.0.0.251
+      - dst: {field: ip src}
+        src: {value: 10.1.1.20}
+      - dst: {field: ip dst}
+        src: {value: 224.0.0.251}
     write:
-      - ip src: 192.168.1.1
+      - dst: {field: ip src}
+        src: {value: 192.168.1.1}
 
   # process is an input interface and a list of (rule, output)
   # tuples to be executed on it.
