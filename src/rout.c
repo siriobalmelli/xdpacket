@@ -81,7 +81,7 @@ die:
  * Return 'true' if matching (and increment matches counter),
  * otherwise return 'false'.
  */
-bool  __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt, size_t plen)
+bool __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt, size_t plen)
 {
 	uint64_t hash = fnv_hash64(NULL, NULL, 0);
 	for (unsigned int i=0; i < set->match_cnt; i++) {

@@ -11,17 +11,7 @@
 #include <field.h>
 #include <state.h>
 #include <stddef.h>  /* size_t */
-#include <nonlibc.h>
-
-
-#if 0
-/* TODO: delete this */
-#if 1
-typedef uint64_t size_t;
-#define NULL 0ULL
-#define	NLC_INLINE static inline __attribute__((always_inline))
-#endif
-#endif
+#include <yamlutils.h>
 
 
 struct op_set {
@@ -43,10 +33,21 @@ struct op {
 	struct field	*field_from;
 union {
 	struct state	*from_state;
-	struct field	*from_field;
 	char		*from_value;
 };
 };
+
+
+void		op_free		(void *arg);
+
+struct op	*op_new		(const char *field_to_name,
+				const char *state_to_name,
+				const char *field_from_name,
+				const char *from);
+
+int		op_emit		(struct op *op,
+				yaml_document_t *outdoc,
+				int outlist);
 
 
 #endif /* operations_h_ */

@@ -121,37 +121,37 @@ int value_parse(const char *value, uint8_t *parsed, size_t len)
 			uint16_t *out = (uint16_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint16_t value '%lld' out of bounds", tt);
-			*out = htobe16(*out);
+			*out = h16tobe(*out);
 
 		} else if (len == 2) {
 			int16_t *out = (int16_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int16_t value '%lld' out of bounds", tt);
-			*out = htobe16(*out);
+			*out = h16tobe(*out);
 
 		} else if (len == 4 && tt >= 0) {
 			uint32_t *out = (uint32_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint32_t value '%lld' out of bounds", tt);
-			*out = htobe32(*out);
+			*out = h32tobe(*out);
 
 		} else if (len == 4) {
 			int32_t *out = (int32_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int32_t value '%lld' out of bounds", tt);
-			*out = htobe32(*out);
+			*out = h32tobe(*out);
 
 		} else if (len == 8 && tt >= 0) {
 			int64_t *out = (int64_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"int64_t value '%lld' out of bounds", tt);
-			*out = htobe64(*out);
+			*out = h64tobe(*out);
 
 		} else if (len == 8) {
 			uint64_t *out = (uint64_t *)by;
 			NB_die_if(__builtin_add_overflow(tt, 0, out),
 				"uint64_t value '%lld' out of bounds", tt);
-			*out = htobe64(*out);
+			*out = h64tobe(*out);
 
 		} else {
 			NB_die("could not parse integer '%s' with nonstandard length '%zu'",
