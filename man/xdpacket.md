@@ -217,6 +217,8 @@ this, it matches and writes precisely where it is told to.
 
 ## Field-Value Tuple (fval)
 
+TODO: update outdated documentation
+
 Data to be matched or written is described using *field-value* tuples:
 
 | element | type   | description                                         |

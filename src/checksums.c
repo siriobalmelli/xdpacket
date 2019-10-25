@@ -9,7 +9,7 @@
 #include <linux/icmpv6.h>	/* struct icmp6hdr */
 #include <linux/udp.h>		/* struct udphdr */
 #include <linux/tcp.h>		/* struct tcphdr */
-#include <nlc_endian.h>		/* endianness macros */
+#include <nlc_endian.h>		/* be16toh */
 
 
 /*	pseudo headers
