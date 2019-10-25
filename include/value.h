@@ -19,7 +19,7 @@
 
 int value_parse		(const char *value,
 			uint8_t *parsed,
-			 size_t len);
+			size_t len);
 
 char *value_render	(const uint8_t *parsed,
 			size_t len);
