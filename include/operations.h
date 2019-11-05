@@ -10,8 +10,8 @@
 
 #include <field.h>
 #include <state.h>
-#include <stddef.h>  /* size_t */
 #include <yamlutils.h>
+#include <memref.h>
 
 
 /*	struct op_set
@@ -30,19 +30,17 @@ int op_write(struct op_set *op, void *pkt, size_t plen);
 
 /*	struct op
  * Encode operation and relevant parameters.
- * TODO: src_state and src_value coalesce into a "src_memory" struct or similar
- * (and we are back down to 64B for this struct)
  */
 struct op {
 	struct field	*dst_field;
-	struct state	*dst_state;
+	struct memref	*dst;
 
 	struct field	*src_field;
-	struct state	*src_state;
-	char		*src_value;
+	struct memref	*src;
 
 	struct op_set	set;
 };
+NLC_ASSERT(struct_op_size, sizeof(struct op) <= 64);
 
 void		op_free		(void *arg);
 

@@ -4,6 +4,7 @@ src_files = files([
     'field.c',
     'fref.c',
     'fval.c',
+	'memref.c',
 	'operations.c',
     'parse2.c',
     'process.c',
