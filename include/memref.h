@@ -33,10 +33,10 @@ struct {	/* static value */
 };
 
 
-void memref_free(void *ref);
+void memref_release(void *ref);
 
-struct memref *memref_value_new(const char *field_name, const char *value);
-struct memref *memref_state_get(const char *state_name, size_t len);
+struct memref *memref_value_new(const struct field *field, const char *value);
+struct memref *memref_state_get(const struct field *field, const char *state_name);
 
 int memref_emit (struct memref *ref, yaml_document_t *outdoc, int outmapping);
 
