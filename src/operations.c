@@ -121,33 +121,24 @@ int op_emit (struct op *op, yaml_document_t *outdoc, int outlist)
 			y_pair_insert(outdoc, dst, "field", op->dst_field->name)
 			, "failed to emit dst->field");
 	}
-	if (op->dst_state) {
-		NB_die_if(
-			y_pair_insert(outdoc, dst, "state", op->dst_state->name)
-			, "failed to emit dst->state");
-	}
+	NB_die_if(
+		memref_emit(op->dst, outdoc, dst)
+		, "");
+	NB_die_if(
+		y_pair_insert_obj(outdoc, reply, "dst", dst)
+		, "failed to emit 'dst'");
+
 	if (op->src_field) {
 		NB_die_if(
 			y_pair_insert(outdoc, src, "field", op->src_field->name)
 			, "failed to emit src->field");
 	}
-	if (op->src_state) {
-		NB_die_if(
-			y_pair_insert(outdoc, src, "state", op->src_state->name)
-			, "failed to emit src->state");
-	}
-	if (op->src_value) {
-		NB_die_if(
-			y_pair_insert(outdoc, src, "value", op->src_state->name)
-			, "failed to emit src->value");
-	}
-
+	NB_die_if(
+		memref_emit(op->src, outdoc, src)
+		, "");
 	NB_die_if(
 		y_pair_insert_obj(outdoc, reply, "src", src)
 		, "failed to emit 'src'");
-	NB_die_if(
-		y_pair_insert_obj(outdoc, reply, "dst", dst)
-		, "failed to emit 'dst'");
 
 	NB_die_if(!(
 		yaml_document_append_sequence_item(outdoc, outlist, reply)
