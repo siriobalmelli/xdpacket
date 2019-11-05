@@ -40,15 +40,15 @@ struct op {
 
 	struct op_set	set;
 };
-NLC_ASSERT(struct_op_size, sizeof(struct op) <= 64);
+NLC_ASSERT(struct_op_size, sizeof(struct op) <= NLC_CACHE_LINE);
 
 void		op_free		(void *arg);
 
-struct op	*op_new		(struct field	*dst_field_name,
-				struct state	*dst_state_name,
-				struct field	*src_field_name,
-				struct state	*src_state_name,
-				char		*src_value);
+struct op	*op_new		(const char	*dst_field_name,
+				const char	*dst_state_name,
+				const char	*src_field_name,
+				const char	*src_state_name,
+				const char	*src_value);
 
 int		op_emit		(struct op *op,
 				yaml_document_t *outdoc,

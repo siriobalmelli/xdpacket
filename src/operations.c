@@ -94,16 +94,74 @@ int __attribute__((hot)) op_write(struct op_set *op, void *pkt, size_t plen)
  */
 void op_free (void *arg)
 {
+	if (!arg)
+		return;
+	struct op *op = arg;
+	
+	field_release(op->dst_field);
+	field_release(op->src_field);
+	memref_release(op->dst);
+	memref_release(op->src);
 
+	free(op);
 }
 
 /*	op_new()
  */
-struct op *op_new (struct field *dst_field_name, struct state *dst_state_name,
-		struct field *src_field_name, struct state *src_state_name,
-		char *src_value)
+struct op *op_new (const char *dst_field_name, const char *dst_state_name,
+		const char *src_field_name, const char *src_state_name, const char *src_value)
 {
-	/* TODO: implement */
+	struct op *ret = NULL;
+	NB_die_if(!dst_field_name && !src_field_name, "must provide at least one field");
+	NB_die_if(!dst_field_name && !dst_state_name, "no destination specified");
+	NB_die_if(!src_field_name && !src_state_name && !src_value, "no source specified");
+	NB_die_if(src_state_name && src_value, "source cannot be both a state and a value");
+
+	NB_die_if(!(
+		ret = calloc(sizeof(*ret), 1)
+		), "fail alloc size %zu", sizeof(*ret));
+
+	if (dst_field_name) {
+		NB_die_if(!(
+			ret->dst_field = field_get(dst_field_name)
+			), "cannot get field '%s'", dst_field_name);
+	}
+	if (src_field_name) {
+		NB_die_if(!(
+			ret->src_field = field_get(src_field_name)
+			), "cannot get field '%s'", src_field_name);
+	}
+
+	if (dst_state_name) {
+		NB_die_if(!(
+			ret->dst = memref_state_get(
+					dst_field_name ? ret->dst_field : ret->src_field,
+					dst_state_name)
+			), "cannot get destination state ref '%s'", dst_state_name);
+	}
+
+	if (src_state_name) {
+		NB_die_if(!(
+			ret->src = memref_state_get(
+					src_field_name ? ret->src_field : ret->dst_field,
+					src_state_name)
+			), "cannot get source state ref '%s'", src_state_name);
+	} else if (src_value) {
+		NB_die_if(!(
+			ret->src = memref_value_new(
+					src_field_name ? ret->src_field : ret->dst_field,
+					src_value)
+			), "cannot parse source value '%s'", src_value);
+	}
+
+	ret->set.set_to = ret->dst_field ? ret->dst_field->set : ret->src_field->set;
+	ret->set.set_from = ret->src_field ? ret->src_field->set : ret->dst_field->set;
+	ret->set.to = ret->dst ? ret->dst->bytes : NULL;
+	ret->set.from = ret->src ? ret->src->bytes : NULL;
+
+	return ret;
+die:
+	op_free(ret);
 	return NULL;
 }
 
