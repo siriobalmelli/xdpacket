@@ -15,35 +15,19 @@
 /*	rout_set
  * Packed representation of a rule (match -> write -> output) sequence.
  *
+ * @if_out	: interface where packets should be output after writing/mangling.
+ * @match_JQ	: queue (sequence) of match operatioons to be applied to packet.
+ * @write_JQ	: write operations to be applied if all match operations pass.
  * @count_match	: number of packets matched and processed
- * @out_fd	: fd of socket where packets should be output after writing/mangling.
- * @writes_JQ	: queue (sequence) of (struct fval_set) to be applied to packet.
- * @hash	: fnv1a hash for a matching packet.
- * @match_cnt	: number of (struct field_set) in 'matches'.
- * @matches	: hash all bytes in the packet described 'matches'.
- *
- * NOTES:
- * - this is laid out in reverse sequence (because matches[] must be last);
- *   the logic makes use of these struct params from bottom to top
- *   (compute matches, check hash, increment counter, etc).
- * - counter sizes reduced and copies, stores and writes combined into 'actions'
- *   to bring struct to one cache line for match_cnt <= 3.
  */
 struct rout_set {
 	struct iface		*if_out;
 
-	Pvoid_t			actions_JQ; /* (uint64_t seq) -> (struct (fval|fref)_set *action) */
-	Pvoid_t			states_JQ; /* (uint64_t seq) -> (struct sref_set *state) */
+	Pvoid_t			match_JQ; /* (uint64_t seq) -> (struct (fval|fref)_set *action) */
+	Pvoid_t			write_JQ; /* (uint64_t seq) -> (struct sref_set *state) */
 
 	uint32_t		count_match;
-
-	uint32_t		match_cnt;
-	uint64_t		hash;
-	struct field_set	matches[];
-}__attribute__((aligned(4))); /* Pack uint32's without incurring
-			       * the compiler's wrath at Judy macro misalignment.
-			       */
-NLC_ASSERT(rout_set_size, sizeof(struct rout_set) <= NLC_CACHE_LINE - (sizeof(struct field_set) * 3));
+};
 
 
 void		rout_set_free	(void *arg);
@@ -62,6 +46,7 @@ bool		rout_set_exec	(struct rout_set *set,
 
 /*	rout
  * Representation of user-supplied (rule, output) tuple, given to us as strings.
+ * TODO: combine with rout_set?
  */
 struct rout {
 	struct rule		*rule;
