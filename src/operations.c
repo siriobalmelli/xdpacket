@@ -10,13 +10,13 @@
  * otherwise NULL.
  */
 NLC_INLINE
-void *op_pkt_offset(void *pkt, size_t plen, struct field_set set)
+const void *op_pkt_offset(const void *pkt, size_t plen, struct field_set set)
 {
 	/* Offset sanity.
 	 * 'offt' may be negative, in which case it denotes offset from
 	 * the end of the packet.
 	 */
-	void *where = pkt + set.offt;
+	const void *where = pkt + set.offt;
 	if (set.offt < 0)
 		where += plen;
 	if (where < pkt)
@@ -35,8 +35,8 @@ void *op_pkt_offset(void *pkt, size_t plen, struct field_set set)
  * Common sanity and offset code for operations.
  */
 NLC_INLINE
-int op_common(struct op_set *op, void *pkt, size_t plen,
-			size_t *out_len, uint8_t **out_to, uint8_t **out_from)
+int op_common(struct op_set *op, const void *pkt, size_t plen,
+			size_t *out_len, const uint8_t **out_to, const uint8_t **out_from)
 {
 	*out_len = op->set_to.len > op->set_from.len ? op->set_to.len : op->set_from.len;
 	*out_len -= 1; /* IMPORTANT: last byte is copied/matched through a mask! */
@@ -57,11 +57,11 @@ int op_common(struct op_set *op, void *pkt, size_t plen,
 
 /*	op_match()
  */
-int __attribute__((hot)) op_match(struct op_set *op, void *pkt, size_t plen)
+int __attribute__((hot)) op_match(struct op_set *op, const void *pkt, size_t plen)
 {
 	size_t len;
-	uint8_t *to;
-	uint8_t *from;
+	const uint8_t *to;
+	const uint8_t *from;
 	if (op_common(op, pkt, plen, &len, &to, &from))
 		return 1;
 
@@ -79,8 +79,8 @@ int __attribute__((hot)) op_write(struct op_set *op, void *pkt, size_t plen)
 {
 	size_t len;
 	uint8_t *to;
-	uint8_t *from;
-	if (op_common(op, pkt, plen, &len, &to, &from))
+	const uint8_t *from;
+	if (op_common(op, pkt, plen, &len, (const uint8_t **)&to, &from))
 		return 1;
 
 	memcpy(to, from, len);
@@ -162,6 +162,51 @@ struct op *op_new (const char *dst_field_name, const char *dst_state_name,
 	return ret;
 die:
 	op_free(ret);
+	return NULL;
+}
+
+/*	op_parse_new()
+ */
+struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
+{
+	const char	*dst_field_name = NULL;
+	const char	*dst_state_name = NULL;
+	const char	*src_field_name = NULL;
+	const char	*src_state_name = NULL;
+	const char	*src_value = NULL;
+
+	Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc, mapping,
+		if (!strcmp("dst", keyname) || !strcmp("d", keyname)) {
+			Y_SEQ_MAP_PAIRS_EXEC_STR(doc, val,
+				if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
+					dst_field_name = valtxt;
+				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
+					dst_state_name = valtxt;
+				} else {
+					NB_die("op destination does not implement '%s'", keyname);
+				}
+			);
+
+		} else if (!strcmp("src", keyname) || !strcmp("s", keyname)) {
+			Y_SEQ_MAP_PAIRS_EXEC_STR(doc, val,
+				if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
+					src_field_name = valtxt;
+				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
+					src_state_name = valtxt;
+				} else if (!strcmp("value", keyname) || !strcmp("v", keyname)) {
+					src_value = valtxt;
+				} else {
+					NB_die("op source does not implement '%s'", keyname);
+				}
+			);
+
+		} else {
+			NB_die("'op' does not implement '%s'", keyname);
+		}
+	);
+
+	return op_new(dst_field_name, dst_state_name, src_field_name, src_state_name, src_value);
+die:
 	return NULL;
 }
 

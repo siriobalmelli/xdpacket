@@ -174,7 +174,7 @@ int process_parse(enum parse_mode mode,
 
 		} else if (val->type == YAML_SEQUENCE_NODE) {
 			if (!strcmp("rules", keyname) || !strcmp("r", keyname)) {
-				Y_SEQ_MAP_PAIRS_EXEC(doc, val,
+				Y_SEQ_MAP_PAIRS_EXEC_STR(doc, val,
 					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
 					NB_err_if(
 						jl_enqueue(&rout_JQ, rout_new(keyname, valtxt))

@@ -67,15 +67,10 @@ die:
 }
 
 
-/*	Y_SEQ_MAP_PAIRS_EXEC()
- * Execute 'statements' on every pair of every mapping in the sequence
- * pointed to by 'seq_ptr'.
- *
- * The following variables are available to 'statements':
- * - (char *)keyname
- * - (char *)valtxt
+/*	Y_SEQ_MAP_PAIRS_EXEC_COMMON()
+ * Common code for Y_SEQ_MAP_PAIRS_[X] code
  */
-#define Y_SEQ_MAP_PAIRS_EXEC(doc_ptr, seq_ptr, statements)				\
+#define Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
 	/* process children list objects */						\
 	for (yaml_node_item_t *child = seq_ptr->data.sequence.items.start;		\
 		child < seq_ptr->data.sequence.items.top;				\
@@ -96,6 +91,32 @@ die:
 			const char *keyname = (const char *)key->data.scalar.value;	\
 											\
 			yaml_node_t *val = yaml_document_get_node(doc_ptr, pair->value);\
+
+/*	Y_SEQ_MAP_PAIRS_EXEC_OBJ()
+ * Execute 'statements' on every pair of every mapping in the sequence
+ * pointed to by 'seq_ptr'.
+ *
+ * The following variables are available to 'statements':
+ * - (char *)keyname
+ * - (yaml_node_t *)val
+ */
+#define Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc_ptr, seq_ptr, statements)				\
+	Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
+			/* user-supplied statements here */				\
+			statements;							\
+		}									\
+	}
+
+/*	Y_SEQ_MAP_PAIRS_EXEC_STR()
+ * Execute 'statements' on every pair of every mapping in the sequence
+ * pointed to by 'seq_ptr'.
+ *
+ * The following variables are available to 'statements':
+ * - (char *)keyname
+ * - (char *)valtxt
+ */
+#define Y_SEQ_MAP_PAIRS_EXEC_STR(doc_ptr, seq_ptr, statements)				\
+	Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
 			if (val->type != YAML_SCALAR_NODE) {				\
 				NB_err("'%s' in field not a scalar", keyname);		\
 				continue;						\

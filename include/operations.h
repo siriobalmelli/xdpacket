@@ -24,7 +24,7 @@ struct op_set {
 	void			*from;
 } __attribute__((packed));
 
-int op_match(struct op_set *op, void *pkt, size_t plen);
+int op_match(struct op_set *op, const void *pkt, size_t plen);
 int op_write(struct op_set *op, void *pkt, size_t plen);
 
 
@@ -49,6 +49,9 @@ struct op	*op_new		(const char	*dst_field_name,
 				const char	*src_field_name,
 				const char	*src_state_name,
 				const char	*src_value);
+
+struct op	*op_parse_new	(yaml_document_t *doc,
+				yaml_node_t *mapping);
 
 int		op_emit		(struct op *op,
 				yaml_document_t *outdoc,
