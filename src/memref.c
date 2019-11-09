@@ -2,6 +2,7 @@
 #include <yamlutils.h>
 #include <refcnt.h>
 #include <nstring.h>
+#include <value.h>
 
 
 static Pvoid_t state_JS = NULL; /* (char *field_name) -> (struct memref *ref) */
@@ -56,11 +57,45 @@ void memref_release(void *arg)
 }
 
 
+/* code shared by both memref_value_new() and memref_state_get()
+ */
+#define MEMREF_ALLOC_COMMON							\
+	NB_die_if(!(								\
+		ret = calloc(1, sizeof(*ret) + field->set.len)			\
+		), "fail alloc size %zu", sizeof(*ret) + field->set.len);	\
+	ret->set = field->set;
+
+
 /*	memref_value_new()
  */
 struct memref *memref_value_new(const struct field *field, const char *value)
 {
-	return NULL; /* TODO: implement */
+	struct memref *ret = NULL;
+	NB_die_if(!field || !value, "missing arguments");
+
+	MEMREF_ALLOC_COMMON
+
+	/* If a field-set can store the length of the user value string,
+	 * it can definitely store the resulting parsed set of bytes.
+	 */
+	errno = 0;
+	ret->input = nstralloc(value, MAXVALUELEN, NULL); /* a zero-length value is valid */
+	NB_die_if(errno == EINVAL, "");
+	NB_die_if(errno == E2BIG, "value truncated:\n%s", ret->input);
+
+	/* parse value into binary representation for memcpy */
+	NB_die_if(
+		value_parse(ret->input, ret->bytes, ret->set.len)
+		, "");
+	/* render binary representation as a user-readable hex string */
+	NB_die_if(!(
+		ret->rendered = value_render(ret->bytes, ret->set.len)
+		), "");
+
+	return ret;
+die:
+	memref_release(ret);
+	return NULL;
 }
 
 
@@ -85,11 +120,7 @@ struct memref *memref_state_get(const struct field *field, const char *state_nam
 
 	/* otherwise, allocate a new one */
 	} else {
-		size_t len = field->set.len;
-		NB_die_if(!(
-			ret = calloc(1, sizeof(*ret) + len)
-			), "fail alloc size %zu", sizeof(*ret) + len);
-		ret->set = field->set;
+		MEMREF_ALLOC_COMMON
 
 		errno = 0;
 		NB_die_if(!(
@@ -114,6 +145,21 @@ die:
  */
 int memref_emit (struct memref *ref, yaml_document_t *outdoc, int outmapping)
 {
-	/* TODO: implement */
-	return 0;
+	int err_cnt = 0;
+
+	if (memref_is_value(ref)) {
+		NB_die_if(
+			y_pair_insert(outdoc, outmapping, "value", ref->input)
+			, "failed to emit value");
+		NB_die_if(
+			y_pair_insert(outdoc, outmapping, "bytes", ref->rendered)
+			, "failed to emit bytes");
+	} else {
+		NB_die_if(
+			y_pair_insert(outdoc, outmapping, "state", ref->name)
+			, "failed to emit state");
+	}
+
+die:
+	return err_cnt;
 }
