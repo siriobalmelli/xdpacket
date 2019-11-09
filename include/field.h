@@ -33,11 +33,16 @@
  *		  Valid values must be registered in 'field_flags.h'.
  */
 struct field_set {
+union {
+struct {
 	int32_t			offt;
 	uint16_t		len;
 	uint8_t			mask;
 	uint8_t			flags; /* deprecate flags, turn this into leading and trailing masks */
 }__attribute__((packed));
+	uint64_t		bytes; /* used for direct comparisons */
+};
+};
 
 NLC_ASSERT(field_set_size, sizeof(struct field_set) == sizeof(uint64_t));
 
