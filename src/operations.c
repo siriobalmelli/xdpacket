@@ -182,6 +182,11 @@ struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
 					dst_field_name = valtxt;
 				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
 					dst_state_name = valtxt;
+				/* Ignore 'bytes': we output this field and our output
+				 * _must_ be valid input.
+				 */
+				} else if (!strcmp("bytes", keyname)) {
+					;
 				} else {
 					NB_die("op destination does not implement '%s'", keyname);
 				}
@@ -195,6 +200,11 @@ struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
 					src_state_name = valtxt;
 				} else if (!strcmp("value", keyname) || !strcmp("v", keyname)) {
 					src_value = valtxt;
+				/* Ignore 'bytes': we output this field and our output
+				 * _must_ be valid input.
+				 */
+				} else if (!strcmp("bytes", keyname)) {
+					;
 				} else {
 					NB_die("op source does not implement '%s'", keyname);
 				}
