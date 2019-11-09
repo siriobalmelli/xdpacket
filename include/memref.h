@@ -33,7 +33,12 @@ struct {	/* static value */
 };
 
 
-void memref_release(void *ref);
+NLC_INLINE bool memref_is_value(struct memref *ref)
+{
+	return (ref->set.flags & MEMREF_FLAG_STATIC);
+}
+
+void memref_release(void *arg);
 
 struct memref *memref_value_new(const struct field *field, const char *value);
 struct memref *memref_state_get(const struct field *field, const char *state_name);
