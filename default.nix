@@ -8,7 +8,7 @@
   # deps
   system ? builtins.currentSystem,
   nixpkgs ? import (builtins.fetchGit {
-    url = "https://github.com/siriobalmelli-foss/nixpkgs.git";
+    url = "https://siriobalmelli@github.com/siriobalmelli-foss/nixpkgs.git";
     ref = "sirio";
     }) {}
 }:
