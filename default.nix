@@ -8,7 +8,7 @@
   # deps
   system ? builtins.currentSystem,
   nixpkgs ? import (builtins.fetchGit {
-    url = "https://github.com/siriobalmelli-foss/nixpkgs.git";
+    url = "https://siriobalmelli@github.com/siriobalmelli-foss/nixpkgs.git";
     ref = "master";
     }) {}
 }:
@@ -29,11 +29,11 @@ stdenv.mkDerivation rec {
   };
 
   libjudy = import (builtins.fetchGit {  # TODO: upstream pkgconfig or Meson Judy
-    url = "https://github.com/siriobalmelli/libjudy.git";
+    url = "https://siriobalmelli@github.com/siriobalmelli/libjudy.git";
     ref = "master";
     }) {};
   nonlibc = nixpkgs.nonlibc or import (builtins.fetchGit {
-    url = "https://github.com/siriobalmelli/nonlibc.git";
+    url = "https://siriobalmelli@github.com/siriobalmelli/nonlibc.git";
     ref = "master";
     }) {};
 

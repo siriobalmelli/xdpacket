@@ -7,6 +7,7 @@
 #include <ndebug.h>
 #include <process.h>
 #include <getopt.h>
+#include <field.h>
 
 /* TCP socket
  */

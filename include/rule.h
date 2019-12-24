@@ -7,9 +7,9 @@
  */
 
 #include <xdpacket.h>
-#include <fval.h>
-#include <sval.h>
-#include <fref.h>
+#include <judyutils.h>
+#include <yamlutils.h>
+#include <parse2.h>
 
 
 /*	rule

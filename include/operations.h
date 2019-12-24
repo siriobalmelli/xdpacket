@@ -9,7 +9,6 @@
  */
 
 #include <field.h>
-#include <state.h>
 #include <yamlutils.h>
 #include <memref.h>
 
