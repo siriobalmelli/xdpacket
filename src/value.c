@@ -77,6 +77,7 @@ static void __attribute__((destructor)) value_set_cleanup()
 int value_parse(const char *value, uint8_t *parsed, size_t len)
 {
 	int err_cnt = 0;
+	struct in6_addr	i6;
 
 	/* 0-length fields are valid: just ignore any user-supplied values */
 	if (!len) {
@@ -160,10 +161,9 @@ int value_parse(const char *value, uint8_t *parsed, size_t len)
 		memcpy(parsed, by, len);
 
 	/* parse IPv6 */
-	} else if (len <= 16 && !regexec(&re_ipv6, value, 0, NULL, 0)) {
-		struct in6_addr	i6;
-		NB_die_if(inet_pton(AF_INET6, value, &i6) != 1,
-			"could not parse ipv6 address '%s'", value);
+	} else if (len <= 16 && !regexec(&re_ipv6, value, 0, NULL, 0)
+			&& inet_pton(AF_INET6, value, &i6) == 1)
+	{
 		memcpy(parsed, &i6, len);
 
 	/* parse arbitrary series of hex digits */
