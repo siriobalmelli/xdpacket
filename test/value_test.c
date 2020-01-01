@@ -19,10 +19,36 @@ const static struct test_case tests[] = {
 		.value = "1.1.1.1",
 		.parsed = (uint8_t []){0x01, 0x01, 0x01, 0x01},
 		.rendered = "0x01010101"
+	},
+	{
+		.field_len = 4,
+		.value = "192.168.1.1",
+		.parsed = (uint8_t []){0xc0, 0xa8, 0x1, 0x1},
+		.rendered = "0xc0a80101"
+	},
+	{
+		/* parses as ASCII and truncates to "192" */
+		.field_len = 3,
+		.value = "192.168.1",
+		.parsed = (uint8_t []){0x31, 0x39, 0x32},
+		.rendered = "0x313932"
+	},
+	{
+		.field_len = 6,
+		.value = "00:11:aa:bb:cc:dd",
+		.parsed = (uint8_t []){0x00, 0x11, 0xaa, 0xbb, 0xcc, 0xdd},
+		.rendered = "0x0011aabbccdd"
+	},
+	{
+		/* parses as ASCII and truncates to "00:11" */
+		.field_len = 5,
+		.value = "00:11:aa:bb:cc",
+		.parsed = (uint8_t []){0x30, 0x30, 0x3a, 0x31, 0x31},
+		.rendered = "0x30303a3131"
 	}
 };
 
-/* TODO: implement the following test cases:
+/* keep in mind the following cases:
  * 1.1.1.1                                     # ipv4 yes
  * 192.168.1.1                                 # ipv4 yes
  * 192.168.1                                   # ipv4 no
