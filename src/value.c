@@ -27,11 +27,11 @@ const char *txt_ipv4 = "^([0-9]{1,3}\\.){3}([0-9]+)$";
 static regex_t re_mac = {0};
 const char *txt_mac = "^([0-9a-fA-F]{2}:){5}([0-9a-fA-F]{2})$";
 static regex_t re_int = {0};
-const char *txt_int = "^[+-]?([0-9]+|b[01]+|(0x|x)[0-9a-f]+)$";
+const char *txt_int = "^\\s*[+-]?([0-9]+|0[xX][0-9a-f]+)$";
 static regex_t re_ipv6 = {0};
 const char *txt_ipv6 = "^((([0-9a-f]{1,4}(:|::)){1,7}([0-9a-f]{1,4}))|::|::1)$";
 static regex_t re_hex = {0};
-const char *txt_hex = "^(x|0x)[0-9a-f]+$";
+const char *txt_hex = "^\\s*0[xX][0-9a-f]+$";
 
 /*	value_init()
  * Compile regexes only once at program start.
