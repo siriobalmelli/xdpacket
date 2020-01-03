@@ -32,6 +32,9 @@ struct {	/* static value */
 	uint8_t			bytes[];
 };
 
+/* allows for <= 40B 'bytes' payload to fit into a single cache line */
+NLC_ASSERT(memref_size, sizeof(struct memref) == 24);
+
 
 NLC_INLINE bool memref_is_value(struct memref *ref)
 {

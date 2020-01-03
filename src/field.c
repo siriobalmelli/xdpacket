@@ -173,19 +173,7 @@ int field_parse(enum parse_mode	mode,
 	long mask = 0;
 
 	/* parse mapping */
-	for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
-		pair < mapping->data.mapping.pairs.top;
-		pair++)
-	{
-		/* loop boilerplate */
-		yaml_node_t *key = yaml_document_get_node(doc, pair->key);
-		const char *keyname = (const char *)key->data.scalar.value;
-
-		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
-		NB_die_if(val->type != YAML_SCALAR_NODE,
-			"'%s' in field not a scalar", keyname);
-		const char *valtxt = (const char *)val->data.scalar.value;
-
+	Y_MAP_PAIRS_EXEC_STR(doc, mapping,
 		/* Match field names and populate 'local' */
 		if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
 			name = valtxt;
@@ -208,7 +196,7 @@ int field_parse(enum parse_mode	mode,
 		} else {
 			NB_err("'iface' does not implement '%s'", keyname);
 		}
-	}
+	);
 
 	/* process based on 'mode' */
 	switch (mode) {

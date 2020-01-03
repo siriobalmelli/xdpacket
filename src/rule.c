@@ -143,7 +143,7 @@ int rule_parse (enum parse_mode mode,
 	Pvoid_t write_JQ = NULL;
 
 	/* parse mapping */
-	Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc, mapping,
+	Y_MAP_PAIRS_EXEC_OBJ(doc, mapping,
 		if (val->type == YAML_SCALAR_NODE) {
 			const char *valtxt = (const char *)val->data.scalar.value;
 

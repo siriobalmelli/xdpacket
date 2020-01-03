@@ -177,7 +177,7 @@ struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
 
 	Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc, mapping,
 		if (!strcmp("dst", keyname) || !strcmp("d", keyname)) {
-			Y_SEQ_MAP_PAIRS_EXEC_STR(doc, val,
+			Y_MAP_PAIRS_EXEC_STR(doc, val,
 				if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
 					dst_field_name = valtxt;
 				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
@@ -193,7 +193,7 @@ struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
 			);
 
 		} else if (!strcmp("src", keyname) || !strcmp("s", keyname)) {
-			Y_SEQ_MAP_PAIRS_EXEC_STR(doc, val,
+			Y_MAP_PAIRS_EXEC_STR(doc, val,
 				if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
 					src_field_name = valtxt;
 				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
