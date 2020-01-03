@@ -13,6 +13,7 @@
 #include <ndebug.h>
 #include <stdarg.h> /* varargs to emulate printf() constructs */
 
+
 /*	y_pair_insert()
  * Insert 'key' and 'val' as a pair into 'mapping'.
  * Return 0 on success.
@@ -67,6 +68,57 @@ die:
 }
 
 
+
+/*	Y_MAP_PAIRS_EXEC_COMMON()
+ * Common code for Y_MAP_PAIRS_EXEC_[X] and nested loop in Y_SEQ_MAP_PAIRS_EXEC_[X]
+ *
+ * TODO: make sure all 'for (yaml_node_pair_t' loops in the code are moved over
+ * to these Y_[X]_EXEC_[Y]() macros
+ */
+#define Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, map_ptr)				\
+	for (yaml_node_pair_t *pair = map_ptr->data.mapping.pairs.start;	\
+		pair < map_ptr->data.mapping.pairs.top;				\
+		pair++)								\
+	{									\
+		/* loop boilerplate */						\
+		yaml_node_t *key = yaml_document_get_node(doc_ptr, pair->key);	\
+		const char *keyname = (const char *)key->data.scalar.value;	\
+										\
+		yaml_node_t *val = yaml_document_get_node(doc_ptr, pair->value);
+
+/*	Y_MAP_PAIRS_EXEC_OBJ()
+ * Execute 'statements' on every pair of the mapping the pointed to by 'map_ptr'.
+ *
+ * The following variables are available to 'statements':
+ * - (char *)keyname
+ * - (yaml_node_t *)val
+ */
+#define Y_MAP_PAIRS_EXEC_OBJ(doc_ptr, map_ptr, statements)			\
+	Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, map_ptr)				\
+		/* user-supplied statements here */				\
+		statements;							\
+	}
+
+/*	Y_MAP_PAIRS_EXEC_STR()
+ * Execute 'statements' on every pair of the mapping the pointed to by 'map_ptr'.
+ *
+ * The following variables are available to 'statements':
+ * - (char *)keyname
+ * - (char *)valtxt
+ */
+#define Y_MAP_PAIRS_EXEC_STR(doc_ptr, map_ptr, statements)			\
+	Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, map_ptr)				\
+		if (val->type != YAML_SCALAR_NODE) {				\
+			NB_err("'%s' in field not a scalar", keyname);		\
+			continue;						\
+		}								\
+		const char *valtxt = (const char *)val->data.scalar.value;	\
+										\
+		/* user-supplied statements here */				\
+		statements;							\
+	}
+
+
 /*	Y_SEQ_MAP_PAIRS_EXEC_COMMON()
  * Common code for Y_SEQ_MAP_PAIRS_[X] code
  */
@@ -78,19 +130,11 @@ die:
 	{										\
 		yaml_node_t *mapping = yaml_document_get_node(doc_ptr, *child);		\
 		if (mapping->type != YAML_MAPPING_NODE) {				\
-			NB_err("node not a map");					\
+			NB_err("node is not a map: %s @%zu:%zu",			\
+				mapping->tag,						\
+				mapping->start_mark.line, mapping->start_mark.column);	\
 			continue;							\
-		}									\
-											\
-		for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;	\
-			pair < mapping->data.mapping.pairs.top;				\
-			pair++)								\
-		{									\
-			/* loop boilerplate */						\
-			yaml_node_t *key = yaml_document_get_node(doc_ptr, pair->key);	\
-			const char *keyname = (const char *)key->data.scalar.value;	\
-											\
-			yaml_node_t *val = yaml_document_get_node(doc_ptr, pair->value);\
+		}
 
 /*	Y_SEQ_MAP_PAIRS_EXEC_OBJ()
  * Execute 'statements' on every pair of every mapping in the sequence
@@ -102,6 +146,7 @@ die:
  */
 #define Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc_ptr, seq_ptr, statements)				\
 	Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
+		Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, mapping)				\
 			/* user-supplied statements here */				\
 			statements;							\
 		}									\
@@ -117,6 +162,7 @@ die:
  */
 #define Y_SEQ_MAP_PAIRS_EXEC_STR(doc_ptr, seq_ptr, statements)				\
 	Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
+		Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, mapping)				\
 			if (val->type != YAML_SCALAR_NODE) {				\
 				NB_err("'%s' in field not a scalar", keyname);		\
 				continue;						\

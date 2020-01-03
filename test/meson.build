@@ -1,5 +1,6 @@
 tests = [
   'field_test.c',
+  'op_test.c',
   'overflow_test.c',
   'value_test.c'
   ]

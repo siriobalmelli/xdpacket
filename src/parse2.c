@@ -12,7 +12,7 @@
 
 /*	private parse functions
  */
-static void parse(const unsigned char *buf,
+int parse(const unsigned char *buf, /* not static: used by op_test.c */
 			size_t buf_len,
 			int outfd);
 static int parse_mapping(yaml_document_t *doc,
@@ -155,7 +155,7 @@ die:
  *
  * TODO: parse multiple documents in a text stream
  */
-static void parse(const unsigned char *buf, size_t buf_len, int outfd)
+int parse(const unsigned char *buf, size_t buf_len, int outfd)
 {
 	int err_cnt = 0;
 
@@ -219,7 +219,8 @@ die:
 	yaml_emitter_delete(&emitter);
 	yaml_parser_delete(&parser);
 	yaml_document_delete(&doc);
-	return;
+
+	return err_cnt;
 }
 
 /*	parse_mapping()
@@ -236,6 +237,7 @@ static int parse_mapping(yaml_document_t *doc, yaml_node_t *root,
 {
 	int err_cnt = 0;
 
+	/* TODO: move over to Y_SEQ_MAP_PAIRS_EXEC_OBJ() */
 	for (yaml_node_pair_t *pair = root->data.mapping.pairs.start;
 		pair < root->data.mapping.pairs.top;
 		pair++)
