@@ -74,6 +74,7 @@ struct memref *memref_value_new(const struct field *field, const char *value)
 	NB_die_if(!field || !value, "missing arguments");
 
 	MEMREF_ALLOC_COMMON
+	ret->set.flags |= MEMREF_FLAG_STATIC;
 
 	/* If a field-set can store the length of the user value string,
 	 * it can definitely store the resulting parsed set of bytes.

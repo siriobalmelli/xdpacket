@@ -160,9 +160,18 @@ int rule_parse (enum parse_mode mode,
 
 			if (!strcmp("match", keyname) || !strcmp("m", keyname)) {
 				/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
+#if 0
 				NB_err_if(
 					jl_enqueue(&match_JQ, op_parse_new(doc, val))
 					, "");
+#else
+				struct op *op = op_parse_new(doc, val);
+				NB_inf("new op at %p", op);
+				op_emit(op, outdoc, outlist);
+				NB_err_if(
+					jl_enqueue(&match_JQ, op)
+					, "");
+#endif
 
 			} else if (!strcmp("write", keyname) || !strcmp("w", keyname)) {
 				NB_err_if(

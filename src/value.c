@@ -194,7 +194,9 @@ int value_parse(const char *value, uint8_t *parsed, size_t len)
 		memcpy(parsed, value, value_len); /* does not copy \0 terminator */
 	}
 
+	return err_cnt;
 die:
+	memset(parsed, 0x0, len); /* zero out memory on failure */
 	return err_cnt;
 }
 

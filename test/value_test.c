@@ -148,8 +148,11 @@ int main()
 			rendered = value_render(parsed, tc->field_len)
 			), "failed to render");
 		NB_err_if(strcmp(rendered, tc->rendered),
-			"'%s' rendered as '%s' != expected '%s'",
-			tc->value, rendered, tc->rendered);
+			"'%s' rendered as '%s' != expected '%s' (test %u)",
+			tc->value, rendered, tc->rendered, i);
+
+		free(parsed); parsed = NULL;
+		free(rendered); rendered = NULL;
 	}
 
 die:
