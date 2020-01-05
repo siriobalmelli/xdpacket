@@ -23,7 +23,13 @@ struct op_set {
 	void			*from;
 } __attribute__((packed));
 
+/**
+ * return 0 if 'pkt' matches 'op'
+ */
 int op_match(struct op_set *op, const void *pkt, size_t plen);
+/**
+ * return 0 if 'op' could be applied (written) to 'pkt'
+ */
 int op_write(struct op_set *op, void *pkt, size_t plen);
 
 

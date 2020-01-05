@@ -39,6 +39,11 @@ int op_common(struct op_set *op, const void *pkt, size_t plen,
 			size_t *out_len, const uint8_t **out_to, const uint8_t **out_from)
 {
 	*out_len = op->set_to.len > op->set_from.len ? op->set_to.len : op->set_from.len;
+
+	/* corner case: zero-length ops (nop) */
+	if (!(*out_len))
+		return 0;
+
 	*out_len -= 1; /* IMPORTANT: last byte is copied/matched through a mask! */
 	*out_to = op->to;
 	*out_from = op->from;
@@ -65,6 +70,10 @@ int __attribute__((hot)) op_match(struct op_set *op, const void *pkt, size_t ple
 	if (op_common(op, pkt, plen, &len, &to, &from))
 		return 1;
 
+	/* zero-length always matches */
+	if (!len)
+		return 0;
+
 	if (memcmp(to, from, len))
 		return 1;
 	if ((to[len] & op->set_to.mask) != (from[len] & op->set_from.mask))
@@ -83,10 +92,13 @@ int __attribute__((hot)) op_write(struct op_set *op, void *pkt, size_t plen)
 	if (op_common(op, pkt, plen, &len, (const uint8_t **)&to, &from))
 		return 1;
 
+	/* zero-length is a nop */
+	if (!len)
+		return 0;
+
 	memcpy(to, from, len);
 	to[len] = (to[len] & ~op->set_to.mask) | /* respect existing bits untouched by dst mask */
 		((from[len] & op->set_to.mask) & op->set_from.mask);
-
 	return 0;
 }
 
