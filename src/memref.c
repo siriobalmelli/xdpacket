@@ -100,6 +100,16 @@ die:
 }
 
 
+/*	memref_state_eq()
+ * Return when whether two states are functionally equivalent (length and mask),
+ * ignoring flags and offsets (irrelevant to a memref).
+ */
+static bool memref_state_eq(struct field_set a, struct field_set b)
+{
+	return (a.len == b.len && a.mask == b.mask);
+}
+
+
 /*	memref_state_get()
  */
 struct memref *memref_state_get(const struct field *field, const char *state_name)
@@ -115,7 +125,7 @@ struct memref *memref_state_get(const struct field *field, const char *state_nam
 		/* Unorthodox usage of short-circuit evalutation so that
 		 * memref_release() does not drop someone else's ref on error.
 		 */
-		NB_die_if(ret->set.bytes != field->set.bytes && !(ret = NULL),
+		NB_die_if(!memref_state_eq(ret->set, field->set) && !(ret = NULL),
 			"field '%s' does not match existing field for '%s'",
 			field->name, state_name);
 

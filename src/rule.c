@@ -142,32 +142,50 @@ int rule_parse (enum parse_mode mode,
 	Pvoid_t match_JQ = NULL;
 	Pvoid_t write_JQ = NULL;
 
-	/* parse mapping */
-	Y_MAP_PAIRS_EXEC_OBJ(doc, mapping,
-		if (val->type == YAML_SCALAR_NODE) {
-			const char *valtxt = (const char *)val->data.scalar.value;
-
+	/* {
+	 *   rule: rule_name		(scalar)
+	 *   match:			(sequence)
+	 *     - { } # op		(mapping)
+	 *   write:			(sequence)
+	 *     - { } # op		(mapping)
+	 * } # rule			(mapping)
+	 */
+	/* TODO: is there a seq here? */
+	Y_FOR_MAP(doc, mapping,
+		if (type == YAML_SCALAR_NODE) {
 			if (!strcmp("rule", keyname) || !strcmp("r", keyname))
-				name = valtxt;
+				name = txt;
 			else
 				NB_err("'rule' does not implement '%s'", keyname);
 
-		} else if (val->type == YAML_SEQUENCE_NODE) {
+		} else if (type == YAML_SEQUENCE_NODE) {
 			if (mode != PARSE_ADD) {
 				NB_err("'rule' does not support parsing rule operations when not adding");
 				continue;
 			}
 
 			if (!strcmp("match", keyname) || !strcmp("m", keyname)) {
-				/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
-				NB_err_if(
-					jl_enqueue(&match_JQ, op_parse_new(doc, val))
-					, "");
+				Y_FOR_SEQ(doc, seq,
+					if (type != YAML_MAPPING_NODE) {
+						NB_err("'match' item not a mapping");
+						continue;
+					}
+					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
+					NB_err_if(
+						jl_enqueue(&match_JQ, op_parse_new(doc, map))
+						, "");
+				);
 
 			} else if (!strcmp("write", keyname) || !strcmp("w", keyname)) {
-				NB_err_if(
-					jl_enqueue(&write_JQ, op_parse_new(doc, val))
-					, "");
+				Y_FOR_SEQ(doc, seq,
+					if (type != YAML_MAPPING_NODE) {
+						NB_err("'match' item not a mapping");
+						continue;
+					}
+					NB_err_if(
+						jl_enqueue(&write_JQ, op_parse_new(doc, map))
+						, "");
+				);
 
 			} else {
 				NB_err("'rule' does not implement '%s'", keyname);

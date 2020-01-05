@@ -172,26 +172,30 @@ int field_parse(enum parse_mode	mode,
 	long len = 0;
 	long mask = 0;
 
-	/* parse mapping */
-	Y_MAP_PAIRS_EXEC_STR(doc, mapping,
+	/* {
+	 *   field: length check	(scalar)
+	 *   offt: 32			(scalar)
+	 * } # field			(mapping)
+	 */
+	Y_FOR_MAP(doc, mapping,
 		/* Match field names and populate 'local' */
 		if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
-			name = valtxt;
+			name = txt;
 
 		} else if (!strcmp("offt", keyname) || !strcmp("o", keyname)) {
 			errno = 0;
-			offt = strtol(valtxt, NULL, 0);
-			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
+			offt = strtol(txt, NULL, 0);
+			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, txt);
 
 		} else if (!strcmp("len", keyname) || !strcmp("l", keyname)) {
 			errno = 0;
-			len = strtol(valtxt, NULL, 0);
-			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
+			len = strtol(txt, NULL, 0);
+			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, txt);
 
 		} else if (!strcmp("mask", keyname) || !strcmp("m", keyname)) {
 			errno = 0;
-			mask = strtol(valtxt, NULL, 0);
-			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, valtxt);
+			mask = strtol(txt, NULL, 0);
+			NB_die_if(errno, "'%s': '%s' could not be parsed", keyname, txt);
 
 		} else {
 			NB_err("'iface' does not implement '%s'", keyname);

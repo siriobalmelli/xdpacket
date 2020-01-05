@@ -69,109 +69,75 @@ die:
 
 
 
-/*	Y_MAP_PAIRS_EXEC_COMMON()
- * Common code for Y_MAP_PAIRS_EXEC_[X] and nested loop in Y_SEQ_MAP_PAIRS_EXEC_[X]
- *
- * TODO: make sure all 'for (yaml_node_pair_t' loops in the code are moved over
- * to these Y_[X]_EXEC_[Y]() macros
- */
-#define Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, map_ptr)				\
-	for (yaml_node_pair_t *pair = map_ptr->data.mapping.pairs.start;	\
-		pair < map_ptr->data.mapping.pairs.top;				\
-		pair++)								\
-	{									\
-		/* loop boilerplate */						\
-		yaml_node_t *key = yaml_document_get_node(doc_ptr, pair->key);	\
-		const char *keyname = (const char *)key->data.scalar.value;	\
-										\
-		yaml_node_t *val = yaml_document_get_node(doc_ptr, pair->value);
-
-/*	Y_MAP_PAIRS_EXEC_OBJ()
- * Execute 'statements' on every pair of the mapping the pointed to by 'map_ptr'.
- *
- * The following variables are available to 'statements':
- * - (char *)keyname
- * - (yaml_node_t *)val
- */
-#define Y_MAP_PAIRS_EXEC_OBJ(doc_ptr, map_ptr, statements)			\
-	Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, map_ptr)				\
-		/* user-supplied statements here */				\
-		statements;							\
-	}
-
-/*	Y_MAP_PAIRS_EXEC_STR()
- * Execute 'statements' on every pair of the mapping the pointed to by 'map_ptr'.
- *
- * The following variables are available to 'statements':
- * - (char *)keyname
- * - (char *)valtxt
- */
-#define Y_MAP_PAIRS_EXEC_STR(doc_ptr, map_ptr, statements)			\
-	Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, map_ptr)				\
-		if (val->type != YAML_SCALAR_NODE) {				\
-			NB_err("'%s' in field not a scalar", keyname);		\
+/* boilerplate typing code used by Y_FOR_X() functions */
+#define Y_FOR_TYPE_								\
+		yaml_node_type_t type = val_->type;				\
+		/* assign proper value variable based on type */		\
+		const char *txt = NULL; yaml_node_t *map = NULL, *seq = NULL;	\
+		if (type == YAML_SCALAR_NODE) {					\
+			txt = (const char *)val_->data.scalar.value;		\
+		} else if (type == YAML_MAPPING_NODE) {				\
+			map = val_;						\
+		} else if (type == YAML_SEQUENCE_NODE) {			\
+			seq = val_;						\
+		} else {							\
+			NB_err("'%s' is not of a known type", keyname);		\
 			continue;						\
-		}								\
-		const char *valtxt = (const char *)val->data.scalar.value;	\
-										\
-		/* user-supplied statements here */				\
-		statements;							\
-	}
-
-
-/*	Y_SEQ_MAP_PAIRS_EXEC_COMMON()
- * Common code for Y_SEQ_MAP_PAIRS_[X] code
- */
-#define Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
-	/* process children list objects */						\
-	for (yaml_node_item_t *child = seq_ptr->data.sequence.items.start;		\
-		child < seq_ptr->data.sequence.items.top;				\
-		child++)								\
-	{										\
-		yaml_node_t *mapping = yaml_document_get_node(doc_ptr, *child);		\
-		if (mapping->type != YAML_MAPPING_NODE) {				\
-			NB_err("node is not a map: %s @%zu:%zu",			\
-				mapping->tag,						\
-				mapping->start_mark.line, mapping->start_mark.column);	\
-			continue;							\
 		}
 
-/*	Y_SEQ_MAP_PAIRS_EXEC_OBJ()
- * Execute 'statements' on every pair of every mapping in the sequence
- * pointed to by 'seq_ptr'.
- *
- * The following variables are available to 'statements':
- * - (char *)keyname
- * - (yaml_node_t *)val
- */
-#define Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc_ptr, seq_ptr, statements)				\
-	Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
-		Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, mapping)				\
-			/* user-supplied statements here */				\
-			statements;							\
-		}									\
-	}
 
-/*	Y_SEQ_MAP_PAIRS_EXEC_STR()
- * Execute 'statements' on every pair of every mapping in the sequence
- * pointed to by 'seq_ptr'.
+/*	Y_FOR_MAP()
+ * Iterate through every key-value pair of the mapping 'map', execute 'statements' on it.
  *
  * The following variables are available to 'statements':
- * - (char *)keyname
- * - (char *)valtxt
+ * - (const char *)keyname
+ * - (yaml_node_type_t)type
+ * - (const char *)txt		// optional: if value is a scalar
+ * - (yaml_node_t *)map		// optional: if value is a mapping
+ * - (yaml_node_t *)seq		// optional: if value is a sequence
  */
-#define Y_SEQ_MAP_PAIRS_EXEC_STR(doc_ptr, seq_ptr, statements)				\
-	Y_SEQ_MAP_PAIRS_EXEC_COMMON(doc_ptr, seq_ptr)					\
-		Y_MAP_PAIRS_EXEC_COMMON(doc_ptr, mapping)				\
-			if (val->type != YAML_SCALAR_NODE) {				\
-				NB_err("'%s' in field not a scalar", keyname);		\
-				continue;						\
-			}								\
-			const char *valtxt = (const char *)val->data.scalar.value;	\
+#define Y_FOR_MAP(doc, map, statements)							\
+	if (doc && map) {								\
+		for (yaml_node_pair_t *pair = map->data.mapping.pairs.start;		\
+			pair < map->data.mapping.pairs.top;				\
+			pair++)								\
+		{									\
+			yaml_node_t *key = yaml_document_get_node(doc, pair->key);	\
+			const char *keyname = (const char *)key->data.scalar.value;	\
+											\
+			yaml_node_t *val_ = yaml_document_get_node(doc, pair->value);	\
+			Y_FOR_TYPE_							\
 											\
 			/* user-supplied statements here */				\
 			statements;							\
 		}									\
+	} else {									\
+		NB_err("%s%s", doc ? "" : "doc == NULL ", map ? "" : "map == NULL");	\
+	}
+
+/*	Y_FOR_SEQ()
+ * Iterate through every item/value in the sequence 'seq', execute 'statements' on it.
+ *
+ * The following variables are available to 'statements':
+ * - (yaml_node_type_t)type
+ * - (const char *)txt		// optional: if item is a scalar
+ * - (yaml_node_t *)map		// optional: if item is a mapping
+ * - (yaml_node_t *)seq		// optional: if item is a sequence
+ */
+#define Y_FOR_SEQ(doc, seq, statements)							\
+	if (doc && seq) {								\
+		for (yaml_node_item_t *child = seq->data.sequence.items.start;		\
+			child < seq->data.sequence.items.top;				\
+			child++)							\
+		{									\
+			yaml_node_t *val_ = yaml_document_get_node(doc, *child);	\
+			Y_FOR_TYPE_							\
+											\
+			/* user-supplied statements here */				\
+			statements;							\
+		}									\
+	} else {									\
+		NB_err("%s%s", doc ? "" : "doc == NULL ", seq ? "" : "seq == NULL");	\
 	}
 
 

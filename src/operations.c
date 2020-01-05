@@ -187,13 +187,22 @@ struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
 	const char	*src_state_name = NULL;
 	const char	*src_value = NULL;
 
-	Y_SEQ_MAP_PAIRS_EXEC_OBJ(doc, mapping,
+	/* {
+	 *   dst: { field: "mac dst" }	(mapping)
+	 *   src: { }			(mapping)
+	 * } # op			(mapping)
+	 */
+	Y_FOR_MAP(doc, mapping,
 		if (!strcmp("dst", keyname) || !strcmp("d", keyname)) {
-			Y_MAP_PAIRS_EXEC_STR(doc, val,
+			if (type != YAML_MAPPING_NODE) {
+				NB_err("dst target is not a mapping");
+				continue;
+			}
+			Y_FOR_MAP(doc, map,
 				if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
-					dst_field_name = valtxt;
+					dst_field_name = txt;
 				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
-					dst_state_name = valtxt;
+					dst_state_name = txt;
 				/* Ignore 'bytes': we output this field and our output
 				 * _must_ be valid input.
 				 */
@@ -205,13 +214,17 @@ struct op *op_parse_new (yaml_document_t *doc, yaml_node_t *mapping)
 			);
 
 		} else if (!strcmp("src", keyname) || !strcmp("s", keyname)) {
-			Y_MAP_PAIRS_EXEC_STR(doc, val,
+			if (type != YAML_MAPPING_NODE) {
+				NB_err("src target is not a mapping");
+				continue;
+			}
+			Y_FOR_MAP(doc, map,
 				if (!strcmp("field", keyname) || !strcmp("f", keyname)) {
-					src_field_name = valtxt;
+					src_field_name = txt;
 				} else if (!strcmp("state", keyname) || !strcmp("s", keyname)) {
-					src_state_name = valtxt;
+					src_state_name = txt;
 				} else if (!strcmp("value", keyname) || !strcmp("v", keyname)) {
-					src_value = valtxt;
+					src_value = txt;
 				/* Ignore 'bytes': we output this field and our output
 				 * _must_ be valid input.
 				 */

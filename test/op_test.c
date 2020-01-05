@@ -38,7 +38,7 @@ struct test {
 };
 
 struct test tests[] = {
-	{	/* nop should _not_ access memory */
+	{	/* nop: should _not_ access memory */
 		.yaml = "\
 xdpk:\n\
   - rule: rule\n\
@@ -53,7 +53,8 @@ xdpk:\n\
 		.pkt_len = 0,
 		.pkt_ex = NULL
 	},
-	{	/* value -> field */
+
+	{	/* match: nop (always); write: value->field */
 		.yaml = "\
 xdpk:\n\
   - rule: rule\n\
@@ -67,6 +68,69 @@ xdpk:\n\
 		.pkt_in = (uint8_t []){0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		.pkt_len = 6,
 		.pkt_ex = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x00, 0x00}
+	},
+
+	{	/* match: value->field; write: field->field */
+		.yaml = "\
+xdpk:\n\
+  - rule: rule\n\
+    match:\n\
+      - dst: {field: \"mac dst\"}\n\
+        src: {value: \"0a:00:27:00:01:02\"}\n\
+    write:\n\
+      - dst: {field: \"mac src\"}\n\
+        src: {field: \"mac dst\"}\n\
+",
+		.pkt_in = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x01, 0x02,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		.pkt_len = 12,
+		.pkt_ex = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x01, 0x02,
+					0x0a, 0x00, 0x27, 0x00, 0x01, 0x02},
+	},
+
+	{	/* match: value->field; write: field->state, state->field */
+		.yaml = "\
+xdpk:\n\
+  - rule: rule\n\
+    match:\n\
+      - dst: {field: \"mac dst\"}\n\
+        src: {value: \"0a:00:27:00:01:02\"}\n\
+    write:\n\
+      - dst: {state: \"msrc\"}\n\
+        src: {field: \"mac dst\"}\n\
+      - dst: {field: \"mac src\"}\n\
+        src: {state: \"msrc\"}\n\
+",
+		.pkt_in = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x01, 0x02,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		.pkt_len = 12,
+		.pkt_ex = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x01, 0x02,
+					0x0a, 0x00, 0x27, 0x00, 0x01, 0x02},
+	},
+
+	{	/* swap 'mac src' and 'mac dst'
+		 * match: value->field
+		 * write: field->state, field->field, state->field
+		 */
+		.yaml = "\
+xdpk:\n\
+  - rule: rule\n\
+    match:\n\
+      - dst: {field: \"mac dst\"}\n\
+        src: {value: \"0a:00:27:00:01:02\"}\n\
+    write:\n\
+      - dst: {state: \"msrc\"}\n\
+        src: {field: \"mac src\"}\n\
+      - dst: {field: \"mac src\"}\n\
+        src: {field: \"mac dst\"}\n\
+      - dst: {field: \"mac dst\"}\n\
+        src: {state: \"msrc\"}\n\
+",
+		.pkt_in = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x01, 0x02,
+					0x01, 0x02, 0x03, 0x04, 0x05, 0x06},
+		.pkt_len = 12,
+		.pkt_ex = (uint8_t []){0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+					0x0a, 0x00, 0x27, 0x00, 0x01, 0x02}
 	}
 };
 
