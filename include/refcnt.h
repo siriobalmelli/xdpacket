@@ -41,13 +41,4 @@
 #endif
 
 
-#if 0
-/*	refcnt_release_cond()
- * Release a refcount if it exists, return whether refcount is non-zero
- * _after_ decrement.
- */
-#define refcnt_release_cond(structure)						\
-	(structure->refcnt && --structure->refcnt)
-#endif
-
 #endif /* refcnt_h_ */

@@ -234,9 +234,11 @@ int op_emit (struct op *op, yaml_document_t *outdoc, int outlist)
 			y_pair_insert(outdoc, dst, "field", op->dst_field->name)
 			, "failed to emit dst->field");
 	}
-	NB_die_if(
-		memref_emit(op->dst, outdoc, dst)
-		, "");
+	if (op->dst) {
+		NB_die_if(
+			memref_emit(op->dst, outdoc, dst)
+			, "");
+	}
 	NB_die_if(
 		y_pair_insert_obj(outdoc, reply, "dst", dst)
 		, "failed to emit 'dst'");
@@ -246,9 +248,11 @@ int op_emit (struct op *op, yaml_document_t *outdoc, int outlist)
 			y_pair_insert(outdoc, src, "field", op->src_field->name)
 			, "failed to emit src->field");
 	}
-	NB_die_if(
-		memref_emit(op->src, outdoc, src)
-		, "");
+	if (op->src) {
+		NB_die_if(
+			memref_emit(op->src, outdoc, src)
+			, "");
+	}
 	NB_die_if(
 		y_pair_insert_obj(outdoc, reply, "src", src)
 		, "failed to emit 'src'");

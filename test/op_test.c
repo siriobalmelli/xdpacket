@@ -36,8 +36,6 @@ int main()
 		NB_die_if(
 			parse((const unsigned char *)tc->yaml, strlen(tc->yaml), fileno(stdout))
 			, "failed to parse YAML:\n%s", tc->yaml);
-
-		/* TODO: clean up */
 	}
 
 die:
