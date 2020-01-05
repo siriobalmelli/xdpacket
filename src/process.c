@@ -154,32 +154,26 @@ int process_parse(enum parse_mode mode,
 	const char *name = "";
 	Pvoid_t rout_JQ = NULL;
 
-	/* parse mapping */
-	for (yaml_node_pair_t *pair = mapping->data.mapping.pairs.start;
-		pair < mapping->data.mapping.pairs.top;
-		pair++)
-	{
-		/* loop boilerplate */
-		yaml_node_t *key = yaml_document_get_node(doc, pair->key);
-		const char *keyname = (const char *)key->data.scalar.value;
-		yaml_node_t *val = yaml_document_get_node(doc, pair->value);
-
-		if (val->type == YAML_SCALAR_NODE) {
-			const char *valtxt = (const char *)val->data.scalar.value;
-
+	/*
+	 * - process: enp0s8
+	 *   rules:
+	 *     - check src: enp0s3
+	 */
+	Y_FOR_MAP(doc, mapping,
+		if (type == YAML_SCALAR_NODE) {
 			if (!strcmp("process", keyname) || !strcmp("p", keyname))
-				name = valtxt;
+				name = txt;
 			else
 				NB_err("'process' does not implement '%s'", keyname);
 
-		} else if (val->type == YAML_SEQUENCE_NODE) {
+		} else if (type == YAML_SEQUENCE_NODE) {
 			if (!strcmp("rules", keyname) || !strcmp("r", keyname)) {
-				Y_SEQ_MAP_PAIRS_EXEC_STR(doc, val,
+				Y_FOR_SEQ(doc, seq,
 					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
 					NB_err_if(
-						jl_enqueue(&rout_JQ, rout_new(keyname, valtxt))
+						jl_enqueue(&rout_JQ, rout_new(keyname, txt))
 						, "");
-					);
+				);
 
 			} else {
 				NB_err("'process' does not implement '%s'", keyname);
@@ -188,7 +182,7 @@ int process_parse(enum parse_mode mode,
 		} else {
 			NB_die("'%s' in field not a scalar or sequence", keyname);
 		}
-	}
+	);
 
 	/* process based on 'mode' */
 	switch (mode) {
