@@ -56,7 +56,7 @@ void process_free(void *arg)
 
 /*	process_free_all()
  */
-void __attribute__((destructor(102))) process_free_all()
+void __attribute__((destructor(5))) process_free_all()
 {
 	JS_LOOP(&process_JS,
 		process_free(val);
