@@ -10,7 +10,7 @@ static Pvoid_t state_JS = NULL; /* (char *field_name) -> (struct memref *ref) */
 /*	state_check_exit()
  * Catch memory leaks.
  */
-static void __attribute__((destructor(3))) memref_check_exit()
+static void __attribute__((destructor(103))) memref_check_exit()
 {
 	JS_LOOP(&state_JS,
 		struct memref *ref = val;

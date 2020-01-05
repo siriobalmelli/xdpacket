@@ -56,7 +56,7 @@ die:
 
 /*	rule_free_all()
  */
-void __attribute__((destructor(4))) rule_free_all()
+void __attribute__((destructor(104))) rule_free_all()
 {
 	JS_LOOP(&rule_JS,
 		rule_free(val);

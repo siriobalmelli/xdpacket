@@ -33,7 +33,7 @@ die:
 
 /*	field_free_all()
  */
-void __attribute__((destructor(2))) field_free_all()
+void __attribute__((destructor(102))) field_free_all()
 {
 	JS_LOOP(&field_JS,
 		field_free(val);

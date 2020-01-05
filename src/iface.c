@@ -58,7 +58,7 @@ die:
 
 /*	iface_free_all()
  */
-void __attribute__((destructor(1))) iface_free_all()
+void __attribute__((destructor(101))) iface_free_all()
 {
 	JS_LOOP(&iface_JS,
 		NB_wrn("iface not freed, freeing by destructor");

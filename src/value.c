@@ -57,7 +57,7 @@ static void __attribute__((constructor)) value_set_init()
 
 /*	value_cleanup()
  */
-static void __attribute__((destructor(2))) value_set_cleanup()
+static void __attribute__((destructor(102))) value_set_cleanup()
 {
 	regfree(&re_ipv4);
 	regfree(&re_mac);
