@@ -27,6 +27,10 @@ xdpk:\n\
   - field: ip dst\n\
     offt: 30\n\
     len: 4\n\
+  - field: dst mac multi\n\
+    offt: 0\n\
+    len: 1\n\
+    mask: 0x10\n\
 ";
 
 
@@ -54,7 +58,7 @@ xdpk:\n\
 		.pkt_ex = NULL
 	},
 
-	{	/* match: nop (always); write: value->field */
+	{	/* write value->field */
 		.yaml = "\
 xdpk:\n\
   - rule: rule\n\
@@ -70,7 +74,7 @@ xdpk:\n\
 		.pkt_ex = (uint8_t []){0x0a, 0x00, 0x27, 0x00, 0x00, 0x00}
 	},
 
-	{	/* match: value->field; write: field->field */
+	{	/* match value->field and write: field->field */
 		.yaml = "\
 xdpk:\n\
   - rule: rule\n\
@@ -88,7 +92,7 @@ xdpk:\n\
 					0x0a, 0x00, 0x27, 0x00, 0x01, 0x02},
 	},
 
-	{	/* match: value->field; write: field->state, state->field */
+	{	/* write in and out of a state variable */
 		.yaml = "\
 xdpk:\n\
   - rule: rule\n\
@@ -108,10 +112,7 @@ xdpk:\n\
 					0x0a, 0x00, 0x27, 0x00, 0x01, 0x02},
 	},
 
-	{	/* swap 'mac src' and 'mac dst'
-		 * match: value->field
-		 * write: field->state, field->field, state->field
-		 */
+	{	/* swap mac source and dest in packet */
 		.yaml = "\
 xdpk:\n\
   - rule: rule\n\
@@ -131,6 +132,22 @@ xdpk:\n\
 		.pkt_len = 12,
 		.pkt_ex = (uint8_t []){0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
 					0x0a, 0x00, 0x27, 0x00, 0x01, 0x02}
+	},
+
+	{	/* match against and then set a 1-bit flag (test masking) */
+		.yaml = "\
+xdpk:\n\
+  - rule: rule\n\
+    match:\n\
+      - dst: {field: \"dst mac multi\"}\n\
+        src: {value: \"0x00\"}\n\
+    write:\n\
+      - dst: {field: \"dst mac multi\"}\n\
+        src: {value: \"0xff\"}\n\
+",
+		.pkt_in = (uint8_t []){0x0a},
+		.pkt_len = 1,
+		.pkt_ex = (uint8_t []){0x1a}
 	}
 };
 
