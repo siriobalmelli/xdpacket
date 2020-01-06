@@ -53,6 +53,7 @@ void memref_release(void *arg)
 	if (js_get(&state_JS, ref->name) == ref)
 		js_delete(&state_JS, ref->name);
 
+	free(ref->name);
 	free(ref);
 }
 
@@ -132,6 +133,7 @@ struct memref *memref_state_get(const struct field *field, const char *state_nam
 	/* otherwise, allocate a new one */
 	} else {
 		MEMREF_ALLOC_COMMON
+		ret->set.flags &= ~MEMREF_FLAG_STATIC;
 
 		errno = 0;
 		NB_die_if(!(

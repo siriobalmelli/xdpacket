@@ -96,7 +96,8 @@ void rout_free(void *arg)
 struct rout *rout_new(const char *rule_name, const char *out_name)
 {
 	struct rout *ret = NULL;
-	NB_die_if(!rule_name || !out_name, "rout requires 'rule_name' and 'out_name'");
+	NB_die_if(!rule_name, "rout requires 'rule_name'");
+	NB_die_if(!out_name, "rout requires 'out_name'");
 
 	NB_die_if(!(
 		ret = calloc(1, sizeof(*ret))

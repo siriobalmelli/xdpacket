@@ -9,9 +9,7 @@ extern int parse(const unsigned char *buf, size_t buf_len, int outfd);
 /* one-time declaration of fields used by all tests */
 const char *fields = "\
 xdpk:\n\
-  - field: any\n\
-    offt: 0\n\
-    len: 0\n\
+  - field: any # all values '0'\n\
   - field: mac dst\n\
     offt: 0\n\
     len: 6\n\
