@@ -169,10 +169,16 @@ int process_parse(enum parse_mode mode,
 		} else if (type == YAML_SEQUENCE_NODE) {
 			if (!strcmp("rules", keyname) || !strcmp("r", keyname)) {
 				Y_FOR_SEQ(doc, seq,
-					/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
-					NB_err_if(
-						jl_enqueue(&rout_JQ, rout_new(keyname, txt))
-						, "");
+					if (type != YAML_MAPPING_NODE) {
+						NB_err("expecting 'rulename: iface' pairs");
+						continue;
+					}
+					Y_FOR_MAP(doc, map,
+						/* rely on enqueue() to test 'fv' (a NULL datum is invalid) */
+						NB_err_if(
+							jl_enqueue(&rout_JQ, rout_new(keyname, txt))
+							, "");
+					);
 				);
 
 			} else {
