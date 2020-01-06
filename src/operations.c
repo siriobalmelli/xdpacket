@@ -41,8 +41,10 @@ int op_common(struct op_set *op, const void *pkt, size_t plen,
 	*out_len = op->set_to.len > op->set_from.len ? op->set_to.len : op->set_from.len;
 
 	/* corner case: zero-length ops (nop) */
-	if (!(*out_len))
+	if (!(*out_len)) {
+		*out_len = -1; /* because of '*out_len -= 1' below, 0 is valid for 1-byte fields */
 		return 0;
+	}
 
 	*out_len -= 1; /* IMPORTANT: last byte is copied/matched through a mask! */
 	*out_to = op->to;
@@ -71,7 +73,7 @@ int __attribute__((hot)) op_match(struct op_set *op, const void *pkt, size_t ple
 		return 1;
 
 	/* zero-length always matches */
-	if (!len)
+	if (len == -1)
 		return 0;
 
 	if (memcmp(to, from, len))
@@ -93,7 +95,7 @@ int __attribute__((hot)) op_write(struct op_set *op, void *pkt, size_t plen)
 		return 1;
 
 	/* zero-length is a nop */
-	if (!len)
+	if (len == -1)
 		return 0;
 
 	memcpy(to, from, len);
