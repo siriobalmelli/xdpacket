@@ -150,7 +150,6 @@ int rule_parse (enum parse_mode mode,
 	 *     - { } # op		(mapping)
 	 * } # rule			(mapping)
 	 */
-	/* TODO: is there a seq here? */
 	Y_FOR_MAP(doc, mapping,
 		if (type == YAML_SCALAR_NODE) {
 			if (!strcmp("rule", keyname) || !strcmp("r", keyname))
