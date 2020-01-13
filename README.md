@@ -36,7 +36,7 @@ and shunting it off to a second L2 segment for IDS/analysis.
 1. Build or install xdpacket:
     -   from source with [meson](https://mesonbuild.com):
         ```bash
-        git clone https://github.com/siriobalmelli/xdpacket.git
+        git clone https://siriobalmelli@github.com/siriobalmelli/xdpacket.git
         cd xdpacket
         meson --buildtype=release build-release
         cd release
@@ -44,14 +44,29 @@ and shunting it off to a second L2 segment for IDS/analysis.
         sudo ninja install
         ```
 
+    -   from source with [nix](https://nixos.org/nix/):
+        ```bash
+        # make sure nix is installed
+        nix-env -q || curl https://nixos.org/nix/install | sh
+        . /home/"$(whoami)"/.nix-profile/etc/profile.d/nix.sh
+        # clone sources
+        git clone https://siriobalmelli@github.com/siriobalmelli/xdpacket.git
+        # install to environment
+        nix-env -i -f xdpacket/default.nix
+        # run with sudo
+        sudo $(which xdpacket)
+        # access the docs
+        man xdpacket
+        ```
+
     -   with [nix](https://nixos.org/nix/):
-        TODO: confirm merged into nixpkgs Master
+        TODO: not yet merged into nixpkgs Master
         ```bash
         nix-env --install xdpacket
         ```
 
     -   on Debian/Ubuntu:
-        TODO: ppa info
+        TODO: add ppa info
         ```bash
         sudo apt-get install xdpacket
         ```
