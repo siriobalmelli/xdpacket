@@ -259,6 +259,12 @@ int iface_output(struct iface *iface, void *pkt, size_t plen)
 	if (checksum(pkt, plen)) {
 		NB_wrn("checksum fail of packet size %zu", plen);
 		iface->count_checkfail++;
+		/* Dump the contents of an entire packet,
+		 * every 128 packets so as not to overload output.
+		 */
+		if (!(iface->count_checkfail & 0x7f) && plen < 128) {
+			NB_dump(pkt, plen, "failed packet:");
+		}
 		return 1;
 	}
 
