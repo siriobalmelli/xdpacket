@@ -251,13 +251,14 @@ die:
 	return err_cnt;
 }
 
-
 /*	iface_output()
  */
 int iface_output(struct iface *iface, void *pkt, size_t plen)
 {
-	if (checksum(pkt, plen)) {
-		NB_wrn("checksum fail of packet size %zu", plen);
+	enum checksum_err ret = checksum(pkt, plen);
+	if (ret) {
+		NB_wrn("checksum fail of packet size %zu: %s",
+			plen, checksum_strerr(ret));
 		iface->count_checkfail++;
 		/* Dump the contents of an entire packet,
 		 * every 128 packets so as not to overload output.

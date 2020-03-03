@@ -1,5 +1,21 @@
 #include <checksums.h>
 
+const char *checksum_strerr(enum checksum_err error)
+{
+	switch (error) {
+	case CHK_OK:
+		return "CHK_OK: success";
+	case CHK_INVAL:
+		return "CHK_INVAL: provided values are not sane";
+	case CHK_UNSUPPORTED:
+		return "CHK_UNSUPPORTED: protocol or extension not supported";
+	case CHK_MALFORMED:
+		return "CHK_MALFORMED: malformed (invalid) header data";
+	default:
+		return "unknown error code";
+	}
+}
+
 
 #include <netinet/in.h>
 #include <linux/if_ether.h>	/* struct ethhdr */
@@ -87,7 +103,7 @@ static uint16_t ones_final(uint32_t sum)
  * Returns 0 on success (was able to calculate all checksums).
  * NOTE: all words are network (big-endian) byte order.
  */
-int __attribute__((hot)) checksum(void *frame, size_t len)
+enum checksum_err __attribute__((hot)) checksum(void *frame, size_t len)
 {
 	struct ethhdr *l2 = frame;
 
@@ -125,11 +141,13 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 
 	/* sanity check provided pointer and length values */
 	if (!l2 || len <= (sizeof(*l2) + sizeof(*l3)) || len > UINT16_MAX)
-		return -1;
+		return CHK_INVAL;
 
 	/* verify protocol */
-	if (be16toh(l2->h_proto) != ETH_P_IP)
-		return -1;
+	if (be16toh(l2->h_proto) != ETH_P_IP) {
+		NB_inf("protocol 0x%04x not IP", be16toh(l2->h_proto));
+		return CHK_UNSUPPORTED;
+	}
 
 
 	/* l3 == ipv4
@@ -141,11 +159,11 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		 */
 		head_len = (uint16_t)l3->ihl << 2;
 		if (head_len < 20 || head_len > 60)
-			return -1;
+			return CHK_MALFORMED;
 		l4.ptr = (void *)l3 + head_len;
 		l4_len = be16toh(l3->tot_len) - head_len;
 		if (l4_len > (len - sizeof(*l2) - head_len))
-			return -1;
+			return CHK_MALFORMED;
 
 		l3_proto = &l3->protocol;
 
@@ -182,8 +200,10 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		head_len = 40;
 		l4.ptr = (void *)l3 + head_len;
 		l4_len = be16toh(l3->payload_len);
-		if (l4_len > (len - sizeof(*l2) - head_len))
-			return -1;
+		if (l4_len > (len - sizeof(*l2) - head_len)) {
+			NB_inf("IPv6 missing next header support");
+			return CHK_UNSUPPORTED;
+		}
 
 		l3_proto = &l3->nexthdr;
 
@@ -206,7 +226,7 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 
 	/* malformed IP protocol */
 	} else {
-		return -1;
+		return CHK_MALFORMED;
 	}
 
 
@@ -238,8 +258,9 @@ int __attribute__((hot)) checksum(void *frame, size_t len)
 		l4.icmp6->icmp6_cksum = ones_final(ones_sum(l4.ptr, l4_len, l4_sum));
 
 	} else {
-		return -1;
+		NB_inf("upper-level protocol not recognized");
+		return CHK_UNSUPPORTED;
 	}
 
-	return 0;
+	return CHK_OK;
 }
