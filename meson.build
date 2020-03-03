@@ -12,6 +12,7 @@ project('xdpacket', 'c',
 description = 'the eXtremely Direct Packet handler'
 homepage = 'https://siriobalmelli.github.io/xdpacket/'
 
+warning_level = 3
 
 # whole-project build flags (most of these are hardening flags)
 add_project_arguments([
@@ -19,8 +20,6 @@ add_project_arguments([
     '-fasynchronous-unwind-tables',
     '-fexceptions',
     '-fstack-protector-strong',
-    '-pipe',
-    '-Wall',
     '-Werror=format-security',
     '-Werror=implicit-function-declaration'
     ],
@@ -28,36 +27,37 @@ add_project_arguments([
 
 # _all_ variables visible in gdb and core dumps
 if get_option('buildtype') == 'debug'
+  optimization = 'g'
   add_project_arguments([
     '-DDEBUG',
     '-fno-omit-frame-pointer',
     '-grecord-gcc-switches',
-    '-O0',
     '-Wno-cpp'
     ],
     language : 'c')
 
 elif get_option('buildtype') == 'debugoptimized'
+  optimization = 2
   add_project_arguments([
     '-fno-omit-frame-pointer',
     '-grecord-gcc-switches',
     '-march=native',
     '-mtune=native',
-    '-O2'
     ],
   language : 'c')
 
 elif get_option('buildtype') == 'release'
+  optimization = 2
   add_project_arguments([
     '-DNDEBUG',
     '-march=native',
     '-mtune=native',
-    '-O2'
     ],
   language : 'c')
 
 # use this to cross check the effect of flags on the other build types.
 elif get_option('buildtype') == 'plain'
+  optimization = 0
   add_project_arguments([
     '-DNDEBUG',
     '-march=core2'

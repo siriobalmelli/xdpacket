@@ -76,10 +76,13 @@ die:
 		const char *txt = NULL; yaml_node_t *map = NULL, *seq = NULL;	\
 		if (type == YAML_SCALAR_NODE) {					\
 			txt = (const char *)val_->data.scalar.value;		\
+			(void)(map); (void)(seq); /* suppress "unused" errors */\
 		} else if (type == YAML_MAPPING_NODE) {				\
 			map = val_;						\
+			(void)(txt); (void)(seq); /* suppress "unused" errors */\
 		} else if (type == YAML_SEQUENCE_NODE) {			\
 			seq = val_;						\
+			(void)(txt); (void)(map); /* suppress "unused" errors */\
 		} else {							\
 			NB_err("'%s' is not of a known type", keyname);		\
 			continue;						\
