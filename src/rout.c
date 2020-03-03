@@ -46,7 +46,8 @@ die:
 bool __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt, size_t plen)
 {
 	JL_LOOP(&set->match_JQ,
-		if (op_match(val, pkt, plen))
+		struct op *op = val;
+		if (op_match(&op->set, pkt, plen))
 			return false;
 	);
 
@@ -63,7 +64,8 @@ bool __attribute__((hot)) rout_set_match(struct rout_set *set, const void *pkt, 
 bool rout_set_exec(struct rout_set *rst, void *pkt, size_t plen)
 {
 	JL_LOOP(&rst->write_JQ,
-		if (op_write(val, pkt, plen))
+		struct op *op = val;
+		if (op_write(&op->set, pkt, plen))
 			return false;
 	);
 	return true;

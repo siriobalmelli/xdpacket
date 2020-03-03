@@ -1,19 +1,24 @@
 # reflection.yaml
-# incoming packets are simply reflected back out the same interface.
+# incoming ICMP packets are reflected back out the same interface.
 # TTL is modified to 1 so these packets are easy to filter in a pcap.
 ---
 xdpk:
   - iface: enp0s3
-  - field: any
-    offt: 0
-    len: 0
+  - field: eth_proto
+    offt: 12
+    len: 2
+  - field: ip_proto
+    offt: 23
+    len: 1
   - field: ttl
     offt: 22
     len: 1
   - rule: reflect
     match:
-      - dst: {field: any}
-        src: {field: any}
+      - dst: {field: eth_proto}
+        src: {value: 0x0800}  # IPv4
+      - dst: {field: ip_proto}
+        src: {value: 0x01}  # ICMP
     write:
       - dst: {field: ttl}
         src: {value: 1}

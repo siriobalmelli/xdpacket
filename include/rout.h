@@ -23,8 +23,8 @@
 struct rout_set {
 	struct iface		*if_out;
 
-	Pvoid_t			match_JQ; /* (uint64_t seq) -> (struct (fval|fref)_set *action) */
-	Pvoid_t			write_JQ; /* (uint64_t seq) -> (struct sref_set *state) */
+	Pvoid_t			match_JQ; /* (uint64_t seq) -> (struct op *match) */
+	Pvoid_t			write_JQ; /* (uint64_t seq) -> (struct op *write) */
 
 	uint32_t		count_match;
 };

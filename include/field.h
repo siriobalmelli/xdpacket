@@ -46,6 +46,12 @@ struct {
 
 NLC_ASSERT(field_set_size, sizeof(struct field_set) == sizeof(uint64_t));
 
+NLC_INLINE void field_set_prn(struct field_set set)
+{
+	NB_inf("offt %d, len %u, mask 0x%x, flags 0x%x",
+		set.offt, set.len, set.mask, set.flags);
+}
+
 
 /*	field
  * User-supplied parameters describing a field.
