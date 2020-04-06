@@ -8,11 +8,10 @@ order: 10
 The [examples](./) dir holds `.yaml` files showing usage cases for `xdpacket`:
 
 - [checksums.yaml](./checksums.yaml)
+- [invalid_rule_ref.yaml](./invalid_rule_ref.yaml)
+- [mac_src.yaml](./mac_src.yaml)
 - [mdns.yaml](./mdns.yaml)
 - [mirror.yaml](./mirror.yaml)
-- [README.md](./README.md)
 - [reflection.yaml](./reflection.yaml)
 - [strings.yaml](./strings.yaml)
-- [state.yaml](./state.yaml)
-- [mac_src.yaml](./mac_src.yaml)
 - [syntax.yaml](./syntax.yaml)
