@@ -2,7 +2,6 @@
   # options
   buildtype ? "release",
   compiler ? "clang",
-  dep_type ? "shared",
   mesonFlags ? "",
 
   # deps
@@ -17,7 +16,7 @@ with nixpkgs;
 
 stdenv.mkDerivation rec {
   name = "xdpacket";
-  version = "0.3.1";
+  version = "0.4.0";
   outputs = [ "out" ];
 
   meta = with nixpkgs.stdenv.lib; {
@@ -70,8 +69,7 @@ stdenv.mkDerivation rec {
 
   # build
   mFlags = mesonFlags
-    + " --buildtype=${buildtype}"
-    + " -Ddep_type=${dep_type}";
+    + " --buildtype=${buildtype}";
 
   configurePhase = ''
       echo "flags: $mFlags"

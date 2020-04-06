@@ -2,7 +2,7 @@
 #   - The Meson build setup must stand alone adn *not* depend on Nix
 #   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('xdpacket', 'c',
-  version : '0.3.1',
+  version : '0.4.0',
   license : 'GPL2',
   default_options : [
     'b_coverage=true',
