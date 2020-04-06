@@ -94,9 +94,11 @@ and shunting it off to a second L2 segment for IDS/analysis.
       # match any IP packet; set it's TTL to 1
       - rule: set ttl
         match:
-          - ethertype: 0x0800
+          - dst: {field: ethertype}
+            src: {value: 0x0800}  # IPv4
         write:
-          - ttl: 1
+          - dst: {field: ttl}
+            src: {value: 1}
       # "reflect" IP packets back out 'enp0s3' with ttl set to 1
       - process: enp0s3
         rules:
