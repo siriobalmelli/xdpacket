@@ -1,59 +1,53 @@
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
 
 # Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
+# Executables
 # Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-_site*
-.*.sw[op]
-build*
-*.pyc
+# Libraries
+# Linker output
+# Object files
+# Precompiled Headers
+# Prerequisites
+# Shared objects (inc. Windows DLLs)
 *.DS_Store
-result
+*.a
+*.app
+*.cmd
+*.d
+*.dSYM/
+*.dll
+*.dylib
+*.elf
+*.exe
+*.exp
+*.gch
+*.hex
+*.i*86
+*.idb
+*.ilk
+*.ko
+*.la
+*.lib
+*.lo
+*.map
+*.mod*
+*.o
+*.obj
+*.out
+*.pch
+*.pdb
+*.pyc
+*.so
+*.so.*
+*.su
+*.x86_64
+.*.sw[op]
+.DS_Store
 .bundle
+.tmp_versions/
+Mkfile.old
+Module.symvers
+_site*
+build*
+dkms.conf
+modules.order
+result
