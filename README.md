@@ -47,11 +47,14 @@ and shunting it off to a second L2 segment for IDS/analysis.
     -   from source with [nix](https://nixos.org/nix/):
         ```bash
         # make sure nix is installed
-        nix-env -q || curl https://nixos.org/nix/install | sh
+        nix-env --version || curl https://nixos.org/nix/install | sh
         . /home/"$(whoami)"/.nix-profile/etc/profile.d/nix.sh
-        # clone sources
+        # optional: source maintainer's binary cache, for speed
+        nix-env -iA cachix -f https://cachix.org/api/v1/install
+        cachix use siriobalmelli-nixpkgs
+        # clone sources and build
         git clone https://siriobalmelli@github.com/siriobalmelli/xdpacket.git
-        # install to environment
+        # build and install to environment
         nix-env -i -f xdpacket/default.nix
         # run with sudo
         sudo $(which xdpacket)
