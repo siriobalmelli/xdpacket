@@ -1,15 +1,19 @@
-{
-  # options
-  buildtype ? "release",
-  compiler ? "clang",
-  mesonFlags ? "",
+{ buildtype ? "release"
+, compiler ? "clang"
+, mesonFlags ? ""
 
-  # deps
-  system ? builtins.currentSystem,
-  nixpkgs ? import (builtins.fetchGit {
+, nixpkgs ? import (builtins.fetchGit {
     url = "https://siriobalmelli@github.com/siriobalmelli-foss/nixpkgs.git";
-    ref = "master";
+    ref = "refs/tags/sirio-2021-07-12";
     }) {}
+, libjudy ? import (builtins.fetchGit {  # TODO: upstream pkgconfig or Meson Judy
+    url = "https://siriobalmelli@github.com/siriobalmelli/libjudy.git";
+    ref = "585024ad05642dfbfa84e0df7b99fb33eae0d2b1";
+    }) { inherit nixpkgs; }
+, nonlibc ? nixpkgs.nonlibc or import (builtins.fetchGit {
+    url = "https://siriobalmelli@github.com/siriobalmelli/nonlibc.git";
+    ref = "975066ba049ace0042dfd811cea5af0be7787133";
+    }) { inherit nixpkgs; }
 }:
 
 with nixpkgs;
@@ -17,33 +21,20 @@ with nixpkgs;
 stdenv.mkDerivation rec {
   name = "xdpacket";
   version = "0.4.0";
-  outputs = [ "out" ];
 
-  meta = with nixpkgs.stdenv.lib; {
+  meta = with lib; {
     description = "the eXtremely Direct Packet handler";
     homepage = https://siriobalmelli.github.io/xdpacket/;
     license = licenses.gpl2;
-    platforms = platforms.unix;
-    maintainers = [ "https://github.com/siriobalmelli" ];
+    platforms = platforms.linux;  # TODO: expand to used BSD sockets
+    maintainers = with maintainers; [ siriobalmelli ];
   };
 
-  libjudy = import (builtins.fetchGit {  # TODO: upstream pkgconfig or Meson Judy
-    url = "https://siriobalmelli@github.com/siriobalmelli/libjudy.git";
-    ref = "master";
-    }) {};
-  nonlibc = nixpkgs.nonlibc or import (builtins.fetchGit {
-    url = "https://siriobalmelli@github.com/siriobalmelli/nonlibc.git";
-    ref = "master";
-    }) {};
-
-  buildInputs = [
+  nativeBuildInputs = [
     clang
     gcc
-    libjudy
-    libyaml
     meson
     ninja
-    nonlibc
     pandoc
     pkgconfig
   ] ++ lib.optional lib.inNixShell [
@@ -56,13 +47,19 @@ stdenv.mkDerivation rec {
     pahole
   ];
 
+  buildInputs = [
+    libjudy
+    libyaml
+    nonlibc
+  ];
+
   # just work with the current directory (aka: Git repo), no fancy tarness
-  src = if nixpkgs.lib.inNixShell then null
-    else nixpkgs.nix-gitignore.gitignoreSource [] ./.;
+  src = if lib.inNixShell then null
+    else nix-gitignore.gitignoreSource [] ./.;
 
   # Override the setupHook in the meson nix derivation,
   # so that meson doesn't automatically get invoked from there.
-  meson = nixpkgs.pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
+  meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
 
   # don't harden away position-dependent speedups for static builds
   hardeningDisable = [ "pic" "pie" ];
